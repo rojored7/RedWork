@@ -1,0 +1,336 @@
+#!/bin/bash
+# Git Pre-Push Hook - Validaciones Completas ANTES de Push
+# BLOQUEA push si algún check crítico falla
+
+set -e
+
+echo ""
+echo "🚀 PRE-PUSH VALIDATIONS - MANDATORY CHECKS"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+ERRORS=0
+WARNINGS=0
+
+# ============================================
+# GATE 1: INFRASTRUCTURE
+# ============================================
+echo "📍 GATE 1: Infrastructure Health Check"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check Docker containers
+echo "🐳 Checking Docker containers..."
+if docker ps | grep -q "taskmanager-postgres"; then
+  echo "  ✅ PostgreSQL: UP"
+else
+  echo "  ❌ PostgreSQL: DOWN"
+  ERRORS=$((ERRORS + 1))
+fi
+
+if docker ps | grep -q "taskmanager-redis"; then
+  echo "  ✅ Redis: UP"
+else
+  echo "  ⚠️  Redis: DOWN (non-critical)"
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+echo ""
+
+# ============================================
+# GATE 2: BACKEND COMPILATION & TESTS
+# ============================================
+echo "📍 GATE 2: Backend Compilation & Tests"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -d "backend/src" ]; then
+  cd backend
+
+  # Validar entities PRIMERO
+  echo "📦 Validating entities structure..."
+  cd ..
+  if bash scripts/validate-entities.sh > /dev/null 2>&1; then
+    echo "  ✅ Entities: VALID"
+  else
+    echo "  ❌ Entities: INVALID (duplicates or obsolete paths detected)"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  cd backend
+
+  # Compilación
+  echo "🔨 Compiling backend..."
+  if npm run build > /dev/null 2>&1; then
+    echo "  ✅ Compilation: SUCCESS (0 errors)"
+  else
+    echo "  ❌ Compilation: FAILED"
+    echo ""
+    echo "  Run 'cd backend && npm run build' to see errors"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  # Unit tests
+  echo "🧪 Running unit tests..."
+  TEST_OUTPUT=$(npm test 2>&1 || true)
+  PASSING_TESTS=$(echo "$TEST_OUTPUT" | grep "Tests:" | grep -o "[0-9]* passed" | grep -o "[0-9]*" || echo "0")
+  FAILING_TESTS=$(echo "$TEST_OUTPUT" | grep "Tests:" | grep -o "[0-9]* failed" | grep -o "[0-9]*" || echo "0")
+
+  if [ "$FAILING_TESTS" = "0" ] && [ "$PASSING_TESTS" != "0" ]; then
+    echo "  ✅ Unit Tests: $PASSING_TESTS passing, 0 failing"
+  else
+    echo "  ❌ Unit Tests: $FAILING_TESTS failing"
+    echo "  Run 'cd backend && npm test' to see failures"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  cd ..
+fi
+
+echo ""
+
+# ============================================
+# GATE 3: FRONTEND COMPILATION & TESTS
+# ============================================
+echo "📍 GATE 3: Frontend Compilation & Tests"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+if [ -d "frontend/src" ]; then
+  cd frontend
+
+  # Type checking
+  echo "🔍 Type checking..."
+  if npm run type-check > /dev/null 2>&1; then
+    echo "  ✅ Type Check: SUCCESS (0 errors)"
+  else
+    echo "  ❌ Type Check: FAILED"
+    echo "  Run 'cd frontend && npm run type-check' to see errors"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  # Build
+  echo "🔨 Building frontend..."
+  if npm run build > /dev/null 2>&1; then
+    echo "  ✅ Build: SUCCESS"
+  else
+    echo "  ❌ Build: FAILED"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  # Unit tests
+  echo "🧪 Running unit tests..."
+  if npm test -- --run > /dev/null 2>&1; then
+    echo "  ✅ Unit Tests: PASSING"
+  else
+    echo "  ⚠️  Unit Tests: FAILING (non-blocking)"
+    WARNINGS=$((WARNINGS + 1))
+  fi
+
+  cd ..
+fi
+
+echo ""
+
+# ============================================
+# GATE 4: SECURITY CHECKS (19-Security-Review-Agent) - BLOQUEANTE
+# ============================================
+echo "📍 GATE 4: Security Checks (19-Security-Review-Agent)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check OWASP compliance if script exists
+if [ -f "scripts/validate-owasp.sh" ]; then
+  echo "🔒 Running OWASP validation (comprehensive)..."
+  if bash scripts/validate-owasp.sh > /dev/null 2>&1; then
+    echo "  ✅ OWASP Validation: COMPLIANT"
+  else
+    echo "  ❌ OWASP Validation: NON-COMPLIANT"
+    echo "  Run 'bash scripts/validate-owasp.sh' to see details"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  # Fallback to basic security checks
+  echo "🔐 Running basic security scans..."
+
+  # Check for secrets in code
+  SECRET_PATTERNS=(
+    "password\s*=\s*['\"][^'\"]+['\"]"
+    "apiKey\s*=\s*['\"][^'\"]+['\"]"
+    "secret\s*=\s*['\"][^'\"]+['\"]"
+    "token\s*=\s*['\"][^'\"]+['\"]"
+  )
+
+  SECRETS_FOUND=0
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    if git diff origin/main...HEAD | grep -iE "$pattern" > /dev/null 2>&1; then
+      SECRETS_FOUND=1
+      break
+    fi
+  done
+
+  if [ $SECRETS_FOUND -eq 0 ]; then
+    echo "  ✅ No secrets detected in diff"
+  else
+    echo "  ❌ Potential secrets detected in code (CRITICAL)"
+    echo "  Review your changes for hardcoded credentials"
+    ERRORS=$((ERRORS + 1))
+  fi
+
+  # Check .env files
+  echo "  🔒 Checking for .env files..."
+  if git log --all --pretty=format: --name-only --diff-filter=A | grep "\.env$" | grep -v "\.env\.example$" > /dev/null 2>&1; then
+    echo "  ❌ .env files found in git history (CRITICAL)"
+    ERRORS=$((ERRORS + 1))
+  else
+    echo "  ✅ No .env files in git history"
+  fi
+fi
+
+echo ""
+
+# ============================================
+# GATE 5: CODE QUALITY (20-Code-Quality-Linting-Agent) - BLOQUEANTE
+# ============================================
+echo "📍 GATE 5: Code Quality (20-Code-Quality-Linting-Agent)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Backend linting
+if [ -d "backend/src" ]; then
+  echo "🔍 Linting backend..."
+  cd backend
+  if npm run lint > /dev/null 2>&1; then
+    echo "  ✅ Backend Lint: CLEAN (0 errors)"
+  else
+    echo "  ❌ Backend Lint: ERRORS FOUND (BLOQUEANTE)"
+    echo "  Run 'cd backend && npm run lint -- --fix' to fix"
+    ERRORS=$((ERRORS + 1))
+  fi
+  cd ..
+fi
+
+# Frontend linting
+if [ -d "frontend/src" ]; then
+  echo "🔍 Linting frontend..."
+  cd frontend
+  if npm run lint > /dev/null 2>&1; then
+    echo "  ✅ Frontend Lint: CLEAN (0 errors)"
+  else
+    echo "  ❌ Frontend Lint: ERRORS FOUND (BLOQUEANTE)"
+    echo "  Run 'cd frontend && npm run lint -- --fix' to fix"
+    ERRORS=$((ERRORS + 1))
+  fi
+  cd ..
+fi
+
+echo ""
+
+# ============================================
+# GATE 6: DATABASE SCHEMA VALIDATION
+# ============================================
+echo "📍 GATE 6: Database Schema Validation"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+echo "📊 Checking database schema..."
+if docker exec taskmanager-postgres psql -U taskmanager_user -d taskmanager_dev -c "\dt" > /dev/null 2>&1; then
+  # Check users table columns count
+  COLUMN_COUNT=$(docker exec taskmanager-postgres psql -U taskmanager_user -d taskmanager_dev -t -c "SELECT COUNT(*) FROM information_schema.columns WHERE table_name = 'users';" 2>&1 | tr -d ' ')
+
+  if [ "$COLUMN_COUNT" -lt 30 ]; then
+    echo "  ✅ DB Schema: CLEAN ($COLUMN_COUNT columns in users table)"
+  else
+    echo "  ❌ DB Schema: CORRUPTED ($COLUMN_COUNT columns, expected ~23)"
+    echo "  Probable entity duplication detected"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo "  ⚠️  DB: Cannot connect (non-blocking)"
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+echo ""
+
+# ============================================
+# GATE 7: SMOKE TESTS (18-Smoke-Test-Validator) - BLOQUEANTE
+# ============================================
+echo "📍 GATE 7: Smoke Tests Full System (18-Smoke-Test-Validator)"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+
+# Check if smoke test script exists
+if [ -f "scripts/smoke-test.sh" ]; then
+  echo "🔥 Running full system smoke tests..."
+  if bash scripts/smoke-test.sh > /dev/null 2>&1; then
+    echo "  ✅ Smoke Tests: ALL PASSED"
+    echo "     - Infrastructure healthy"
+    echo "     - Backend responding"
+    echo "     - Frontend loads"
+    echo "     - Critical flows work"
+  else
+    echo "  ❌ Smoke Tests: FAILED (BLOQUEANTE)"
+    echo "  Run 'bash scripts/smoke-test.sh' to see details"
+    echo ""
+    echo "  System integration is broken. Fix smoke tests before pushing."
+    ERRORS=$((ERRORS + 1))
+  fi
+elif [ -f "scripts/validate-smoke-tests.sh" ]; then
+  echo "🔥 Running smoke test validation..."
+  if bash scripts/validate-smoke-tests.sh > /dev/null 2>&1; then
+    echo "  ✅ Smoke Tests: VALIDATED"
+  else
+    echo "  ❌ Smoke Tests: VALIDATION FAILED (BLOQUEANTE)"
+    ERRORS=$((ERRORS + 1))
+  fi
+else
+  echo "  ⚠️  Smoke Tests: SCRIPTS NOT FOUND"
+  echo "     Expected: scripts/smoke-test.sh or scripts/validate-smoke-tests.sh"
+  echo "     Skipping smoke test validation"
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+# ============================================
+# SUMMARY
+# ============================================
+if [ $ERRORS -eq 0 ] && [ $WARNINGS -eq 0 ]; then
+  echo "✅✅✅ ALL GATES PASSED - PUSH ALLOWED"
+  echo ""
+  echo "Summary:"
+  echo "  🟢 Critical Errors: 0"
+  echo "  🟡 Warnings: 0"
+  echo ""
+  echo "🚀 Push is ALLOWED. Code quality verified."
+  exit 0
+elif [ $ERRORS -eq 0 ] && [ $WARNINGS -gt 0 ]; then
+  echo "⚠️⚠️⚠️  WARNINGS DETECTED - PUSH ALLOWED WITH CAUTION"
+  echo ""
+  echo "Summary:"
+  echo "  🟢 Critical Errors: 0"
+  echo "  🟡 Warnings: $WARNINGS"
+  echo ""
+  echo "⚠️  Push is ALLOWED but please review warnings above."
+  echo ""
+  read -p "Continue with push? (y/N): " -n 1 -r
+  echo ""
+  if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo "✅ Push confirmed by user"
+    exit 0
+  else
+    echo "❌ Push cancelled by user"
+    exit 1
+  fi
+else
+  echo "❌❌❌ GATES FAILED - PUSH BLOCKED"
+  echo ""
+  echo "Summary:"
+  echo "  🔴 Critical Errors: $ERRORS"
+  echo "  🟡 Warnings: $WARNINGS"
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "❌ PUSH IS BLOCKED"
+  echo ""
+  echo "Fix all critical errors above before pushing."
+  echo ""
+  echo "To bypass (NOT RECOMMENDED):"
+  echo "  git push --no-verify"
+  echo ""
+  exit 1
+fi

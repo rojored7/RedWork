@@ -1,0 +1,245 @@
+# ============================================
+# CLIENT DELIVERY MODE - .gitignore
+# ============================================
+# Framework used LOCALLY for development
+# But NEVER pushed to client's repository
+#
+# Use this .gitignore when working on CLIENT PROJECTS
+
+# ============================================
+# FRAMEWORK FILES - NEVER DELIVER TO CLIENT
+# ============================================
+
+# ENTIRE FRAMEWORK - BLOCK EVERYTHING
+.claude/
+scripts/hooks/
+scripts/enforce-sprint-baseline.sh
+scripts/validate-*.sh
+scripts/verify-enforcement.sh
+scripts/smoke-test*.sh
+scripts/post-hook-*.sh
+scripts/install-git-hooks.sh
+scripts/install-pre-commit-hook.sh
+scripts/setup-enforcement-system.sh
+scripts/README.md
+
+# Git hooks templates (client doesn't need framework hooks)
+.husky/
+
+# Framework documentation (internal use only)
+AUTOMATIC_HOOK_ENFORCEMENT.md
+AGENTS_SETUP.md
+FRAMEWORK_*.md
+TEMPLATE_README.md
+ROADMAP.md
+QUICK_START.md
+START_HERE.md
+WHAT_TO_COPY.md
+INVENTORY.md
+.gitignore-*
+
+# ============================================
+# PROJECT ORCHESTRATION - INTERNAL ONLY
+# ============================================
+
+# All internal planning/orchestration
+.project-orchestration/
+
+# Design documents (01-09) - DECISION POINT
+# Option A: Keep design docs for client (document architecture)
+# !01_*.md
+# !02_*.md
+# !03_*.md
+# !04_*.md
+# !05_*.md
+
+# Option B: Hide ALL internal docs (only deliver code)
+01_*.md
+02_*.md
+03_*.md
+04_*.md
+05_*.md
+06_epics/
+07_user_stories/
+08_implementation_breakdown/
+09_sprint_plan/
+
+# ============================================
+# REPORTS - INTERNAL ONLY (NEVER CLIENT)
+# ============================================
+
+*_report.md
+*_REPORT.md
+*report*.md
+*Report*.md
+*completion*.md
+*COMPLETION*.md
+*summary*.md
+*SUMMARY*.md
+*INFORME*.md
+*FASE*.md
+*FIX_REPORT*.md
+*AUDIT*.md
+*BASELINE*.md
+*VALIDATION*.md
+smoke-test-report.md
+test-results*.txt
+coverage-report*.txt
+lint-output.txt
+lint-result.txt
+*-output.txt
+*-result.txt
+
+# ============================================
+# CLIENT GETS - PRODUCTION CODE ONLY
+# ============================================
+# These are explicitly INCLUDED (negated from ignore)
+
+# Production source code
+!backend/src/
+!frontend/src/
+
+# Production configuration (templates only, no secrets)
+!backend/.env.example
+!frontend/.env.example
+!docker-compose.yml
+!Dockerfile
+!.dockerignore
+
+# Production scripts (if useful for client)
+!scripts/health-check.sh
+!scripts/health-check.bat
+!scripts/init-database.sql
+
+# Client documentation
+!README.md
+!CONTRIBUTING.md
+!LICENSE
+!CHANGELOG.md
+
+# API documentation
+!docs/api/
+!docs/architecture/
+!docs/setup/
+
+# Tests (if client wants them)
+!backend/test/
+!backend/src/**/*.spec.ts
+!backend/src/**/*.test.ts
+!frontend/src/**/*.test.tsx
+!frontend/src/**/*.test.ts
+!frontend/e2e/
+
+# Configuration for production
+!package.json
+!package-lock.json
+!tsconfig.json
+!jest.config.js
+!vite.config.ts
+!tailwind.config.js
+!postcss.config.js
+!.prettierrc
+!.eslintrc.js
+!.eslintignore
+
+# CI/CD for client (if they want it)
+!.github/workflows/ci.yml
+!.github/workflows/deploy.yml
+
+# ============================================
+# STANDARD PROJECT .gitignore
+# ============================================
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+.next/
+out/
+*.local
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# But keep templates
+!.env.example
+!.env.template
+
+# Testing
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+.playwright/
+
+# Logs
+logs/
+*.log
+
+# OS
+.DS_Store
+.AppleDouble
+.LSOverride
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*~
+.Trash-*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+.cache/
+
+# ============================================
+# VERIFICATION
+# ============================================
+# To verify what will be delivered to client:
+#
+# 1. Check what's tracked:
+#    git ls-files
+#
+# 2. Should NOT see:
+#    - .claude/
+#    - scripts/hooks/
+#    - Framework documentation
+#    - Internal reports
+#
+# 3. Should ONLY see:
+#    - backend/src/
+#    - frontend/src/
+#    - package.json, configs
+#    - README.md
+#    - Tests (optional)
+#
+# ============================================

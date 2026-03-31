@@ -1,0 +1,236 @@
+# ============================================
+# QUALITY ENFORCEMENT FRAMEWORK - .gitignore
+# ============================================
+# This file defines what should/shouldn't be in git for projects using the framework
+
+# ============================================
+# FRAMEWORK FILES - DECISIONS
+# ============================================
+
+# OPTION A: Agents versioned in git (RECOMMENDED for team consistency)
+# Uncomment to version agents:
+# !.claude/agents/
+
+# OPTION B: Agents NOT versioned (each dev copies locally)
+# Uncomment to ignore agents:
+.claude/agents/
+
+# OPTION C: Hybrid - version agent configs but not full agents
+# Keep agent-config.md but ignore full agent definitions
+.claude/agents/*.md
+!.claude/agents/README.md
+!.claude/agents/AGENTS_INDEX.md
+
+# ============================================
+# ALWAYS IGNORE - Personal/Local Files
+# ============================================
+
+# Personal Claude Code settings (each dev has their own)
+.claude/settings.local.json
+
+# Personal preferences
+.claude/preferences.json
+.claude/.cache/
+
+# Build outputs from framework
+.claude/enforcement/.cache/
+.claude/validators/.output/
+
+# ============================================
+# ALWAYS VERSION - Team Files
+# ============================================
+# These are explicitly INCLUDED (use ! to negate gitignore)
+
+# Core enforcement (CRITICAL - must be versioned)
+!.claude/AUTOMATIC_HOOK_ENFORCEMENT.md
+!.claude/agent-config.md
+
+# Enforcement system (CRITICAL)
+!.claude/enforcement/
+!.claude/validators/
+
+# Scripts (CRITICAL)
+!scripts/
+
+# Git hooks template (CRITICAL - devs install locally)
+!.husky/
+
+# Framework documentation
+!README.md
+!QUICK_START.md
+!TEMPLATE_README.md
+!ROADMAP.md
+!AGENTS_SETUP.md
+!START_HERE.md
+!FRAMEWORK_INDEX.md
+!FRAMEWORK_COMPLETE.md
+
+# ============================================
+# BLOCK REPORTS - Anti-Spam
+# ============================================
+
+# Block all report/summary/completion files
+*_report.md
+*_REPORT.md
+*report*.md
+*Report*.md
+*completion*.md
+*COMPLETION*.md
+*summary*.md
+*SUMMARY*.md
+*INFORME*.md
+*FASE*.md
+*FIX_REPORT*.md
+*AUDIT*.md
+smoke-test-report.md
+
+# Block orchestration reports
+.project-orchestration/*.md
+
+# Allow design documents (01-09 series)
+!01_*.md
+!02_*.md
+!03_*.md
+!04_*.md
+!05_*.md
+!06_*.md
+!07_*.md
+!08_*.md
+!09_*.md
+
+# Block temporary test outputs
+*-output.txt
+*-result.txt
+test-results*.txt
+coverage-report*.txt
+lint-output.txt
+lint-result.txt
+
+# Allow framework documentation
+!README.md
+!TEMPLATE_README.md
+!ROADMAP.md
+!CLAUDE.md
+!ENFORCEMENT_README.md
+!QUICK_START.md
+!START_HERE.md
+!AGENTS_SETUP.md
+
+# ============================================
+# PROJECT-SPECIFIC (Backend/Frontend)
+# ============================================
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+
+# Environment files (NEVER commit secrets)
+.env
+.env.local
+.env.*.local
+.env.production
+.env.development
+
+# But DO version templates
+!.env.example
+!.env.template
+
+# ============================================
+# IDE/Editor
+# ============================================
+
+# VSCode (personal settings)
+.vscode/settings.json
+.vscode/launch.json
+
+# But DO version recommended extensions
+!.vscode/extensions.json
+!.vscode/tasks.json
+
+# Cursor
+.cursor/
+
+# JetBrains
+.idea/
+
+# ============================================
+# OS Files
+# ============================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.Trash-*
+
+# ============================================
+# Git Hooks (Local Installation)
+# ============================================
+
+# Ignore installed hooks (devs install with script)
+.git/hooks/*
+
+# But keep templates for installation
+!.husky/
+!scripts/install-git-hooks.sh
+
+# ============================================
+# Testing
+# ============================================
+
+# Coverage reports (generated locally)
+coverage/
+.nyc_output/
+*.lcov
+
+# Test results (generated locally)
+test-results/
+playwright-report/
+.playwright/
+
+# ============================================
+# Temporary Files
+# ============================================
+
+*.tmp
+*.temp
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# ============================================
+# Framework-Specific Temp
+# ============================================
+
+# Gate flags (created by hooks, not versioned)
+scripts/hooks/gate-flags/*.flag
+
+# But keep the directory
+!scripts/hooks/gate-flags/.gitkeep
+
+# Hook execution logs (temporary)
+scripts/hooks/*.log
+scripts/*.log
+
+# Temporary validation outputs
+validate-*.log
+enforce-*.log

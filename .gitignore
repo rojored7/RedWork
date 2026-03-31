@@ -1,0 +1,46 @@
+# ============================================
+# QUALITY ENFORCEMENT FRAMEWORK - .gitignore
+# ============================================
+# These rules block report spam and maintain clean repository
+
+# Block all report/summary/completion files
+*_report.md
+*_REPORT.md
+*report*.md
+*Report*.md
+*completion*.md
+*COMPLETION*.md
+*summary*.md
+*SUMMARY*.md
+*INFORME*.md
+*FASE*.md
+*FIX_REPORT*.md
+*AUDIT*.md
+smoke-test-report.md
+
+# Block orchestration reports
+.project-orchestration/*.md
+
+# Allow design documents (01-09 series)
+!01_*.md
+!02_*.md
+!03_*.md
+!04_*.md
+!05_*.md
+!06_*.md
+!07_*.md
+!08_*.md
+!09_*.md
+
+# Block temporary test outputs
+*-output.txt
+*-result.txt
+test-results*.txt
+coverage-report*.txt
+
+# Allow framework documentation
+!README.md
+!TEMPLATE_README.md
+!ROADMAP.md
+!CLAUDE.md
+!ENFORCEMENT_README.md

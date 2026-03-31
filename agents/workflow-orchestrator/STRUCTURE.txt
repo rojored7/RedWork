@@ -1,0 +1,158 @@
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   WORKFLOW ORCHESTRATOR AGENT - ESTRUCTURA COMPLETA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+workflow-orchestrator/
+│
+├── 📄 agent.md                    [6.7 KB]  ✅ Definición principal del agente
+│   ├─ Identidad
+│   ├─ Reglas CRÍTICAS (regression testing)
+│   ├─ Skills disponibles
+│   ├─ Workflow detection
+│   └─ Coordinación de agentes
+│
+├── 📘 README.md                   [24.3 KB] ✅ Documentación completa
+│   ├─ Inicio rápido
+│   ├─ Skills detalladas (8)
+│   ├─ Casos de uso reales
+│   ├─ Configuración
+│   ├─ Troubleshooting
+│   └─ Integración CI/CD
+│
+├── ✅ SETUP_COMPLETE.md           [6.8 KB]  ✅ Resumen de instalación
+│   ├─ Estado del sistema
+│   ├─ Cómo usar
+│   ├─ Ejemplo real completo
+│   └─ Próximos pasos
+│
+├── 📁 skills/                     [8 archivos]
+│   │
+│   ├── 01-capture-baseline.md     [5.4 KB]  ✅ Captura estado del proyecto
+│   │   ├─ Ejecuta tests backend/frontend
+│   │   ├─ Calcula coverage
+│   │   ├─ Guarda a .baselines/latest.json
+│   │   └─ Duración: 2-3 minutos
+│   │
+│   ├── 02-orchestrate-feature.md  [14.9 KB] ✅ Workflow completo (semi-auto)
+│   │   ├─ FASE 0: Baseline (auto)
+│   │   ├─ FASE 1: Docker (con aprobación)
+│   │   ├─ FASE 2: Backend (con aprobación)
+│   │   ├─ FASE 3: Frontend (con aprobación)
+│   │   ├─ FASE 4: Regression (BLOQUEA si falla)
+│   │   ├─ FASE 5: Comparación
+│   │   ├─ FASE 6: Visual validation
+│   │   └─ Duración: 20-40 minutos
+│   │
+│   ├── 03-orchestrate-fix.md      [3.8 KB]  ✅ Workflow rápido (automático)
+│   │   ├─ Sin pausas entre fases
+│   │   ├─ Solo bloquea si regression falla
+│   │   ├─ Para fixes y refactors
+│   │   └─ Duración: 10-20 minutos
+│   │
+│   ├── 04-run-regression.md       [9.1 KB]  ⚠️  CRÍTICO - Regression testing
+│   │   ├─ Carga baseline
+│   │   ├─ Ejecuta TODOS los tests
+│   │   ├─ Compara con baseline
+│   │   ├─ Detecta tests rotos
+│   │   ├─ BLOQUEA workflow si falla
+│   │   └─ Duración: 3-5 minutos
+│   │
+│   ├── 05-compare-baseline.md     [4.1 KB]  ✅ Comparación before/after
+│   │   ├─ Carga baseline
+│   │   ├─ Captura estado actual
+│   │   ├─ Genera tabla comparativa
+│   │   └─ Duración: 1-2 minutos
+│   │
+│   ├── 06-validate-architecture.md [6.9 KB] ✅ Validación CAS (advisory)
+│   │   ├─ Layering rules
+│   │   ├─ Naming conventions
+│   │   ├─ Circular dependencies
+│   │   ├─ Import order
+│   │   ├─ Modo advisory (no bloquea)
+│   │   └─ Duración: 2-3 minutos
+│   │
+│   ├── 07-visual-validation.md    [8.5 KB]  ✅ Validación visual (Playwright)
+│   │   ├─ Navega a páginas afectadas
+│   │   ├─ Verifica componentes
+│   │   ├─ Detecta console errors
+│   │   ├─ Captura screenshots
+│   │   └─ Duración: 3-5 minutos
+│   │
+│   └── 08-init-project.md         [9.0 KB]  ✅ Setup inicial del proyecto
+│       ├─ Detecta proyecto type/frameworks
+│       ├─ Crea estructura de directorios
+│       ├─ Copia templates
+│       ├─ Captura baseline inicial
+│       └─ Duración: 5-10 minutos
+│
+└── 📁 templates/                  [4 archivos]
+    │
+    ├── smoke-tests.test.ts        [3.9 KB]  ✅ Template de tests críticos
+    │   ├─ Health checks
+    │   ├─ Authentication flow
+    │   ├─ Core API endpoints
+    │   ├─ Database operations
+    │   └─ Error handling
+    │
+    ├── .arch-rules.ts             [8.9 KB]  ✅ Reglas de arquitectura
+    │   ├─ Layering rules
+    │   ├─ Naming conventions
+    │   ├─ File organization
+    │   ├─ Import order
+    │   ├─ Code quality metrics
+    │   ├─ Anti-patterns detection
+    │   └─ Validation functions
+    │
+    ├── .workflow-config.json      [4.7 KB]  ✅ Configuración del proyecto
+    │   ├─ Project detection
+    │   ├─ Workflows enabled
+    │   ├─ Thresholds
+    │   ├─ Agents configuration
+    │   ├─ Directories
+    │   └─ Advanced settings
+    │
+    └── Makefile.workflow          [9.9 KB]  ✅ Helper commands
+        ├─ workflow-init
+        ├─ workflow-baseline
+        ├─ workflow-regression
+        ├─ workflow-feature
+        ├─ workflow-fix
+        ├─ workflow-status
+        └─ workflow-clean
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   RESUMEN
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 Estadísticas:
+   - Total archivos: 14
+   - Total tamaño: ~110 KB
+   - Skills: 8 especializadas
+   - Templates: 4 completos
+   - Documentación: 3 archivos (37 KB)
+
+🎯 Capabilities:
+   ✅ Capture baseline automático
+   ✅ Coordinación de 4+ agentes
+   ✅ Regression testing (CRÍTICO)
+   ✅ Architecture validation (CAS)
+   ✅ Visual validation (Playwright MCP)
+   ✅ Before/after comparison
+   ✅ Checkpoints y resume
+   ✅ Workflow detection automático
+
+⚠️  Reglas CRÍTICAS:
+   1. SIEMPRE capturar baseline antes de cambios
+   2. SIEMPRE ejecutar regression después de cambios
+   3. BLOQUEAR workflow si CUALQUIER test viejo falla
+   4. CERO tolerancia a regresiones
+
+🚀 Listo para:
+   ✅ Curso_ciber project
+   ✅ Cualquier proyecto Node.js/TypeScript
+   ✅ Express, React, Prisma, Jest, Vitest
+   ✅ Producción inmediata
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+   ESTADO: ✅ PRODUCTION READY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

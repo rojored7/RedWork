@@ -1,0 +1,70 @@
+#!/bin/bash
+# Git Post-Merge Hook - Validaciones Después de Merge/Pull
+# Detecta problemas introducidos por cambios de otros desarrolladores
+
+echo ""
+echo "🔀 POST-MERGE VALIDATION - Checking merged changes"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+WARNINGS=0
+
+# 1. Check if package.json changed (need npm install)
+if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "package.json"; then
+  echo "📦 package.json changed - dependencies may need update"
+  echo ""
+  echo "  Run the following commands:"
+  echo "    cd backend && npm install"
+  echo "    cd frontend && npm install"
+  echo ""
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+# 2. Check if entities changed (need validation)
+if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "\.entity\.ts$"; then
+  echo "⚠️  Entity files changed - validation recommended"
+  echo ""
+  echo "  Run: bash scripts/validate-entities.sh"
+  echo ""
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+# 3. Check if database migrations added
+if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "migrations"; then
+  echo "📊 Database migrations detected"
+  echo ""
+  echo "  Run: cd backend && npm run typeorm migration:run"
+  echo ""
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+# 4. Check if dist/ was merged (should be cleaned)
+if git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD | grep -q "^backend/dist/"; then
+  echo "⚠️  dist/ files were merged (should be in .gitignore)"
+  echo ""
+  echo "  Recommend: cd backend && rm -rf dist && npm run build"
+  echo ""
+  WARNINGS=$((WARNINGS + 1))
+fi
+
+# 5. Recommend running validation after merge
+echo "📋 Post-merge recommendations:"
+echo ""
+echo "  1. Run full validation: bash scripts/validate-entities.sh"
+echo "  2. Rebuild backend: cd backend && rm -rf dist && npm run build"
+echo "  3. Run tests: cd backend && npm test"
+echo "  4. Verify backend starts: cd backend && npm run start:dev"
+echo ""
+
+if [ $WARNINGS -gt 0 ]; then
+  echo "⚠️  $WARNINGS potential issues detected after merge"
+  echo "   Review recommendations above before continuing development"
+else
+  echo "✅ No immediate issues detected after merge"
+fi
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+exit 0  # Never block after merge, only warn
