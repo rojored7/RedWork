@@ -1,246 +1,190 @@
-# 🔄 GitLab CI/CD Pipeline - Agent Workflow Visualization
-# Este archivo crea el workflow visual en GitLab con 20 agentes conectados
+# GitLab CI/CD Pipeline - Agent Workflow Visualization
+# 20 agents connected as visual workflow nodes
 
 stages:
-  - discovery      # Fase 1: Agentes 01-05
-  - planning       # Fase 2: Agentes 06-09
-  - infrastructure # Fase 3: Agente 12
-  - development    # Fase 4: Agentes 10-11, 13-14
-  - testing        # Fase 5: Agentes 15-16, 18
-  - quality        # Fase 6: Agentes 19-20
+  - discovery
+  - planning
+  - infrastructure
+  - development
+  - testing
+  - quality
 
-# ============================================
-# FASE 1: DISCOVERY & DESIGN (Agentes 01-05)
-# ============================================
+# PHASE 1: DISCOVERY (Agents 01-05)
 
-01-product-discovery:
+agent_01_product_discovery:
   stage: discovery
   script:
-    - echo "🚀 Ejecutando Agent 01 - Product Discovery"
-    - cat agents/01-product-discovery.md | head -30
-    - echo "✅ Agent 01 completado - Output: 01_product_discovery.md"
+    - echo "Executing Agent 01 - Product Discovery"
+    - ls -la agents/
+    - echo "Agent 01 completed"
   when: manual
-  allow_failure: false
 
-02-domain-modeling:
+agent_02_domain_modeling:
   stage: discovery
   script:
-    - echo "🚀 Ejecutando Agent 02 - Domain Modeling"
-    - cat agents/02-domain-modeling-agent.md | head -30
-    - echo "✅ Agent 02 completado - Output: 02_domain_model.md"
-  needs: ["01-product-discovery"]
+    - echo "Executing Agent 02 - Domain Modeling"
+    - echo "Agent 02 completed"
+  needs: ["agent_01_product_discovery"]
   when: manual
-  allow_failure: false
 
-03-context-mapping:
+agent_03_context_mapping:
   stage: discovery
   script:
-    - echo "🚀 Ejecutando Agent 03 - Context Mapping"
-    - cat agents/context-mapping-agent.md | head -30
-    - echo "✅ Agent 03 completado - Output: 03_context_map.md"
-  needs: ["02-domain-modeling"]
+    - echo "Executing Agent 03 - Context Mapping"
+    - echo "Agent 03 completed"
+  needs: ["agent_02_domain_modeling"]
   when: manual
-  allow_failure: false
 
-04-architecture-decision:
+agent_04_architecture_decision:
   stage: discovery
   script:
-    - echo "🚀 Ejecutando Agent 04 - Architecture Decision"
-    - cat agents/architecture-decision.md | head -30
-    - echo "✅ Agent 04 completado - Output: 04_architecture_decision.md"
-  needs: ["03-context-mapping"]
+    - echo "Executing Agent 04 - Architecture Decision"
+    - echo "Agent 04 completed"
+  needs: ["agent_03_context_mapping"]
   when: manual
-  allow_failure: false
 
-05-service-design:
+agent_05_service_design:
   stage: discovery
   script:
-    - echo "🚀 Ejecutando Agent 05 - Service Design"
-    - cat agents/service-design-architect.md | head -30
-    - echo "✅ Agent 05 completado - Output: 05_service_design.md"
-  needs: ["04-architecture-decision"]
+    - echo "Executing Agent 05 - Service Design"
+    - echo "Agent 05 completed"
+  needs: ["agent_04_architecture_decision"]
   when: manual
-  allow_failure: false
 
-# ============================================
-# FASE 2: PLANNING (Agentes 06-09)
-# ============================================
+# PHASE 2: PLANNING (Agents 06-09)
 
-06-epic-generation:
+agent_06_epic_generation:
   stage: planning
   script:
-    - echo "🚀 Ejecutando Agent 06 - Epic Generation"
-    - cat agents/epic-generation.md | head -30
-    - echo "✅ Agent 06 completado - Output: 06_epics/*.md"
-  needs: ["05-service-design"]
+    - echo "Executing Agent 06 - Epic Generation"
+    - echo "Agent 06 completed"
+  needs: ["agent_05_service_design"]
   when: manual
-  allow_failure: false
 
-07-user-story-generation:
+agent_07_user_story_generation:
   stage: planning
   script:
-    - echo "🚀 Ejecutando Agent 07 - User Story Generation"
-    - cat agents/user-story-generator.md | head -30
-    - echo "✅ Agent 07 completado - Output: 07_user_stories/**/*.md"
-  needs: ["06-epic-generation"]
+    - echo "Executing Agent 07 - User Story Generation"
+    - echo "Agent 07 completed"
+  needs: ["agent_06_epic_generation"]
   when: manual
-  allow_failure: false
 
-08-tech-lead-delivery:
+agent_08_tech_lead_delivery:
   stage: planning
   script:
-    - echo "🚀 Ejecutando Agent 08 - Tech Lead Delivery"
-    - cat agents/tech-lead-delivery.md | head -30
-    - echo "✅ Agent 08 completado - Output: 08_implementation_breakdown/**/*.md"
-  needs: ["07-user-story-generation"]
+    - echo "Executing Agent 08 - Tech Lead Delivery"
+    - echo "Agent 08 completed"
+  needs: ["agent_07_user_story_generation"]
   when: manual
-  allow_failure: false
 
-09-sprint-orchestrator:
+agent_09_sprint_orchestrator:
   stage: planning
   script:
-    - echo "🚀 Ejecutando Agent 09 - Sprint Orchestrator"
-    - cat agents/sprint-orchestrator.md | head -30
-    - echo "✅ Agent 09 completado - Output: 09_sprint_plan/**/*.md"
-  needs: ["08-tech-lead-delivery"]
+    - echo "Executing Agent 09 - Sprint Orchestrator"
+    - echo "Agent 09 completed"
+  needs: ["agent_08_tech_lead_delivery"]
   when: manual
-  allow_failure: false
 
-# ============================================
-# FASE 3: INFRASTRUCTURE (Agente 12)
-# ============================================
+# PHASE 3: INFRASTRUCTURE (Agent 12)
 
-12-infrastructure-deployment:
+agent_12_infrastructure:
   stage: infrastructure
   script:
-    - echo "🚀 Ejecutando Agent 12 - Infrastructure Deployment"
-    - cat agents/infrastructure-deployment.md | head -30
-    - echo "✅ Agent 12 completado - Output: docker-compose.yml, Dockerfile"
-  needs: ["09-sprint-orchestrator"]
+    - echo "Executing Agent 12 - Infrastructure Deployment"
+    - echo "Agent 12 completed"
+  needs: ["agent_09_sprint_orchestrator"]
   when: manual
-  allow_failure: false
 
-# ============================================
-# FASE 4: DEVELOPMENT (Agentes 10-11, 13-14)
-# ============================================
+# PHASE 4: DEVELOPMENT (Agents 10-11, 13-14, 20)
 
-# Backend Track
-10-backend-development:
+agent_10_backend_dev:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 10 - Backend Development"
-    - cat agents/backend-fastapi-dev.md | head -30
-    - echo "✅ Agent 10 completado - Output: backend/src/**/*.ts"
-  needs: ["12-infrastructure-deployment"]
+    - echo "Executing Agent 10 - Backend Development"
+    - echo "Agent 10 completed"
+  needs: ["agent_12_infrastructure"]
   when: manual
-  allow_failure: false
 
-13-backend-test:
+agent_13_backend_test:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 13 - Backend Test Agent"
-    - cat agents/backend-test-agent.md | head -30
-    - echo "✅ Agent 13 completado - Output: backend/**/*.spec.ts (100% coverage)"
-  needs: ["10-backend-development"]
+    - echo "Executing Agent 13 - Backend Test"
+    - echo "Agent 13 completed"
+  needs: ["agent_10_backend_dev"]
   when: manual
-  allow_failure: false
 
-# Frontend Track
-11-frontend-development:
+agent_11_frontend_dev:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 11 - Frontend Development"
-    - cat agents/frontend-development.md | head -30
-    - echo "✅ Agent 11 completado - Output: frontend/src/**/*.tsx"
-  needs: ["12-infrastructure-deployment"]
+    - echo "Executing Agent 11 - Frontend Development"
+    - echo "Agent 11 completed"
+  needs: ["agent_12_infrastructure"]
   when: manual
-  allow_failure: false
 
-14-frontend-test:
+agent_14_frontend_test:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 14 - Frontend Test Auditor"
-    - echo "✅ Agent 14 completado - Output: frontend/**/*.test.tsx (100% coverage)"
-  needs: ["11-frontend-development"]
+    - echo "Executing Agent 14 - Frontend Test"
+    - echo "Agent 14 completed"
+  needs: ["agent_11_frontend_dev"]
   when: manual
-  allow_failure: false
 
-# Linting (runs after both tracks)
-20-linting-backend:
+agent_20_linting_backend:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 20 - Linting Validator (Backend)"
-    - cat agents/linting-validator.md | head -30
-    - echo "✅ Backend linting: 0 errors, 0 warnings"
-  needs: ["13-backend-test"]
+    - echo "Executing Agent 20 - Linting Backend"
+    - echo "Agent 20 completed"
+  needs: ["agent_13_backend_test"]
   when: manual
-  allow_failure: false
 
-20-linting-frontend:
+agent_20_linting_frontend:
   stage: development
   script:
-    - echo "🚀 Ejecutando Agent 20 - Linting Validator (Frontend)"
-    - cat agents/linting-validator.md | head -30
-    - echo "✅ Frontend linting: 0 errors, 0 warnings"
-  needs: ["14-frontend-test"]
+    - echo "Executing Agent 20 - Linting Frontend"
+    - echo "Agent 20 completed"
+  needs: ["agent_14_frontend_test"]
   when: manual
-  allow_failure: false
 
-# ============================================
-# FASE 5: TESTING (Agentes 15-16, 18)
-# ============================================
+# PHASE 5: TESTING (Agents 15-16, 18)
 
-15-integration-test:
+agent_15_integration_test:
   stage: testing
   script:
-    - echo "🚀 Ejecutando Agent 15 - Integration Test Validator"
-    - cat agents/integration-test-validator.md | head -30
-    - echo "✅ Agent 15 completado - Integration tests: 100% passing"
-  needs: ["20-linting-backend", "20-linting-frontend"]
+    - echo "Executing Agent 15 - Integration Test"
+    - echo "Agent 15 completed"
+  needs: ["agent_20_linting_backend", "agent_20_linting_frontend"]
   when: manual
-  allow_failure: false
 
-16-e2e-test:
+agent_16_e2e_test:
   stage: testing
   script:
-    - echo "🚀 Ejecutando Agent 16 - E2E Test Validator"
-    - cat agents/e2e-test-validator.md | head -30
-    - echo "✅ Agent 16 completado - E2E tests: 100% passing"
-  needs: ["15-integration-test"]
+    - echo "Executing Agent 16 - E2E Test"
+    - echo "Agent 16 completed"
+  needs: ["agent_15_integration_test"]
   when: manual
-  allow_failure: false
 
-18-smoke-test:
+agent_18_smoke_test:
   stage: testing
   script:
-    - echo "🚀 Ejecutando Agent 18 - Smoke Test Validator"
-    - cat agents/smoke-test-validator.md | head -30
-    - echo "✅ Agent 18 completado - Smoke tests: 100% passing"
-  needs: ["16-e2e-test"]
+    - echo "Executing Agent 18 - Smoke Test"
+    - echo "Agent 18 completed"
+  needs: ["agent_16_e2e_test"]
   when: manual
-  allow_failure: false
 
-# ============================================
-# FASE 6: QUALITY & SECURITY (Agentes 19-20)
-# ============================================
+# PHASE 6: QUALITY (Agents 19-20)
 
-19-security-review:
+agent_19_security_review:
   stage: quality
   script:
-    - echo "🚀 Ejecutando Agent 19 - Security Review Agent"
-    - cat agents/security-review-agent.md | head -30
-    - echo "✅ Agent 19 completado - Security review: 0 CRITICAL/HIGH findings"
-  needs: ["18-smoke-test"]
+    - echo "Executing Agent 19 - Security Review"
+    - echo "Agent 19 completed"
+  needs: ["agent_18_smoke_test"]
   when: manual
-  allow_failure: false
 
-20-linting-final:
+agent_20_linting_final:
   stage: quality
   script:
-    - echo "🚀 Ejecutando Agent 20 - Final Linting Validator"
-    - cat agents/linting-validator.md | head -30
-    - echo "✅ Agent 20 completado - Final code quality: 0 errors, 0 warnings"
-    - echo "🎉 PRODUCTION READY!"
-  needs: ["19-security-review"]
+    - echo "Executing Agent 20 - Final Linting"
+    - echo "PRODUCTION READY"
+  needs: ["agent_19_security_review"]
   when: manual
-  allow_failure: false
