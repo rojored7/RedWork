@@ -4,7 +4,98 @@ stages:
 agent_01_product_discovery:
   stage: discovery
   script:
-    - echo "Executing Agent 01 - Product Discovery"
-    - ls -la agents/
-    - echo "Agent 01 completed"
+    - echo "======================================"
+    - echo "Agent 01 - Product Discovery"
+    - echo "Waiting for 01_product_discovery.md"
+    - echo "======================================"
+    - |
+      MAX_WAIT=3600  # 1 hour timeout
+      CHECK_INTERVAL=30  # Check every 30 seconds
+      ELAPSED=0
+      FILE_NAME="01_product_discovery.md"
+
+      while [ $ELAPSED -lt $MAX_WAIT ]; do
+        echo "[$ELAPSED/$MAX_WAIT] Checking if $FILE_NAME exists..."
+
+        # Fetch latest changes from repository
+        git fetch origin framework
+        git checkout origin/framework -- $FILE_NAME 2>/dev/null || true
+
+        if [ -f "$FILE_NAME" ]; then
+          echo "File detected: $FILE_NAME"
+
+          # Validate file
+          echo "Running validation..."
+
+          # Check required sections
+          if grep -q "Product Vision" "$FILE_NAME" && \
+             grep -q "Problem Statement" "$FILE_NAME" && \
+             grep -q "System Objectives" "$FILE_NAME"; then
+            echo "Validation PASSED"
+            echo "======================================"
+            echo "Agent 01 COMPLETED"
+            echo "======================================"
+            exit 0
+          else
+            echo "ERROR: File exists but missing required sections"
+            exit 1
+          fi
+        fi
+
+        echo "File not found yet. Waiting $CHECK_INTERVAL seconds..."
+        sleep $CHECK_INTERVAL
+        ELAPSED=$((ELAPSED + CHECK_INTERVAL))
+      done
+
+      echo "ERROR: Timeout waiting for $FILE_NAME"
+      exit 1
+  timeout: 2h
   when: manual
+
+agent_02_domain_modeling:
+  stage: discovery
+  script:
+    - echo "======================================"
+    - echo "Agent 02 - Domain Modeling"
+    - echo "Waiting for 02_domain_model.md"
+    - echo "======================================"
+    - |
+      MAX_WAIT=3600
+      CHECK_INTERVAL=30
+      ELAPSED=0
+      FILE_NAME="02_domain_model.md"
+
+      while [ $ELAPSED -lt $MAX_WAIT ]; do
+        echo "[$ELAPSED/$MAX_WAIT] Checking if $FILE_NAME exists..."
+
+        git fetch origin framework
+        git checkout origin/framework -- $FILE_NAME 2>/dev/null || true
+
+        if [ -f "$FILE_NAME" ]; then
+          echo "File detected: $FILE_NAME"
+
+          echo "Running validation..."
+
+          if grep -q "Domain Entities" "$FILE_NAME" && \
+             grep -q "Value Objects" "$FILE_NAME"; then
+            echo "Validation PASSED"
+            echo "======================================"
+            echo "Agent 02 COMPLETED"
+            echo "======================================"
+            exit 0
+          else
+            echo "ERROR: File exists but missing required sections"
+            exit 1
+          fi
+        fi
+
+        echo "File not found yet. Waiting $CHECK_INTERVAL seconds..."
+        sleep $CHECK_INTERVAL
+        ELAPSED=$((ELAPSED + CHECK_INTERVAL))
+      done
+
+      echo "ERROR: Timeout waiting for $FILE_NAME"
+      exit 1
+  timeout: 2h
+  needs: ["agent_01_product_discovery"]
+  when: on_success
