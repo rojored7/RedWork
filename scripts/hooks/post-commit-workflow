@@ -79,7 +79,88 @@ fi
 # Check if agent_03 output was committed
 if echo "$CHANGED_FILES" | grep -q "03_context_map.md"; then
     echo "Detected: 03_context_map.md"
-    echo "Validation for agent_03 not yet implemented"
+    echo ""
+
+    if bash scripts/workflow/validate-agent-03.sh; then
+        echo ""
+        echo "Validation PASSED. Pushing to GitLab..."
+        git push origin framework
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "======================================"
+            echo "Agent 03 pushed to GitLab successfully"
+            echo "Pipeline will detect it within 30 seconds"
+            echo "======================================"
+        else
+            echo ""
+            echo "ERROR: Failed to push to GitLab"
+            echo "Please push manually: git push origin framework"
+        fi
+    else
+        echo ""
+        echo "WARNING: Validation FAILED for agent_03"
+        echo "Please fix issues and commit again"
+        exit 1
+    fi
+fi
+
+# Check if agent_04 output was committed
+if echo "$CHANGED_FILES" | grep -q "04_architecture_decision.md"; then
+    echo "Detected: 04_architecture_decision.md"
+    echo ""
+
+    if bash scripts/workflow/validate-agent-04.sh; then
+        echo ""
+        echo "Validation PASSED. Pushing to GitLab..."
+        git push origin framework
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "======================================"
+            echo "Agent 04 pushed to GitLab successfully"
+            echo "Pipeline will detect it within 30 seconds"
+            echo "======================================"
+        else
+            echo ""
+            echo "ERROR: Failed to push to GitLab"
+            echo "Please push manually: git push origin framework"
+        fi
+    else
+        echo ""
+        echo "WARNING: Validation FAILED for agent_04"
+        echo "Please fix issues and commit again"
+        exit 1
+    fi
+fi
+
+# Check if agent_05 output was committed
+if echo "$CHANGED_FILES" | grep -q "05_service_design.md"; then
+    echo "Detected: 05_service_design.md"
+    echo ""
+
+    if bash scripts/workflow/validate-agent-05.sh; then
+        echo ""
+        echo "Validation PASSED. Pushing to GitLab..."
+        git push origin framework
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "======================================"
+            echo "Agent 05 pushed to GitLab successfully"
+            echo "Pipeline will detect it within 30 seconds"
+            echo "======================================"
+        else
+            echo ""
+            echo "ERROR: Failed to push to GitLab"
+            echo "Please push manually: git push origin framework"
+        fi
+    else
+        echo ""
+        echo "WARNING: Validation FAILED for agent_05"
+        echo "Please fix issues and commit again"
+        exit 1
+    fi
 fi
 
 echo "======================================"
