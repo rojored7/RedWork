@@ -1,0 +1,53 @@
+#!/bin/bash
+# Post-commit hook for workflow automation
+# Detects agent completions and updates workflow status
+
+set -e
+
+echo ""
+echo "======================================"
+echo "POST-COMMIT: Workflow Automation"
+echo "======================================"
+
+# Get list of files in the last commit
+CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
+
+# Check if agent_01 output was committed
+if echo "$CHANGED_FILES" | grep -q "01_product_discovery.md"; then
+    echo "Detected: 01_product_discovery.md"
+    echo ""
+
+    # Run validation
+    if bash scripts/workflow/validate-agent-01.sh; then
+        echo ""
+        echo "Validation PASSED. Updating workflow status..."
+
+        # Update workflow status
+        bash scripts/workflow/update-workflow-status.sh "agent_01_product_discovery"
+
+        echo ""
+        echo "Agent 01 workflow automation completed"
+    else
+        echo ""
+        echo "WARNING: Validation FAILED for agent_01"
+        echo "Workflow status NOT updated"
+        echo "Please fix issues and commit again"
+    fi
+fi
+
+# Check if agent_02 output was committed
+if echo "$CHANGED_FILES" | grep -q "02_domain_model.md"; then
+    echo "Detected: 02_domain_model.md"
+    echo "Validation for agent_02 not yet implemented"
+fi
+
+# Check if agent_03 output was committed
+if echo "$CHANGED_FILES" | grep -q "03_context_map.md"; then
+    echo "Detected: 03_context_map.md"
+    echo "Validation for agent_03 not yet implemented"
+fi
+
+echo "======================================"
+echo ""
+
+exit 0

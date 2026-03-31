@@ -1,0 +1,24 @@
+{
+  "workflow_version": "1.0.0",
+  "last_updated": null,
+  "agents": {
+    "agent_01_product_discovery": {
+      "status": "pending",
+      "output_file": "01_product_discovery.md",
+      "completed_at": null,
+      "validation_passed": false
+    },
+    "agent_02_domain_modeling": {
+      "status": "pending",
+      "output_file": "02_domain_model.md",
+      "completed_at": null,
+      "validation_passed": false
+    },
+    "agent_03_context_mapping": {
+      "status": "pending",
+      "output_file": "03_context_map.md",
+      "completed_at": null,
+      "validation_passed": false
+    }
+  }
+}
