@@ -80,13 +80,18 @@ Execute agent 01 product discovery for a task management application
 
 Claude will generate the file: 01_product_discovery.md
 
-### Step 4: Push to GitLab
+### Step 4: Commit (Hook Auto-Pushes)
 
 ```bash
 git add 01_product_discovery.md
 git commit -m "docs: agent_01 product discovery completed"
-git push origin framework
 ```
+
+The post-commit hook will:
+1. Detect 01_product_discovery.md
+2. Run validation
+3. If PASSED: Automatically push to GitLab
+4. You will see: "Agent 01 pushed to GitLab successfully"
 
 ### Step 5: Watch GitLab Detect It
 
@@ -125,13 +130,18 @@ Execute agent 02 domain modeling based on 01_product_discovery.md
 
 Claude will generate: 02_domain_model.md
 
-### Step 8: Push to GitLab
+### Step 8: Commit (Hook Auto-Pushes)
 
 ```bash
 git add 02_domain_model.md
 git commit -m "docs: agent_02 domain modeling completed"
-git push origin framework
 ```
+
+The post-commit hook will:
+1. Detect 02_domain_model.md
+2. Run validation
+3. If PASSED: Automatically push to GitLab
+4. You will see: "Agent 02 pushed to GitLab successfully"
 
 ### Step 9: Watch Agent 02 Complete
 

@@ -20,25 +20,60 @@ if echo "$CHANGED_FILES" | grep -q "01_product_discovery.md"; then
     # Run validation
     if bash scripts/workflow/validate-agent-01.sh; then
         echo ""
-        echo "Validation PASSED. Updating workflow status..."
+        echo "Validation PASSED. Pushing to GitLab..."
 
-        # Update workflow status
-        bash scripts/workflow/update-workflow-status.sh "agent_01_product_discovery"
+        # Push to GitLab (this triggers the pipeline detection)
+        git push origin framework
 
-        echo ""
-        echo "Agent 01 workflow automation completed"
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "======================================"
+            echo "Agent 01 pushed to GitLab successfully"
+            echo "Pipeline will detect it within 30 seconds"
+            echo "======================================"
+        else
+            echo ""
+            echo "ERROR: Failed to push to GitLab"
+            echo "Please push manually: git push origin framework"
+        fi
     else
         echo ""
         echo "WARNING: Validation FAILED for agent_01"
-        echo "Workflow status NOT updated"
         echo "Please fix issues and commit again"
+        exit 1
     fi
 fi
 
 # Check if agent_02 output was committed
 if echo "$CHANGED_FILES" | grep -q "02_domain_model.md"; then
     echo "Detected: 02_domain_model.md"
-    echo "Validation for agent_02 not yet implemented"
+    echo ""
+
+    # Run validation
+    if bash scripts/workflow/validate-agent-02.sh; then
+        echo ""
+        echo "Validation PASSED. Pushing to GitLab..."
+
+        # Push to GitLab (this triggers the pipeline detection)
+        git push origin framework
+
+        if [ $? -eq 0 ]; then
+            echo ""
+            echo "======================================"
+            echo "Agent 02 pushed to GitLab successfully"
+            echo "Pipeline will detect it within 30 seconds"
+            echo "======================================"
+        else
+            echo ""
+            echo "ERROR: Failed to push to GitLab"
+            echo "Please push manually: git push origin framework"
+        fi
+    else
+        echo ""
+        echo "WARNING: Validation FAILED for agent_02"
+        echo "Please fix issues and commit again"
+        exit 1
+    fi
 fi
 
 # Check if agent_03 output was committed
