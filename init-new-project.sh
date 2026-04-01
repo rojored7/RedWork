@@ -94,12 +94,66 @@ build/
 # Testing
 coverage/
 .pytest_cache/
+
+# Learning data (never commit)
+.learning/
 EOF
 echo "✓ .gitignore created"
 echo ""
 
+# Create learning structure
+echo "Step 4: Creating learning structure..."
+mkdir -p "$PROJECT_PATH/.learning/analysis"
+mkdir -p "$PROJECT_PATH/.learning/proposed-skills"
+mkdir -p "$PROJECT_PATH/.learning/errors-kb"
+
+cat > "$PROJECT_PATH/.learning/.gitignore" << 'EOF'
+# Never commit learning data to project repository
+# This data is local to your machine and used by Agent 21
+
+*
+!.gitignore
+EOF
+
+cat > "$PROJECT_PATH/.learning/README.md" << 'EOF'
+# Learning Directory
+
+This directory is used by **Agent 21: Learning Agent** to store analysis data and skill proposals.
+
+## What's Here
+
+- `analysis/` - Git pattern analysis, output analysis reports
+- `proposed-skills/` - Auto-generated skill proposals from detected patterns
+- `errors-kb/` - Knowledge base of errors and solutions
+
+## Usage
+
+```bash
+# Run learning agent
+lanza el agente 21-learning-agent
+
+# Review proposed skills
+ls proposed-skills/
+
+# Read a proposal
+cat proposed-skills/09-skill-name.md
+
+# Approve a skill
+cp proposed-skills/09-skill-name.md ../.framework/agents/workflow-orchestrator/skills/
+```
+
+## Important
+
+This directory is **NOT committed to git** (see .gitignore). All learning data stays local to your machine.
+
+To share approved skills with the framework, manually copy them to the framework repository.
+EOF
+
+echo "✓ Learning structure created"
+echo ""
+
 # Create README
-echo "Step 4: Creating README.md..."
+echo "Step 5: Creating README.md..."
 cat > "$PROJECT_PATH/README.md" << EOF
 # $PROJECT_NAME
 
@@ -110,6 +164,7 @@ Project created with Framework Agents.
 \`\`\`
 $PROJECT_NAME/
 ├── .framework/          # Framework files (agents, scripts, hooks)
+├── .learning/           # Learning data (Agent 21, NOT committed)
 ├── outputs/             # Agent outputs (discovery docs, models, etc.)
 ├── backend/             # Backend application
 ├── frontend/            # Frontend application
@@ -180,7 +235,7 @@ echo "✓ README.md created"
 echo ""
 
 # Update workflow paths in scripts
-echo "Step 5: Updating script paths..."
+echo "Step 6: Updating script paths..."
 cd "$PROJECT_PATH/.framework/scripts/workflow"
 
 # Update auto-commit script to use outputs/ directory
@@ -195,13 +250,13 @@ echo "✓ Script paths updated"
 echo ""
 
 # Update GitLab CI to look in outputs/
-echo "Step 6: Updating GitLab CI paths..."
+echo "Step 7: Updating GitLab CI paths..."
 sed -i 's|FILE_NAME="0|FILE_NAME="outputs/0|g' "$PROJECT_PATH/.gitlab-ci.yml" 2>/dev/null || true
 echo "✓ GitLab CI updated"
 echo ""
 
 # Initialize Git
-echo "Step 7: Initializing Git repository..."
+echo "Step 8: Initializing Git repository..."
 cd "$PROJECT_PATH"
 git init
 git add .

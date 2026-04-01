@@ -1,6 +1,6 @@
 # Framework Agents - Complete Development Automation
 
-Automated workflow with 20 specialized agents for full-stack development with GitLab CI/CD integration.
+Automated workflow with 21 specialized agents for full-stack development with GitLab CI/CD integration and auto-learning.
 
 ---
 
@@ -11,8 +11,9 @@ Automates the complete development lifecycle:
 - Planning: Epics → User Stories → Technical Tasks → Sprints
 - Development: Backend + Frontend + Tests
 - Quality: Integration → E2E → Security → Linting
+- Learning: Auto-detect patterns → Generate new skills
 
-**Result**: Production-ready application with 100% test coverage and quality.
+**Result**: Production-ready application with 100% test coverage, quality, and continuous improvement.
 
 ---
 
@@ -35,6 +36,7 @@ Creates:
 ```
 ../my-project/
 ├── .framework/          # Framework (agents, scripts, hooks)
+├── .learning/           # Learning data (Agent 21, NOT committed)
 ├── outputs/             # Agent outputs (*.md files)
 ├── backend/             # Your backend code
 ├── frontend/            # Your frontend code
@@ -148,6 +150,38 @@ Next agent auto-starts
 ### Quality (19-20) - To Be Configured
 19. Security Review Agent
 20. Final Linting
+
+### Learning & Optimization (21) - Configured
+21. **Learning Agent** → Analyzes patterns → Proposes new skills
+
+---
+
+## Auto-Learning System
+
+**Agent 21** runs periodically to analyze your project:
+- Git history (agent execution patterns)
+- Agent outputs (content structures)
+- Error logs (problems and solutions)
+
+**Proposes new skills** when patterns detected ≥3 times:
+- Saves in `.learning/proposed-skills/`
+- You review and approve
+- Approved skills become part of framework
+
+**Usage**:
+```bash
+# In Claude Code (every 2-3 weeks)
+lanza el agente 21-learning-agent
+
+# Review proposals
+ls .learning/proposed-skills/
+
+# Approve a skill
+cp .learning/proposed-skills/09-skill-name.md \
+   .framework/agents/workflow-orchestrator/skills/
+```
+
+See `learning/README.md` for complete documentation.
 
 ---
 
@@ -300,9 +334,13 @@ Framework/
 ├── workflow-status.json                   # Status tracker
 ├── .gitignore                             # Git ignore rules
 │
-├── agents/                                # 20 agents
+├── agents/                                # 21 agents
 │   ├── 01-product-discovery.md
+│   ├── 21-learning-agent.md
 │   └── ... (19 more)
+│
+├── learning/                              # Learning system
+│   └── README.md
 │
 └── scripts/
     ├── install-workflow-hooks.sh
@@ -314,7 +352,7 @@ Framework/
         └── post-commit-workflow
 ```
 
-**Total: ~35 files**
+**Total: ~40 files**
 
 ---
 
@@ -324,13 +362,17 @@ Framework/
 - **Quality**: 100% validation at every step
 - **Traceable**: GitLab shows complete flow
 - **Reusable**: One framework, infinite projects
-- **Tested**: Working Discovery phase (agents 01-05)
+- **Self-Improving**: Learns patterns and generates new skills
+- **Tested**: Working Discovery phase (agents 01-05) + Learning Agent
 
 ---
 
 ## Status
 
-**Working**: Discovery phase (agents 01-05)
+**Working**:
+- Discovery phase (agents 01-05) - Fully configured
+- Learning Agent (agent 21) - Fully configured
+
 **Pending**: Planning, Infrastructure, Development, Testing, Quality phases
 
 **Next**: Configure remaining 15 agents with same pattern.
@@ -342,9 +384,11 @@ Framework/
 - Framework: https://gitlab.com/rojored7-group/redwork
 - Issues: Create issue in framework repo
 - Agents: See `agents/README.md`
+- Learning System: See `learning/README.md`
 
 ---
 
-**Version**: 1.0.0
+**Version**: 1.1.0
 **Created**: 2026-03-31
-**Status**: Discovery Phase Complete
+**Updated**: 2026-04-01 (Added Learning Agent)
+**Status**: Discovery Phase + Learning System Complete

@@ -1,14 +1,14 @@
 # Framework Agents
 
-**Complete set of 20 specialized agents for full-stack development**
+**Complete set of 21 specialized agents for full-stack development with auto-learning**
 
 ---
 
 ## 📊 Quick Stats
 
-- **Total Agents**: 20 agents
-- **Total Size**: ~230 KB
-- **Coverage**: Product Discovery → Production Deployment
+- **Total Agents**: 21 agents
+- **Total Size**: ~250 KB
+- **Coverage**: Product Discovery → Production Deployment + Auto-Learning
 - **Architecture**: DDD, Clean Architecture, Hexagonal Architecture
 - **Testing**: Unit, Integration, E2E, Smoke Tests
 - **Quality**: Security Review, Linting, 100% Coverage
@@ -47,6 +47,9 @@
 ### Quality & Security (19, 20)
 19. **19-security-review-agent** - Security review (auth, APIs, uploads, secrets)
 20. **20-linting-validator** - Enforce 0 errors, 0 warnings (BLOCKS progress)
+
+### Learning & Optimization (21)
+21. **21-learning-agent** - Analyzes patterns, proposes new skills (AUTO-LEARNING)
 
 ### Orchestration
 - **wsl-docker-orchestrator** - Docker orchestration for WSL/Windows
@@ -96,6 +99,13 @@ Product Idea
 20 Linting Validator → Enforce code quality
      ↓
 PRODUCTION READY ✅
+
+──────────────────────────────────────
+CONTINUOUS IMPROVEMENT (Run Periodically)
+
+21 Learning Agent → Analyze patterns → Propose new skills
+     ↓
+Review proposals → Approve → Framework evolves
 ```
 
 ---
@@ -174,6 +184,8 @@ agents/
 ├── security-review-agent.md           # Phase 6: Quality
 ├── linting-validator.md               # (20)
 │
+├── 21-learning-agent.md               # Phase 7: Learning & Optimization
+│
 ├── wsl-docker-orchestrator.md         # Orchestration
 └── workflow-orchestrator/             # Advanced orchestration
 ```
@@ -207,12 +219,14 @@ A project using all agents should have:
 - ✅ Passing smoke tests (100%)
 - ✅ Security review passed (no CRITICAL/HIGH findings)
 - ✅ Linting clean (0 errors, 0 warnings)
+- ✅ Learning agent run (pattern analysis + skill proposals)
 
-**Result**: Production-ready application with 100% quality
+**Result**: Production-ready application with 100% quality + auto-optimization
 
 ---
 
 **Created**: 2026-03-31
-**Version**: 1.0.0
-**Agents**: 20 specialized agents
-**Framework**: Quality Enforcement Framework
+**Updated**: 2026-04-01 (Added Learning Agent)
+**Version**: 1.1.0
+**Agents**: 21 specialized agents
+**Framework**: Quality Enforcement Framework with Auto-Learning
