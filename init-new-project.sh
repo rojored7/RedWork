@@ -51,9 +51,10 @@ echo ""
 echo "Step 2: Copying framework files..."
 cp -r agents "$PROJECT_PATH/.framework/"
 cp -r scripts "$PROJECT_PATH/.framework/"
+cp -r skills "$PROJECT_PATH/.framework/"
 cp workflow-status.json "$PROJECT_PATH/"
 cp .gitlab-ci.yml "$PROJECT_PATH/"
-echo "✓ Framework files copied"
+echo "✓ Framework files copied (agents + scripts + skills)"
 echo ""
 
 # Create project-specific .gitignore
