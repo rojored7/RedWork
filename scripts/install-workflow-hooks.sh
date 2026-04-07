@@ -5,10 +5,19 @@ echo "======================================"
 echo "Installing Workflow Automation Hooks"
 echo "======================================"
 
+# Detect if we're in Framework or in a project
+if [ -d ".framework/scripts" ]; then
+    # We're in a project (GAIA, etc.)
+    SCRIPTS_PATH=".framework/scripts"
+else
+    # We're in the Framework repository
+    SCRIPTS_PATH="scripts"
+fi
+
 # Make workflow scripts executable
-chmod +x scripts/workflow/validate-agent-01.sh
-chmod +x scripts/workflow/update-workflow-status.sh
-chmod +x scripts/hooks/post-commit-workflow
+chmod +x $SCRIPTS_PATH/workflow/validate-agent-01.sh 2>/dev/null || true
+chmod +x $SCRIPTS_PATH/workflow/update-workflow-status.sh 2>/dev/null || true
+chmod +x $SCRIPTS_PATH/hooks/post-commit-workflow 2>/dev/null || true
 
 echo "✓ Made scripts executable"
 
@@ -29,7 +38,7 @@ if [ -f "$HOOK_FILE" ]; then
 fi
 
 # Copy hook
-cp scripts/hooks/post-commit-workflow "$HOOK_FILE"
+cp $SCRIPTS_PATH/hooks/post-commit-workflow "$HOOK_FILE"
 chmod +x "$HOOK_FILE"
 
 echo "✓ Installed post-commit hook"
