@@ -60,8 +60,8 @@ echo ""
 # Create project-specific .gitignore
 echo "Step 3: Creating .gitignore..."
 cat > "$PROJECT_PATH/.gitignore" << 'EOF'
-# Framework (tracked, do not ignore)
-# .framework/
+# Framework (NEVER commit - stays local only)
+.framework/
 
 # Outputs (tracked)
 # outputs/
