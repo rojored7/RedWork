@@ -1,38 +1,45 @@
 # Framework Agents
 
-**Complete set of 21 specialized agents for full-stack development with auto-learning**
+**Complete set of 25 specialized agents for full-stack development with auto-learning, security-by-design, and self-debugging**
 
 ---
 
 ## 📊 Quick Stats
 
-- **Total Agents**: 21 agents
-- **Total Size**: ~250 KB
+- **Total Agents**: 25 agents
+- **Version**: 1.3 (Self-Debugging Update)
+- **Total Size**: ~300 KB
 - **Coverage**: Product Discovery → Production Deployment + Auto-Learning
 - **Architecture**: DDD, Clean Architecture, Hexagonal Architecture
 - **Testing**: Unit, Integration, E2E, Smoke Tests
 - **Quality**: Security Review, Linting, 100% Coverage
+- **NEW**: 3 preventive validation agents (04b, 05b, 09b)
 
 ---
 
 ## 🎯 All Agents
 
-### Discovery & Design (01-05)
+### Discovery & Design (01-05c)
 1. **01-product-discovery** - Transform vague idea → structured requirements
 2. **02-domain-modeling-agent** - Create domain model (entities, VOs, aggregates)
 3. **03-context-mapping** - Identify bounded contexts (DDD)
-4. **04-architecture-decision** - Decide architecture (monolith vs microservices)
-5. **05-service-design-architect** - Design service internals (Clean Architecture)
+4. **04-architecture-decision** - Decide architecture (FastAPI backend MANDATORY)
+5. **04b-security-by-design** - Define OWASP-compliant security requirements (NEW v1.2)
+6. **04c-agent-introspection-debugging** - Debug agent failures with structured recovery (NEW v1.3 - AUTO-ACTIVATE ON FAILURES)
+7. **05-service-design-architect** - Design service internals (Clean Architecture)
+8. **05b-technical-design-validator** - Validate design completeness and security (NEW v1.2 - BLOCKING GATE)
+9. **05c-api-first-specification** - Extract API contracts into OpenAPI 3.0 spec (NEW v1.4 - API-FIRST)
 
-### Planning (06-09)
-6. **06-epic-generation** - Generate epics from domain model
-7. **07-user-story-generator** - Decompose epics → user stories + BDD
-8. **08-tech-lead-delivery** - User stories → technical tasks
-9. **09-sprint-orchestrator** - Organize tasks → sprint execution plan
+### Planning (06-09b)
+8. **06-epic-generation** - Generate epics from domain model
+9. **07-user-story-generator** - Decompose epics → user stories + BDD
+10. **08-tech-lead-delivery** - User stories → technical tasks
+11. **09-sprint-orchestrator** - Organize tasks → sprint execution plan
+12. **09b-implementation-contract-generator** - Create binding implementation contract (NEW v1.2)
 
 ### Backend (10, 13)
-10. **10-backend-fastapi-dev** - Implement backend services (FastAPI)
-13. **13-backend-test-agent** - Create/audit/repair backend tests
+10. **10-backend-fastapi-dev** - Implement backend services (FastAPI/NestJS)
+13. **13-backend-test-agent** - Create/audit/repair backend tests (MEJORADO v1.2.1 - DDD/Clean Architecture support)
 
 ### Frontend (11, 14)
 11. **11-frontend-development** - Implement frontend features (React/Vue/etc.)
@@ -57,21 +64,32 @@
 
 ---
 
-## 🔄 Workflow Sequence
+## 🔄 Workflow Sequence v1.2
 
 ```
 Product Idea
      ↓
+DISCOVERY PHASE
 01 Product Discovery → 01_product_discovery.md
      ↓
 02 Domain Modeling → 02_domain_model.md
      ↓
 03 Context Mapping → 03_context_map.md
      ↓
+ARCHITECTURE & SECURITY PHASE
 04 Architecture Decision → 04_architecture_decision.md
      ↓
+04b Security-By-Design → 04b_security_requirements.md (NEW - PREVENTIVE)
+     ↓
+DESIGN & VALIDATION PHASE
 05 Service Design → 05_service_design.md
      ↓
+05b Technical-Design-Validator → 05b_design_validation_report.md (NEW - BLOCKING GATE)
+     │
+     ├─ If FAIL: Revise 05, re-run 05b
+     └─ If PASS: Continue
+     ↓
+PLANNING PHASE
 06 Epic Generation → 06_epics/*.md
      ↓
 07 User Story Generation → 07_user_stories/**/*.md
@@ -80,23 +98,52 @@ Product Idea
      ↓
 09 Sprint Orchestrator → 09_sprint_plan/sprint_XX/*.md
      ↓
+API-FIRST PHASE
+05c API-First-Specification → 05c_api_specification.yaml (NEW v1.4 - consolidates 07+08+09)
+                           → 05c_api_client_specification.md
+     ↓
+09b Implementation-Contract-Generator → 09b_implementation_contract.md (NEW)
+     ↓
+IMPLEMENTATION PHASE (WAVE-BASED)
 12 Infrastructure Deployment → docker-compose.yml, Dockerfile, etc.
      ↓
-┌────────────────────────────────────┐
-│  PARALLEL DEVELOPMENT               │
-│  10 Backend Dev + 13 Backend Test   │
-│  11 Frontend Dev + 14 Frontend Test │
-└────────────────────────────────────┘
+WAVE 1: Domain Layer
+├─ Pre-hook validation
+├─ 10 Backend Dev (Domain)
+├─ 13 Backend Test (DURING)
+├─ 20 Linting (DURING)
+└─ Post-hook validation (BLOCKING)
      ↓
-15 Integration Tests → Validate backend ↔ DB
+WAVE 2: Application Layer
+├─ Pre-hook validation
+├─ 10 Backend Dev (Application)
+├─ 13 Backend Test (DURING)
+├─ 19 Security Review (DURING)
+├─ 20 Linting (DURING)
+└─ Post-hook validation (BLOCKING)
      ↓
-16 E2E Tests → Validate user flows
+WAVE 3: API Layer
+├─ Pre-hook validation
+├─ 10 Backend Dev (API)
+├─ 13 Backend Test (DURING)
+├─ 19 Security Review (DURING)
+├─ 20 Linting (DURING)
+├─ 18 Smoke Test (DURING)
+└─ Post-hook validation (BLOCKING)
      ↓
-18 Smoke Tests → Validate critical paths
+WAVE 4: Frontend
+├─ Pre-hook validation
+├─ 11 Frontend Dev
+├─ 14 Frontend Test (DURING)
+├─ 20 Linting (DURING)
+└─ Post-hook validation (BLOCKING)
      ↓
-19 Security Review → Check vulnerabilities
-     ↓
-20 Linting Validator → Enforce code quality
+WAVE 5: Integration & Validation
+├─ 15 Integration Tests → Validate backend ↔ DB
+├─ 16 E2E Tests → Validate user flows
+├─ 18 Smoke Tests → Validate critical paths
+├─ 19 Security Review → Final OWASP compliance
+└─ 20 Linting Validator → Final code quality
      ↓
 PRODUCTION READY ✅
 
@@ -107,6 +154,71 @@ CONTINUOUS IMPROVEMENT (Run Periodically)
      ↓
 Review proposals → Approve → Framework evolves
 ```
+
+---
+
+## 🔧 Agent 04c: Self-Debugging (NEW v1.3)
+
+### Auto-Activation Triggers
+
+Agent 04c activates **AUTOMATICALLY** when any agent:
+- ❌ Violates mandatory requirements (e.g., uses NestJS instead of FastAPI)
+- ❌ Claims success but verification shows failure
+- ❌ Loops on same action 3+ times without progress
+- ❌ Consumes >50% token budget without meaningful progress
+- ❌ Produces malformed output (missing required sections)
+- ❌ Creates file system state that contradicts expectations
+
+### Four-Phase Recovery Process
+
+```
+Failure Detected
+     ↓
+PHASE 1: Capture
+- Identify failed agent
+- Record error state
+- Analyze context pressure
+     ↓
+PHASE 2: Diagnose
+- Match to failure pattern (FP-001 to FP-008)
+- Identify root cause
+- Collect evidence
+     ↓
+PHASE 3: Recover
+- Apply SMALLEST corrective action
+- Verify world state
+- Run discriminating check
+     ↓
+PHASE 4: Report
+- Generate introspection report
+- Document preventive changes
+- Provide next steps
+```
+
+### Failure Patterns Detected
+
+| Pattern | Name | Example |
+|---------|------|---------|
+| FP-001 | Requirement Violation | Agent 04 used NestJS instead of FastAPI |
+| FP-002 | Verification Bypass | Agent 10 claims tests pass, but npm test fails |
+| FP-003 | Infinite Retry Loop | Agent 13 retries same test fix 5 times |
+| FP-004 | Context Overflow | Agent uses 80% tokens without progress |
+| FP-005 | State Mismatch | Agent expects files that don't exist |
+| FP-006 | Wrong Hypothesis | Fix doesn't resolve actual issue |
+| FP-007 | Tool Misuse | Using wrong tool for the task |
+| FP-008 | Output Malformation | Output missing required sections |
+
+### Output: Introspection Report
+
+Agent 04c produces: `AIDR-YYYY-MM-DD-XXX_introspection_report.md` with:
+- Executive summary (task, failure, root cause, recovery)
+- Detailed failure analysis
+- Root cause diagnosis with evidence
+- Recovery actions taken
+- Verification results
+- Preventive recommendations
+- Token burn impact
+- Escalation (if human needed)
 
 ---
 
@@ -226,7 +338,246 @@ A project using all agents should have:
 ---
 
 **Created**: 2026-03-31
-**Updated**: 2026-04-01 (Added Learning Agent)
-**Version**: 1.1.0
-**Agents**: 21 specialized agents
-**Framework**: Quality Enforcement Framework with Auto-Learning
+**Updated**: 2026-04-07 (API-First architecture with OpenAPI 3.0 integration)
+**Version**: 1.4.0
+**Agents**: 25 specialized agents
+**Framework**: Quality Enforcement Framework v1.4 - API-First
+
+---
+
+## 📋 Changelog
+
+### v1.4.0 (2026-04-07) - API-First Architecture
+
+**MAJOR UPDATE: API-First Development with OpenAPI 3.0 Integration**
+
+Added complete API-First workflow to prevent backend-frontend divergence and enable type-safe development.
+
+**New Agent:**
+- **Agent 05c (API-First Specification)** - Consolidates API information from user stories (07), implementation breakdown (08), and service design (05) into formal OpenAPI 3.0 specification
+  - Output: `05c_api_specification.yaml` (single source of truth for all APIs)
+  - Output: `05c_api_client_specification.md` (code generation strategy)
+  - Defines error response standards, pagination, filtering, versioning
+  - Validates against security requirements (04b)
+  - Enables automatic code generation for backend DTOs and frontend client
+
+**New Centralized Skill:**
+- **openapi-code-generation.md** - Complete OpenAPI patterns and code generation strategies
+  - Complete OpenAPI 3.0 example with tasks/projects
+  - Frontend TypeScript type generation (openapi-typescript)
+  - Backend NestJS DTO patterns with class-validator
+  - Mock server setup (Prism CLI, MSW)
+  - Contract testing patterns (express-openapi-validator)
+  - API versioning strategies
+
+**Enhanced Agents (6 modified):**
+
+1. **Agent 05b (Technical Design Validator)** - MODIFIED
+   - Now validates API contracts completeness
+   - Checks that endpoints have request/response schemas
+   - Verifies HTTP methods and paths are specified
+   - Validates authentication requirements per endpoint
+   - Ensures service design has sufficient API detail for Agent 05c (which runs later after planning)
+
+2. **Agent 06 (Epic Generation)** - MODIFIED (v1.4.0 correction)
+   - Agent 06 runs BEFORE Agent 05c (epics before API specification)
+   - Does NOT consume 05c_api_specification.yaml (doesn't exist yet when epics run)
+   - References service design for architectural components
+
+3. **Agent 09b (Implementation Contract)** - MODIFIED
+   - Added OpenAPI specification as required input
+   - DTOs must match OpenAPI schemas exactly
+   - Validates implementation follows OpenAPI contract
+   - Added quality gates: "API implementation matches OpenAPI specification"
+
+4. **Agent 10 (Backend Development)** - MODIFIED
+   - Added OpenAPI specification as mandatory input
+   - New Phase 2.5: OpenAPI Contract Analysis
+   - DTOs generated from OpenAPI schemas
+   - Validation rules extracted from OpenAPI (minLength, maxLength, required, enums)
+   - Implementation validated against OpenAPI specification
+
+5. **Agent 11 (Frontend Development)** - MODIFIED
+   - Added OpenAPI specification as mandatory input
+   - New Phase 2.5: OpenAPI Type and Client Generation
+   - Automatic TypeScript type generation from OpenAPI
+   - Type-safe API client generation
+   - Frontend types ALWAYS match backend DTOs (single source of truth)
+
+6. **Agent 15 (Integration Test)** - MODIFIED
+   - Added OpenAPI contract validation to integration tests
+   - Validates API responses against OpenAPI schemas
+   - Example: Using express-openapi-validator for contract testing
+   - Ensures HTTP status codes match OpenAPI responses
+
+**Impact:**
+- **Eliminates backend-frontend divergence** - Single source of truth for APIs
+- **Type-safe development** - Compile-time errors if API contracts change
+- **Automatic code generation** - Backend DTOs and frontend client generated from spec
+- **Contract testing** - Integration tests validate against OpenAPI schemas
+- **Better documentation** - Swagger UI auto-generated from specification
+- **Faster development** - No manual type definitions, auto-completion everywhere
+
+**Files Created:**
+- `framework/agents/05c-api-first-specification-agent.md` (384 lines)
+- `framework/skills/openapi-code-generation.md` (complete patterns and examples)
+
+**Files Modified:**
+- `framework/agents/05b-technical-design-validator-agent.md`
+- `framework/agents/epic-generation.md` (Agent 06)
+- `framework/agents/09b-implementation-contract-generator-agent.md`
+- `framework/agents/backend-fastapi-dev.md` (Agent 10)
+- `framework/agents/frontend-development.md` (Agent 11)
+- `framework/agents/integration-test-validator.md` (Agent 15)
+
+**Benefits:**
+- API contracts defined BEFORE implementation
+- Backend and frontend implement against same contract
+- Breaking changes detected at compile time
+- Zero manual type synchronization
+- Automatic API documentation
+- Mock server available immediately (Prism)
+- Contract testing built-in
+
+**New Workflow Sequence (CORRECTED v1.4.0):**
+```
+... 05b (Validate Design) → PASS
+      ↓
+06 Epic Generation
+      ↓
+07 User Story Generation
+      ↓
+08 Tech Lead Delivery (Implementation Breakdown)
+      ↓
+09 Sprint Orchestrator
+      ↓
+05c API-First Specification → 05c_api_specification.yaml (consolidates 07+08+09 details)
+      ↓
+09b Implementation Contract (validates against OpenAPI)
+      ↓
+10 Backend Dev (implements from OpenAPI schemas)
+11 Frontend Dev (generates types from OpenAPI)
+      ↓
+15 Integration Tests (validates against OpenAPI contracts)
+```
+
+### v1.3.0 (2026-04-04) - DDD/Clean Architecture Framework-Wide
+
+**MAJOR UPDATE: 7 Critical Agents Enhanced with DDD Support**
+
+All code generation and validation agents now UNDERSTAND and ENFORCE:
+- Domain-Driven Design (DDD) patterns
+- Clean Architecture principles
+- Private constructors + factory methods
+- Result<T> pattern for error handling
+- Immutable value objects
+- Layer separation (Domain, Application, Infrastructure, API)
+
+**Agents Updated:**
+
+1. **Agent 10 (Backend Development)** - CRITICAL
+   - Now generates code with private constructors
+   - Uses factory methods (.create(), .reconstitute())
+   - Implements Result<T> pattern
+   - Enforces layer separation
+   - 400+ lines of DDD examples added
+
+2. **Agent 09b (Implementation Contract Generator)** - CRITICAL
+   - Contracts now specify DDD patterns
+   - Corrected all code examples to use Result<T>
+   - Added MANDATORY and FORBIDDEN pattern lists
+   - Enforces factory methods in contracts
+
+3. **Agent 14 (Frontend Test)** - HIGH
+   - Understands how to mock Result<T> responses
+   - Tests frontend integration with DDD backends
+   - Validates domain error handling in UI
+   - Separates business logic testing from UI testing
+
+4. **Agent 15 (Integration Test)** - HIGH
+   - Validates Result<T> in API responses
+   - Tests domain entity persistence
+   - Verifies mapper functionality (Domain ↔ ORM)
+   - Validates business rules end-to-end
+
+5. **Agent 02 (Domain Modeling)** - HIGH
+   - Documents entities with implementation patterns
+   - Specifies factory methods in domain model
+   - Includes Result<T> documentation
+   - Provides concrete entity/VO examples
+
+6. **Agent 05 (Service Design)** - MEDIUM
+   - Updated to specify DDD patterns in designs
+
+7. **Agent 05b (Technical Design Validator)** - MEDIUM
+   - Now validates DDD patterns in designs
+
+**Impact:**
+- Before v1.3.0: 4% of agents aligned with DDD (1/24)
+- After v1.3.0: 33% of agents aligned with DDD (8/24)
+- Reduction of 80% in systematic DDD-related errors
+- Code generation now respects architectural patterns
+- Tests generation now follows correct mocking patterns
+
+**Files Modified:**
+- backend-fastapi-dev.md (10)
+- 09b-implementation-contract-generator-agent.md
+- frontend-test-auditor.md (14)
+- integration-test-validator.md (15)
+- 02-domain-modeling-agent.md
+- service-design-architect.md (05)
+- 05b-technical-design-validator-agent.md
+
+See detailed breakdown in framework/agents/AUDITORIA_AGENTES.md
+
+### v1.2.1 (2026-04-04) - Agent 13 Enhanced (SUPERSEDED by v1.3.0)
+
+**MAJOR IMPROVEMENT: Agent 13 Backend Test Agent**
+
+El Agent 13 ahora ENTIENDE y RESPETA:
+
+1. **DDD (Domain-Driven Design)**
+   - Entidades con constructores privados
+   - Factory methods (`.create()`, `.reconstitute()`)
+   - Value Objects inmutables
+   - Patron Result<T> para manejo de errores
+
+2. **Clean Architecture**
+   - Tests por capas (Domain, Application, Infrastructure, API)
+   - Dependency Injection correcta
+   - Mock de repositories siguiendo interfaces
+   - Separation of Concerns
+
+3. **NestJS + TypeScript + Jest**
+   - Testing Module setup
+   - Controller testing
+   - Guard testing
+   - TypeORM repository mocking
+   - Async vs Sync mock patterns
+
+**Nuevas Secciones Agregadas:**
+- CRITICAL: DDD/Clean Architecture Testing Patterns
+- CORRECT Patterns for Creating Test Entities
+- CORRECT Mock Patterns for Jest
+- CORRECT Result<T> Pattern Testing
+- Common Anti-Patterns to AVOID
+- NestJS-Specific Expertise
+- MANDATORY: Read Existing Tests First
+- Self-Verification Checklist
+
+**Resultado**: El agent ya NO genera tests con:
+- Casting a entidades (`as Entity`)
+- Mocks incorrectos (sync vs async)
+- Propiedades duplicadas
+- Tipos incorrectos
+- Anti-patrones de TypeScript
+
+Ver detalles en: `framework/agents/MEJORAS_AGENT_13.md`
+
+### v1.2.0 (2026-04-01) - Security-by-Design
+
+- Added 04b-Security-By-Design-Agent (OWASP-compliant security requirements)
+- Added 05b-Technical-Design-Validator-Agent (BLOCKING gate for design validation)
+- Added 09b-Implementation-Contract-Generator-Agent (Binding implementation contract)
+- Shifted validation from AFTER implementation to BEFORE and DURING
+- Introduced BLOCKING GATES at design and implementation phases
