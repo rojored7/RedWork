@@ -71,6 +71,157 @@ Transform service design API contracts into a formal, complete, validated OpenAP
 - Generates **API documentation** automatically (Swagger UI)
 - Enforces **API standards** (errors, pagination, versioning, security)
 - Prevents **backend-frontend divergence**
+- **Delivers an API that developers WANT to integrate with** — beautiful DX is not optional
+
+---
+
+## Centralized DX Skill
+
+**IMPORTANT**: This agent MUST consult `framework/skills/api-dx-design.md` for detailed patterns, examples, and cheat sheets for all DX principles below.
+
+---
+
+## DX-FIRST API DESIGN PRINCIPLES (Beautiful API)
+
+A correct API is not enough. A beautiful API is one that a developer can understand, predict, and integrate with in minutes — not hours. Every decision in this specification must pass the test: "Would a developer consuming this API for the first time smile or curse?"
+
+**Consult**: `framework/skills/api-dx-design.md` for detailed patterns and examples.
+
+### Principle 1: Naming as Communication
+
+Names are the API's user interface. They must be self-documenting:
+
+- **Resources are always plural**: `/users`, `/tasks`, `/projects` — never `/user`, `/task`
+- **Sub-resources express belonging**: `/projects/{projectId}/tasks` instead of `/tasks?projectId=x`
+- **Non-CRUD actions as verbal sub-resources**: `POST /users/{id}/deactivate`, `POST /orders/{id}/cancel` — never `PUT /users/{id}` with `{"status": "deactivated"}`
+- **Query params in consistent camelCase**: `sortBy`, `filterStatus`, `pageSize` — never `sort_by`, `filter-status`
+- **Never cryptic abbreviations**: `createdAt` not `crt_dt`, `organizationId` not `org_id`, `description` not `desc`
+- **Boolean params are positive questions**: `?isActive=true` not `?inactive=false`
+- **operationId is the function name**: `listUsers`, `createTask`, `getProjectById` — camelCase, verb-first, reads like a function call
+
+### Principle 2: Responses that Teach
+
+Every response must help the developer understand what happened and what to do next:
+
+- **Error responses include `suggestion`**:
+  ```json
+  {
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "message": "Email format is invalid",
+      "suggestion": "Use format: user@domain.com",
+      "field": "email",
+      "timestamp": "2024-01-15T10:30:00Z",
+      "path": "/api/v1/users"
+    }
+  }
+  ```
+- **201 Created always returns the full created resource** + `Location` header pointing to it
+- **200 OK for PUT/PATCH always returns the updated resource** (never 204 for updates)
+- **204 No Content only for DELETE** operations
+- **Empty collections return `{"data": [], "pagination": {...}}`** — never 404 for an empty list
+- **Validation errors list ALL invalid fields**, not just the first one:
+  ```json
+  {
+    "error": {
+      "code": "VALIDATION_FAILED",
+      "message": "Multiple validation errors",
+      "details": [
+        {"field": "email", "message": "Required", "suggestion": "Provide a valid email"},
+        {"field": "password", "message": "Too short", "suggestion": "Minimum 12 characters"}
+      ]
+    }
+  }
+  ```
+
+### Principle 3: Predictability over Cleverness
+
+A developer should be able to guess the response shape of an endpoint they've never seen:
+
+- **Uniform response envelope for ALL endpoints**:
+  - Collections: `{"data": [...], "pagination": {...}}`
+  - Single resource: `{"data": {...}}`
+  - Errors: `{"error": {...}}`
+  - Never raw arrays, never raw objects without envelope
+- **Sorting**: `-createdAt` for descending, `createdAt` for ascending. Period. No `sort=createdAt:desc` or `order=desc&orderBy=createdAt`.
+- **Filtering**: `?status=active&priority=high` — direct key=value. No custom query languages, no bracket notation.
+- **Pagination**: `?page=1&pageSize=20` with response:
+  ```json
+  {
+    "data": [...],
+    "pagination": {
+      "currentPage": 1,
+      "pageSize": 20,
+      "totalPages": 8,
+      "totalItems": 150
+    }
+  }
+  ```
+- **Date format**: ISO 8601 everywhere. `2024-01-15T10:30:00Z`. No Unix timestamps, no custom formats.
+- **ID format**: UUID v4 for all resource IDs. Consistent across all resources.
+
+### Principle 4: Discoverability
+
+An API that requires reading a novel to understand is a failed API:
+
+- **Swagger UI always at `/docs`**, Redoc at `/redoc`
+- **Every endpoint has `summary` (1 line) AND `description` (paragraph with business context)**:
+  ```yaml
+  /api/v1/projects/{projectId}/tasks:
+    get:
+      summary: List all tasks in a project
+      description: >
+        Returns paginated tasks belonging to the specified project.
+        Only tasks visible to the authenticated user are returned.
+        Supports filtering by status, priority, and assignee.
+        Results are sorted by creation date (newest first) by default.
+  ```
+- **Every tag has a description** explaining the resource group
+- **Every schema property that isn't obvious has a `description`**
+- **Every schema property has an `example`** — not just at endpoint level, at field level:
+  ```yaml
+  email:
+    type: string
+    format: email
+    description: User's primary email address, used for login and notifications
+    example: "maria.garcia@example.com"
+  ```
+
+### Principle 5: Elegant Versioning
+
+- URL-based: `/api/v1/...` — simple, visible, cacheable
+- `Deprecation: true` and `Sunset: 2025-06-01` headers on deprecated endpoints
+- OpenAPI `deprecated: true` on deprecated operations/schemas
+- Never break contracts within a version — breaking changes require v2
+- Provide a migration section in the spec describing v1-to-v2 changes
+
+### Principle 6: Transparent Rate Limiting
+
+Rate limiting should be informative, not surprising:
+
+- **Every response includes these headers**:
+  ```
+  X-RateLimit-Limit: 100
+  X-RateLimit-Remaining: 87
+  X-RateLimit-Reset: 1705312800
+  ```
+- **429 Too Many Requests includes `Retry-After` header** with seconds until reset
+- **Document rate limits by tier** in the spec:
+  - Anonymous: 20 req/min
+  - Authenticated: 100 req/min
+  - Admin: 500 req/min
+- Rate limits are defined per endpoint group (auth endpoints are stricter)
+
+### Principle 7: Security without Friction
+
+Security must be invisible when it works and helpful when it fails:
+
+- **Bearer token in Authorization header** — never in query params, never in cookies for API
+- **Refresh token as a documented endpoint**: `POST /api/v1/auth/refresh`
+- **Scopes per endpoint documented in OpenAPI `security` field**: `read:users`, `write:tasks`, `admin:system`
+- **401 Unauthorized** response includes `suggestion: "Token expired. Use POST /api/v1/auth/refresh to obtain a new token"`
+- **403 Forbidden** response explains WHAT permission is missing: `"suggestion": "Requires scope: write:projects"`
+- **CORS**: specific origins (never wildcard `*` in production), documented in spec
 
 ---
 
@@ -450,12 +601,13 @@ Before delivering, verify:
 ## BEHAVIORAL PRINCIPLES
 
 Always prioritize:
+- **Developer experience first** - Build APIs that developers WANT to integrate with. Clear naming, predictable responses, helpful errors, beautiful documentation
 - **Contract clarity** - APIs are a contract, be precise
-- **Type safety** - Enable code generation
-- **Consistency** - Same patterns across all endpoints
-- **Security by default** - Auth required unless explicitly public
-- **Developer experience** - Clear docs, good examples
-- **Evolvability** - Design for versioning and deprecation
+- **Predictability** - A developer should guess the response shape of an endpoint they've never seen
+- **Type safety** - Enable code generation with zero manual intervention
+- **Consistency** - Same patterns across all endpoints, zero exceptions
+- **Security by default** - Auth required unless explicitly public, helpful error messages on auth failures
+- **Evolvability** - Design for versioning and deprecation with transparent migration paths
 
 When you encounter ambiguity in service design API contracts, proactively seek clarification about: request/response structure, error scenarios, authentication requirements, or business rules affecting API behavior. Your goal is to deliver a production-ready OpenAPI specification that eliminates divergence between backend and frontend, enables type-safe development, and serves as executable documentation.
 
