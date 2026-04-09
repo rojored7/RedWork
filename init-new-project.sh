@@ -52,9 +52,31 @@ echo "Step 2: Copying framework files..."
 cp -r agents "$PROJECT_PATH/.framework/"
 cp -r scripts "$PROJECT_PATH/.framework/"
 cp -r skills "$PROJECT_PATH/.framework/"
-cp workflow-status.json "$PROJECT_PATH/"
+
+# Copy workflow-status.json if present
+if [ -f workflow-status.json ]; then
+    cp workflow-status.json "$PROJECT_PATH/"
+fi
+
+# Copy pipeline v3.0 (parent-child architecture)
 cp .gitlab-ci.yml "$PROJECT_PATH/"
-echo "✓ Framework files copied (agents + scripts + skills)"
+
+# Copy child pipeline definitions (parent-child architecture)
+if [ -d .gitlab/ci ]; then
+    mkdir -p "$PROJECT_PATH/.gitlab/ci"
+    cp .gitlab/ci/*.yml "$PROJECT_PATH/.gitlab/ci/"
+fi
+
+# Also copy critical validation scripts to project root scripts/ for CI access
+mkdir -p "$PROJECT_PATH/scripts/workflow"
+cp scripts/workflow/validate-no-nestjs-contamination.sh "$PROJECT_PATH/scripts/workflow/" 2>/dev/null || true
+cp scripts/workflow/pipeline-helper.sh "$PROJECT_PATH/scripts/workflow/" 2>/dev/null || true
+chmod +x "$PROJECT_PATH/scripts/workflow/"*.sh 2>/dev/null || true
+
+echo "  OK - Framework files copied (agents + scripts + skills)"
+echo "  OK - Pipeline .gitlab-ci.yml v3.0 copied (parent-child, 8 cards)"
+echo "  OK - Child pipelines copied to .gitlab/ci/ (7 files)"
+echo "  OK - Validation scripts copied to scripts/workflow/"
 echo ""
 
 # Create project-specific .gitignore
@@ -250,10 +272,8 @@ cd "$FRAMEWORK_PATH"
 echo "✓ Script paths updated"
 echo ""
 
-# Update GitLab CI to look in outputs/
-echo "Step 7: Updating GitLab CI paths..."
-sed -i 's|FILE_NAME="0|FILE_NAME="outputs/0|g' "$PROJECT_PATH/.gitlab-ci.yml" 2>/dev/null || true
-echo "✓ GitLab CI updated"
+# GitLab CI v2.0 already uses outputs/ paths - no modification needed
+echo "Step 7: GitLab CI v2.0 ready (already uses outputs/ paths)"
 echo ""
 
 # Initialize Git

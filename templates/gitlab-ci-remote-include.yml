@@ -1,0 +1,52 @@
+# ============================================================================
+# GitLab CI/CD Pipeline - Remote Include Template
+# ============================================================================
+# This is a MINIMAL .gitlab-ci.yml for new projects. Instead of copying the
+# full 600-line pipeline, it imports it remotely from the Framework repo.
+#
+# BENEFIT: When the Framework pipeline is updated, your project automatically
+# gets the improvements on next pipeline run (no manual copy needed).
+#
+# USAGE:
+#   1. Copy this file to your new project as `.gitlab-ci.yml` (root)
+#   2. Update FRAMEWORK_PROJECT below to your Framework GitLab path
+#   3. Commit and push - pipeline runs automatically
+#
+# PREREQUISITES:
+#   - Framework repo MUST be accessible from your project's GitLab instance
+#   - If Framework is private, set up a CI_JOB_TOKEN or deploy key
+# ============================================================================
+
+include:
+  # Option 1: From same GitLab instance (most common)
+  - project: 'rojored7-group/framework'         # CHANGE to your Framework path
+    ref: main                                    # Or pin to a tag like v2.0
+    file: '/.gitlab-ci.yml'
+
+  # Option 2: From a different GitLab instance (uncomment if needed)
+  # - remote: 'https://gitlab.com/rojored7-group/framework/-/raw/main/.gitlab-ci.yml'
+
+# ----------------------------------------------------------------------------
+# Project-specific overrides (optional)
+# ----------------------------------------------------------------------------
+# You can override variables or add project-specific jobs here.
+# These take precedence over the ones defined in the included pipeline.
+
+variables:
+  OUTPUTS_DIR: "outputs"
+  MAX_WAIT_SECONDS: "3600"
+  # PROJECT_NAME: "my-project"  # Optional: override with your project name
+
+# ----------------------------------------------------------------------------
+# Example: Add project-specific deploy job
+# ----------------------------------------------------------------------------
+# deploy:my-custom-env:
+#   stage: deploy
+#   script:
+#     - echo "Deploying $CI_PROJECT_NAME to custom environment"
+#     - ./scripts/deploy-custom.sh
+#   environment:
+#     name: custom
+#   needs:
+#     - quality:20-linting-validator
+#   when: manual

@@ -163,16 +163,16 @@ Create a comprehensive security requirements document that will be used by:
 
 ### A08:2021 - Software and Data Integrity Failures
 **Requirements:**
-- [ ] MANDATORY: Global validation pipe enabled
-- [ ] MANDATORY: Input validation with class-validator
-- [ ] MANDATORY: Schema validation on all inputs
+- [ ] MANDATORY: Pydantic v2 validation on all request bodies
+- [ ] MANDATORY: Input validation with Pydantic Field validators
+- [ ] MANDATORY: Schema validation on all inputs (FastAPI automatic)
 - [ ] Code signing for releases
 - [ ] Integrity checks on dependencies
 
 **Validation Criteria:**
-- ValidationPipe configured globally
-- All DTOs use class-validator decorators
-- No unvalidated inputs
+- FastAPI uses Pydantic models for all request bodies
+- All DTOs use Pydantic v2 BaseModel with Field validators
+- No unvalidated inputs (FastAPI rejects automatically)
 
 ### A09:2021 - Security Logging and Monitoring Failures
 **Requirements:**
@@ -231,13 +231,30 @@ if (!accessSecret) {
 - [ ] Default deny policy
 
 **Implementation Specifications:**
-```typescript
-// MANDATORY: Ownership guard on all protected resources
-@UseGuards(JwtAuthGuard, OwnershipGuard)
-@Get(':id')
-async getResource(@Param('id') id: string, @CurrentUser() user: User) {
-  // Ownership validated by guard
-}
+```python
+# MANDATORY: Ownership enforced via FastAPI Depends + service layer
+
+from fastapi import APIRouter, Depends, HTTPException
+from app.api.deps import get_current_user, get_resource_service
+from app.modules.resource.application.services import ResourceService
+from app.modules.user.domain.entities import User
+
+router = APIRouter()
+
+@router.get("/{resource_id}")
+async def get_resource(
+    resource_id: str,
+    current_user: User = Depends(get_current_user),        # JWT auth
+    service: ResourceService = Depends(get_resource_service),
+):
+    # Ownership validated inside service layer (Result<T> pattern)
+    result = await service.get_by_id(resource_id, current_user.id)
+    if result.is_failure:
+        if result.error.code == "FORBIDDEN":
+            raise HTTPException(status_code=403, detail="Not owner")
+        if result.error.code == "NOT_FOUND":
+            raise HTTPException(status_code=404, detail="Not found")
+    return result.value
 ```
 
 ## 4. Password Policy Requirements
@@ -323,39 +340,59 @@ Permissions-Policy: geolocation=(), microphone=(), camera=()
 ```
 
 **Implementation:**
-```typescript
-// MANDATORY: Helmet configuration
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      scriptSrc: ["'self'"], // NO unsafe-inline
-      styleSrc: ["'self'"],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-  },
-}));
+```python
+# MANDATORY: Security headers middleware (FastAPI)
+from fastapi import FastAPI
+from secure import Secure
+
+app = FastAPI()
+secure_headers = Secure(
+    csp="default-src 'self'; script-src 'self'; style-src 'self'",
+    hsts="max-age=31536000; includeSubDomains",
+    xfo="DENY",
+    xxp="1; mode=block",
+    referrer="strict-origin-when-cross-origin",
+    permissions="geolocation=(), microphone=(), camera=()",
+)
+
+@app.middleware("http")
+async def set_secure_headers(request, call_next):
+    response = await call_next(request)
+    secure_headers.framework.fastapi(response)
+    return response
 ```
 
 ## 8. Input Validation Requirements
 
 **MANDATORY:**
-- [ ] Global ValidationPipe enabled
-- [ ] All DTOs use class-validator decorators
+- [ ] Pydantic v2 models for ALL request bodies
+- [ ] All DTOs use Pydantic Field validators
 - [ ] File upload validation (type, size, content)
 - [ ] Sanitization of user inputs
 
 **Implementation Specifications:**
-```typescript
-// MANDATORY: Global ValidationPipe
-app.useGlobalPipes(new ValidationPipe({
-  whitelist: true,
-  forbidNonWhitelisted: true,
-  transform: true,
-}));
+```python
+# MANDATORY: Pydantic v2 with strict validation
+from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+class CreateUserDTO(BaseModel):
+    model_config = ConfigDict(
+        str_strip_whitespace=True,
+        extra="forbid",            # Reject unknown fields
+        str_max_length=1000,       # Prevent DoS via huge strings
+    )
+
+    email: str = Field(..., pattern=r"^[^@]+@[^@]+\.[^@]+$")
+    password: str = Field(..., min_length=12, max_length=128)
+
+    @field_validator("password")
+    @classmethod
+    def password_strength(cls, v: str) -> str:
+        if not any(c.isupper() for c in v):
+            raise ValueError("Password must contain uppercase")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("Password must contain digit")
+        return v
 ```
 
 ## 9. Error Handling Requirements
@@ -452,7 +489,7 @@ This checklist will be used by Security Review Agent (19) to validate compliance
 - [ ] No default passwords/credentials (CRITICAL)
 - [ ] Rate limiting on auth endpoints (CRITICAL)
 - [ ] Password minimum 12 characters (CRITICAL)
-- [ ] Global ValidationPipe enabled (HIGH)
+- [ ] Pydantic v2 validation enforced on all endpoints (HIGH)
 - [ ] Security headers configured (HIGH)
 - [ ] npm audit clean (HIGH)
 - [ ] Stack traces sanitized in production (MEDIUM)

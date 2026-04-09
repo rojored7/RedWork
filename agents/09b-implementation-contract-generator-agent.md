@@ -368,86 +368,98 @@ Wave 1 is COMPLETE when:
 ### 2.1 What to Implement
 
 #### Application Services
-```typescript
-// MANDATORY: Application services with use cases
+```python
+# MANDATORY: Application services with use cases
 
-// backend/src/modules/task/application/services/task.service.ts
-@Injectable()
-class TaskService {
-  constructor(
-    @Inject('ITaskRepository')
-    private readonly taskRepository: ITaskRepository,
-  ) {}
+# backend/app/modules/task/application/services/task_service.py
+from app.modules.task.domain.repositories import ITaskRepository
+from app.modules.task.domain.entities import Task
+from app.modules.task.application.dto import CreateTaskDTO, UpdateTaskDTO, TaskDTO
+from app.modules.task.application.mappers import TaskMapper
+from app.core.result import Result
+from app.core.exceptions import NotFoundError, ForbiddenError
 
-  // MANDATORY: All use cases from design
-  async createTask(dto: CreateTaskDto, userId: string): Promise<TaskDto> {
-    // Validate DTO (ValidationPipe handles this)
-    const task = Task.create({
-      title: dto.title,
-      description: dto.description,
-      userId: userId,
-    });
-    const saved = await this.taskRepository.save(task);
-    return TaskMapper.toDto(saved);
-  }
+class TaskService:
+    def __init__(self, task_repository: ITaskRepository) -> None:
+        self._task_repository = task_repository
 
-  async updateTask(id: string, dto: UpdateTaskDto, userId: string): Promise<TaskDto> {
-    // Check ownership
-    const task = await this.taskRepository.findById(id);
-    if (!task) throw new NotFoundException();
-    if (task.userId !== userId) throw new ForbiddenException();
-    // Update logic
-  }
+    # MANDATORY: All use cases from design
+    async def create_task(self, dto: CreateTaskDTO, user_id: str) -> Result[TaskDTO]:
+        # DTO already validated by Pydantic at FastAPI boundary
+        task_result = Task.create(
+            title=dto.title,
+            description=dto.description,
+            user_id=user_id,
+        )
+        if task_result.is_failure:
+            return Result.fail(task_result.error)
 
-  // All other use cases from design
-}
+        saved = await self._task_repository.save(task_result.value)
+        return Result.ok(TaskMapper.to_dto(saved))
+
+    async def update_task(
+        self, task_id: str, dto: UpdateTaskDTO, user_id: str
+    ) -> Result[TaskDTO]:
+        # Check ownership
+        task = await self._task_repository.find_by_id(task_id)
+        if task is None:
+            return Result.fail(NotFoundError(f"Task {task_id} not found"))
+        if task.user_id != user_id:
+            return Result.fail(ForbiddenError("Not owner of this task"))
+        # Update logic
+        ...
+
+    # All other use cases from design
 ```
 
 **Implementation Checklist:**
 - [ ] TaskService with ALL use cases
 - [ ] AuthService with ALL methods
 - [ ] ProjectService with ALL use cases
-- [ ] All DTOs defined with class-validator decorators
-- [ ] All mappers (Domain ↔ DTO)
-- [ ] Error handling in all services
+- [ ] All DTOs defined as Pydantic v2 BaseModel with Field validators
+- [ ] All mappers (Domain <-> DTO)
+- [ ] Error handling in all services using Result<T> pattern
 
 #### DTOs with Validation
-```typescript
-// MANDATORY: DTOs with class-validator decorators
-// MANDATORY: DTOs MUST match OpenAPI schemas from 05c_api_specification.yaml
+```python
+# MANDATORY: DTOs with Pydantic v2 validation
+# MANDATORY: DTOs MUST match OpenAPI schemas from 05c_api_specification.yaml
 
-import { IsString, IsNotEmpty, MinLength, MaxLength, IsEnum } from 'class-validator';
+from pydantic import BaseModel, Field, ConfigDict
+from enum import Enum
+from typing import Optional
 
-// backend/src/modules/task/application/dto/create-task.dto.ts
-// MUST match components/schemas/CreateTaskDTO from OpenAPI spec
-class CreateTaskDto {
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(3)  // Match OpenAPI minLength
-  @MaxLength(200)  // Match OpenAPI maxLength
-  title: string;
+class TaskPriority(str, Enum):
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
-  @IsString()
-  @MaxLength(4000)
-  description?: string;
+# backend/app/modules/task/application/dto/create_task_dto.py
+# MUST match components/schemas/CreateTaskDTO from OpenAPI spec
+class CreateTaskDTO(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-  @IsEnum(TaskPriority)
-  priority: TaskPriority;
+    title: str = Field(
+        ...,
+        min_length=3,       # Match OpenAPI minLength
+        max_length=200,     # Match OpenAPI maxLength
+    )
+    description: Optional[str] = Field(default=None, max_length=4000)
+    priority: TaskPriority
 
-  // All fields with validation from OpenAPI schema
-}
+    # All fields with validation from OpenAPI schema
 ```
 
 **Implementation Checklist:**
-- [ ] CreateTaskDto with all validations
-- [ ] UpdateTaskDto with all validations
-- [ ] CreateUserDto with all validations
-- [ ] LoginDto with all validations
-- [ ] ALL DTOs use class-validator decorators
+- [ ] CreateTaskDTO with all validations (Pydantic v2)
+- [ ] UpdateTaskDTO with all validations
+- [ ] CreateUserDTO with all validations
+- [ ] LoginDTO with all validations
+- [ ] ALL DTOs use Pydantic v2 Field validators
 - [ ] ALL DTOs match OpenAPI schemas exactly (property names, types, validations)
-- [ ] Required fields in OpenAPI = @IsNotEmpty() in DTO
-- [ ] String length constraints match OpenAPI minLength/maxLength
-- [ ] Enum values match OpenAPI enum definitions
+- [ ] Required fields in OpenAPI = non-Optional in Pydantic model
+- [ ] String length constraints match OpenAPI minLength/maxLength (Field min_length/max_length)
+- [ ] Enum values match OpenAPI enum definitions (Python Enum class)
 
 ### 2.2 What to Test
 
@@ -502,25 +514,31 @@ describe('TaskService', () => {
 
 **FROM 04b_security_requirements.md:**
 
-```typescript
-// MANDATORY: NO hardcoded JWT secrets
+```python
+# MANDATORY: NO hardcoded JWT secrets
 
-// backend/src/modules/auth/application/services/jwt.service.ts
-@Injectable()
-class JwtService {
-  private readonly accessSecret: string;
+# backend/app/modules/auth/application/services/jwt_service.py
+from app.core.config import settings
+from jose import jwt
+from datetime import datetime, timedelta, timezone
 
-  constructor(private readonly config: ConfigService) {
-    // MANDATORY: Throw error if missing (NO defaults)
-    this.accessSecret = config.get<string>('JWT_ACCESS_SECRET');
-    if (!this.accessSecret) {
-      throw new Error('JWT_ACCESS_SECRET is required in environment');
-    }
-  }
+class JwtService:
+    def __init__(self) -> None:
+        # MANDATORY: Raise error if missing (NO defaults)
+        # settings.JWT_ACCESS_SECRET is loaded via Pydantic BaseSettings
+        # which raises ValidationError at startup if env var is missing
+        if not settings.JWT_ACCESS_SECRET:
+            raise RuntimeError("JWT_ACCESS_SECRET is required in environment")
+        self._access_secret = settings.JWT_ACCESS_SECRET
+        self._algorithm = "HS256"
 
-  // NO FALLBACK ALLOWED
-  // if (config.get(..., 'default-secret')) ← FORBIDDEN
-}
+    def create_access_token(self, subject: str, expires_minutes: int = 15) -> str:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=expires_minutes)
+        payload = {"sub": subject, "exp": expire}
+        return jwt.encode(payload, self._access_secret, algorithm=self._algorithm)
+
+    # NO FALLBACK ALLOWED
+    # settings.JWT_ACCESS_SECRET or "default-secret"  # FORBIDDEN
 ```
 
 **Security Checklist:**
@@ -539,13 +557,13 @@ cd backend
 ```
 
 Must verify:
-- [ ] TypeScript compiles (0 errors)
+- [ ] Python type check passes (mypy, 0 errors)
 - [ ] ALL tests pass (100% - Wave 1 + Wave 2)
 - [ ] Coverage: 100% (domain + application layers)
-- [ ] Linting: 0 errors, 0 warnings
+- [ ] Linting: 0 errors, 0 warnings (ruff)
 - [ ] No hardcoded secrets detected
 - [ ] All services exist
-- [ ] All DTOs exist with validations
+- [ ] All DTOs exist as Pydantic models with validations
 - [ ] DTOs match OpenAPI schemas (property names, types, validations)
 - [ ] OpenAPI specification can validate request/response examples
 
@@ -556,7 +574,7 @@ Must verify:
 Wave 2 is COMPLETE when:
 - [x] All application services implemented
 - [x] All use cases implemented
-- [x] All DTOs with validation decorators
+- [x] All DTOs as Pydantic v2 BaseModel with Field validators
 - [x] All mappers implemented
 - [x] NO hardcoded secrets
 - [x] Tests for ALL services (100% coverage)
@@ -568,174 +586,227 @@ Wave 2 is COMPLETE when:
 
 ### 3.1 What to Implement
 
-#### Controllers with Guards
-```typescript
-// MANDATORY: Controllers with proper guards
-// MANDATORY: Endpoints MUST match OpenAPI paths and methods from 05c_api_specification.yaml
+#### FastAPI Routers with Auth Dependencies
+```python
+# MANDATORY: Routers with proper authentication dependencies
+# MANDATORY: Endpoints MUST match OpenAPI paths and methods from 05c_api_specification.yaml
 
-// backend/src/modules/task/api/controllers/task.controller.ts
-@Controller('api/tasks')  // Path from OpenAPI: /api/tasks
-@UseGuards(JwtAuthGuard)
-export class TaskController {
-  constructor(private readonly taskService: TaskService) {}
+# backend/app/modules/task/api/routers/task_router.py
+from fastapi import APIRouter, Depends, HTTPException, status
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
-  // MANDATORY: Rate limiting on creation
-  @Throttle(10, 60) // 10 per minute
-  @Post()  // Method from OpenAPI: POST /api/tasks
-  async create(
-    @Body() createDto: CreateTaskDto,
-    @CurrentUser() user: User,
-  ): Promise<TaskDto> {
-    return this.taskService.createTask(createDto, user.id);
-  }
+from app.api.deps import get_current_user, get_task_service
+from app.modules.task.application.services import TaskService
+from app.modules.task.application.dto import CreateTaskDTO, UpdateTaskDTO, TaskDTO
+from app.modules.user.domain.entities import User
 
-  // MANDATORY: Ownership guard on protected routes
-  @UseGuards(TaskOwnershipGuard)
-  @Patch(':id')  // Method from OpenAPI: PATCH /api/tasks/{id}
-  async update(
-    @Param('id') id: string,
-    @Body() updateDto: UpdateTaskDto,
-    @CurrentUser() user: User,
-  ): Promise<TaskDto> {
-    return this.taskService.updateTask(id, updateDto, user.id);
-  }
+limiter = Limiter(key_func=get_remote_address)
 
-  // All endpoints from OpenAPI spec
-}
+router = APIRouter(
+    prefix="/api/tasks",  # Path from OpenAPI: /api/tasks
+    tags=["tasks"],
+)
+
+# MANDATORY: Rate limiting on creation
+@router.post("", response_model=TaskDTO, status_code=status.HTTP_201_CREATED)
+@limiter.limit("10/minute")  # 10 per minute
+async def create_task(
+    dto: CreateTaskDTO,
+    current_user: User = Depends(get_current_user),   # JWT auth
+    service: TaskService = Depends(get_task_service),
+) -> TaskDTO:
+    result = await service.create_task(dto, current_user.id)
+    if result.is_failure:
+        raise HTTPException(status_code=400, detail=result.error.message)
+    return result.value
+
+# MANDATORY: Ownership enforced inside service layer
+@router.patch("/{task_id}", response_model=TaskDTO)
+async def update_task(
+    task_id: str,
+    dto: UpdateTaskDTO,
+    current_user: User = Depends(get_current_user),
+    service: TaskService = Depends(get_task_service),
+) -> TaskDTO:
+    result = await service.update_task(task_id, dto, current_user.id)
+    if result.is_failure:
+        if result.error.code == "NOT_FOUND":
+            raise HTTPException(status_code=404, detail=result.error.message)
+        if result.error.code == "FORBIDDEN":
+            raise HTTPException(status_code=403, detail=result.error.message)
+        raise HTTPException(status_code=400, detail=result.error.message)
+    return result.value
+
+# All endpoints from OpenAPI spec
 ```
 
 **Implementation Checklist:**
-- [ ] TaskController with ALL endpoints
-- [ ] AuthController with rate limiting (5/15min)
-- [ ] ProjectController with ALL endpoints
-- [ ] All controllers use Guards
-- [ ] Ownership guards on protected routes
-- [ ] Rate limiting on critical endpoints
-- [ ] API paths match OpenAPI paths exactly (e.g., /api/tasks/:id)
+- [ ] task_router with ALL endpoints
+- [ ] auth_router with rate limiting (5/15min via slowapi)
+- [ ] project_router with ALL endpoints
+- [ ] All routers use `Depends(get_current_user)` for auth
+- [ ] Ownership checks enforced in service layer
+- [ ] Rate limiting on critical endpoints (slowapi)
+- [ ] API paths match OpenAPI paths exactly (e.g., /api/tasks/{task_id})
 - [ ] HTTP methods match OpenAPI methods (GET, POST, PUT, DELETE, PATCH)
-- [ ] Request DTOs match OpenAPI request schemas
+- [ ] Request DTOs match OpenAPI request schemas (Pydantic v2)
 - [ ] Response DTOs match OpenAPI response schemas
 - [ ] HTTP status codes match OpenAPI responses (200, 201, 400, 401, 403, 404)
 
-#### Guards
-```typescript
-// MANDATORY: Ownership guards
+#### Authentication Dependency
+```python
+# MANDATORY: JWT auth dependency (FastAPI Depends)
 
-// backend/src/modules/task/api/guards/task-ownership.guard.ts
-@Injectable()
-export class TaskOwnershipGuard implements CanActivate {
-  constructor(
-    @Inject('ITaskRepository')
-    private readonly taskRepository: ITaskRepository,
-  ) {}
+# backend/app/api/deps.py
+from fastapi import Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordBearer
+from jose import jwt, JWTError
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const taskId = request.params.id;
-    const userId = request.user.id;
+from app.core.config import settings
+from app.modules.user.domain.repositories import IUserRepository
+from app.modules.user.domain.entities import User
 
-    const task = await this.taskRepository.findById(taskId);
-    if (!task) throw new NotFoundException();
-    if (task.userId !== userId) throw new ForbiddenException();
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-    return true;
-  }
-}
+async def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    user_repo: IUserRepository = Depends(get_user_repository),
+) -> User:
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_ACCESS_SECRET,
+            algorithms=[settings.JWT_ALGORITHM],
+        )
+        user_id: str | None = payload.get("sub")
+        if user_id is None:
+            raise credentials_exception
+    except JWTError:
+        raise credentials_exception
+
+    user = await user_repo.find_by_id(user_id)
+    if user is None:
+        raise credentials_exception
+    return user
 ```
 
 **Implementation Checklist:**
-- [ ] TaskOwnershipGuard
-- [ ] ProjectOwnershipGuard
-- [ ] JwtAuthGuard configured
-- [ ] All guards tested
+- [ ] `get_current_user` dependency implemented
+- [ ] Ownership checks in service layer (not dependency)
+- [ ] JWT decoding with environment secret
+- [ ] All dependencies tested
 
-#### Global Configuration
-```typescript
-// MANDATORY: Global ValidationPipe
+#### Global Application Configuration
+```python
+# MANDATORY: FastAPI application setup with security middleware
 
-// backend/src/main.ts
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+# backend/app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+from secure import Secure
 
-  // MANDATORY: Global ValidationPipe (from security requirements)
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    forbidNonWhitelisted: true,
-    transform: true,
-  }));
+from app.core.config import settings
+from app.api.routers import task_router, auth_router, project_router
 
-  // MANDATORY: Security headers (from security requirements)
-  app.use(helmet({
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"], // NO 'unsafe-inline'
-      },
-    },
-    hsts: { maxAge: 31536000, includeSubDomains: true },
-  }));
+# Rate limiter (slowapi)
+limiter = Limiter(key_func=get_remote_address)
 
-  // MANDATORY: CORS configuration
-  app.enableCors({
-    origin: process.env.FRONTEND_URL, // NO wildcard
-    credentials: true,
-  });
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json",
+)
 
-  await app.listen(process.env.PORT || 3000);
-}
+# MANDATORY: Attach rate limiter
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
+# MANDATORY: CORS configuration (NO wildcard)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.FRONTEND_ORIGINS,   # list from config, NO "*"
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
+# MANDATORY: Security headers
+secure_headers = Secure(
+    csp="default-src 'self'; script-src 'self'",  # NO 'unsafe-inline'
+    hsts="max-age=31536000; includeSubDomains",
+    xfo="DENY",
+)
+
+@app.middleware("http")
+async def set_secure_headers(request, call_next):
+    response = await call_next(request)
+    secure_headers.framework.fastapi(response)
+    return response
+
+# Routers
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
+app.include_router(task_router)
+app.include_router(project_router, prefix="/api/projects", tags=["projects"])
 ```
 
 **Configuration Checklist:**
-- [ ] Global ValidationPipe enabled
-- [ ] Security headers configured
-- [ ] CORS properly restricted
-- [ ] Rate limiting configured globally
-- [ ] Error filter configured
+- [ ] Pydantic v2 validation enforced globally (automatic with FastAPI)
+- [ ] Security headers configured (secure library)
+- [ ] CORS properly restricted (no wildcards)
+- [ ] Rate limiting configured globally (slowapi)
+- [ ] Global exception handlers configured
 
 ### 3.2 What to Test
 
-```typescript
-// MANDATORY: E2E tests for API endpoints
+```python
+# MANDATORY: E2E tests for API endpoints (pytest + httpx + FastAPI TestClient)
 
-// backend/test/e2e/task.e2e-spec.ts
-describe('Task API (e2e)', () => {
-  let app: INestApplication;
+# backend/tests/e2e/test_task_api.py
+import pytest
+from httpx import AsyncClient
+from app.main import app
 
-  beforeAll(async () => {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+@pytest.mark.asyncio
+async def test_create_task_when_authenticated(valid_token: str) -> None:
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/api/tasks",
+            headers={"Authorization": f"Bearer {valid_token}"},
+            json={"title": "Test Task", "priority": "HIGH"},
+        )
+    assert response.status_code == 201
+    assert response.json()["title"] == "Test Task"
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
-  });
+@pytest.mark.asyncio
+async def test_create_task_returns_401_when_not_authenticated() -> None:
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.post(
+            "/api/tasks",
+            json={"title": "Test Task"},
+        )
+    assert response.status_code == 401
 
-  it('/api/tasks (POST) should create task when authenticated', () => {
-    return request(app.getHttpServer())
-      .post('/api/tasks')
-      .set('Authorization', `Bearer ${validToken}`)
-      .send({ title: 'Test Task', priority: 'HIGH' })
-      .expect(201)
-      .expect((res) => {
-        expect(res.body.title).toBe('Test Task');
-      });
-  });
-
-  it('/api/tasks (POST) should return 401 when not authenticated', () => {
-    return request(app.getHttpServer())
-      .post('/api/tasks')
-      .send({ title: 'Test Task' })
-      .expect(401);
-  });
-
-  it('/api/tasks/:id (PATCH) should return 403 if not owner', () => {
-    return request(app.getHttpServer())
-      .patch(`/api/tasks/${otherUserTaskId}`)
-      .set('Authorization', `Bearer ${validToken}`)
-      .send({ title: 'Updated' })
-      .expect(403);
-  });
-});
+@pytest.mark.asyncio
+async def test_update_task_returns_403_if_not_owner(
+    valid_token: str,
+    other_user_task_id: str,
+) -> None:
+    async with AsyncClient(app=app, base_url="http://test") as client:
+        response = await client.patch(
+            f"/api/tasks/{other_user_task_id}",
+            headers={"Authorization": f"Bearer {valid_token}"},
+            json={"title": "Updated"},
+        )
+    assert response.status_code == 403
 ```
 
 **Test Coverage Requirements:**
@@ -775,12 +846,12 @@ Must verify:
 ### 3.4 Acceptance Criteria
 
 Wave 3 is COMPLETE when:
-- [x] All controllers implemented
-- [x] All guards implemented
-- [x] Global ValidationPipe enabled
-- [x] Security headers configured
-- [x] Rate limiting configured
-- [x] CORS properly restricted
+- [x] All FastAPI routers implemented
+- [x] All auth dependencies (`Depends(get_current_user)`) in place
+- [x] Pydantic v2 validation enforced on every endpoint
+- [x] Security headers configured (secure library)
+- [x] Rate limiting configured (slowapi)
+- [x] CORS properly restricted (no wildcards)
 - [x] E2E tests pass (100%)
 - [x] Backend starts without errors
 - [x] Smoke tests pass
@@ -846,8 +917,8 @@ After each wave, Security Review Agent (19) MUST validate:
 - ❌ Hardcode secrets ("just for testing")
 - ❌ Use default values for security configs
 - ❌ Reduce password minimum from 12 to "make it easier"
-- ❌ Disable ValidationPipe ("it causes hang")
-- ❌ Allow console.log in production code
+- Disable Pydantic validation or use `model_config = ConfigDict(extra="allow")` to bypass checks
+- Allow `print()` statements in production code (use structured logging)
 - ❌ Commit with linting warnings ("just warnings, not errors")
 - ❌ Accept < 100% coverage ("99% is close enough")
 - ❌ Continue to next wave if current wave post-hook fails

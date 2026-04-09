@@ -512,91 +512,127 @@ export const taskApi = {
 
 ---
 
-## Backend NestJS Code Generation
+## Backend FastAPI Code Generation
 
-### Manual DTO Creation from OpenAPI
+### Manual Pydantic v2 Schema Creation from OpenAPI
 
-```typescript
-// src/modules/task/api/dto/create-task-api.dto.ts
-import { IsString, IsEnum, IsOptional, IsUUID, MinLength, MaxLength } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+```python
+# app/modules/task/api/schemas/task_schemas.py
+from datetime import datetime
+from enum import Enum
+from typing import Annotated, Optional
+from uuid import UUID
 
-export enum TaskStatus {
-  TODO = 'TODO',
-  IN_PROGRESS = 'IN_PROGRESS',
-  DONE = 'DONE',
-}
+from pydantic import BaseModel, ConfigDict, Field
 
-export enum TaskPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-}
 
-export class CreateTaskApiDto {
-  @ApiProperty({ minLength: 1, maxLength: 200 })
-  @IsString()
-  @MinLength(1)
-  @MaxLength(200)
-  title: string;
+class TaskStatus(str, Enum):
+    TODO = "TODO"
+    IN_PROGRESS = "IN_PROGRESS"
+    DONE = "DONE"
 
-  @ApiPropertyOptional({ maxLength: 2000 })
-  @IsString()
-  @IsOptional()
-  @MaxLength(2000)
-  description?: string;
 
-  @ApiPropertyOptional({ enum: TaskStatus, default: TaskStatus.TODO })
-  @IsEnum(TaskStatus)
-  @IsOptional()
-  status?: TaskStatus;
+class TaskPriority(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
 
-  @ApiPropertyOptional({ enum: TaskPriority, default: TaskPriority.MEDIUM })
-  @IsEnum(TaskPriority)
-  @IsOptional()
-  priority?: TaskPriority;
 
-  @ApiPropertyOptional({ type: String, format: 'date-time' })
-  @IsString()
-  @IsOptional()
-  dueDate?: string;
+class CreateTaskSchema(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
 
-  @ApiProperty({ type: String, format: 'uuid' })
-  @IsUUID()
-  projectId: string;
+    title: Annotated[str, Field(min_length=1, max_length=200)]
+    description: Annotated[Optional[str], Field(default=None, max_length=2000)]
+    status: TaskStatus = TaskStatus.TODO
+    priority: TaskPriority = TaskPriority.MEDIUM
+    due_date: Optional[datetime] = None
+    project_id: UUID
+    assignee_id: Optional[UUID] = None
 
-  @ApiPropertyOptional({ type: String, format: 'uuid' })
-  @IsUUID()
-  @IsOptional()
-  assigneeId?: string;
-}
+
+class UpdateTaskSchema(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    title: Annotated[Optional[str], Field(default=None, min_length=1, max_length=200)]
+    description: Annotated[Optional[str], Field(default=None, max_length=2000)]
+    status: Optional[TaskStatus] = None
+    priority: Optional[TaskPriority] = None
+    due_date: Optional[datetime] = None
+    assignee_id: Optional[UUID] = None
+
+
+class TaskResponseSchema(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    title: str
+    description: Optional[str] = None
+    status: TaskStatus
+    priority: Optional[TaskPriority] = None
+    due_date: Optional[datetime] = None
+    project_id: Optional[UUID] = None
+    assignee_id: Optional[UUID] = None
+    created_at: datetime
+    updated_at: datetime
 ```
 
-### Swagger UI Integration
+### FastAPI Router and OpenAPI Docs Integration
 
-```typescript
-// src/main.ts
-import { NestFactory } from '@nestjs/core';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { AppModule } from './app.module';
+```python
+# app/main.py
+from fastapi import FastAPI
+from fastapi.security import HTTPBearer
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+from app.modules.task.api.routers import task_router
 
-  // Swagger configuration
-  const config = new DocumentBuilder()
-    .setTitle('Task Manager API')
-    .setDescription('RESTful API for task management system')
-    .setVersion('1.0.0')
-    .addBearerAuth()
-    .build();
+bearer_scheme = HTTPBearer()
 
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+app = FastAPI(
+    title="Task Manager API",
+    description="RESTful API for task management system",
+    version="1.0.0",
+    docs_url="/api/docs",
+    redoc_url="/api/redoc",
+    openapi_url="/api/openapi.json",
+)
 
-  await app.listen(3001);
-}
-bootstrap();
+app.include_router(task_router.router, prefix="/api/v1", tags=["tasks"])
+
+
+# app/modules/task/api/routers/task_router.py
+from uuid import UUID
+from fastapi import APIRouter, Depends, Query, status
+
+from app.modules.task.api.schemas.task_schemas import (
+    CreateTaskSchema,
+    TaskResponseSchema,
+    TaskStatus,
+    UpdateTaskSchema,
+)
+from app.modules.task.application.services import TaskService
+from app.modules.auth.dependencies import get_current_user
+
+router = APIRouter(prefix="/tasks")
+
+
+@router.get("", response_model=list[TaskResponseSchema])
+async def list_tasks(
+    project_id: UUID | None = Query(default=None),
+    status_filter: TaskStatus | None = Query(default=None, alias="status"),
+    limit: int = Query(default=20, ge=1, le=100),
+    service: TaskService = Depends(),
+    current_user=Depends(get_current_user),
+):
+    return await service.list_tasks(project_id=project_id, status=status_filter, limit=limit)
+
+
+@router.post("", response_model=TaskResponseSchema, status_code=status.HTTP_201_CREATED)
+async def create_task(
+    payload: CreateTaskSchema,
+    service: TaskService = Depends(),
+    current_user=Depends(get_current_user),
+):
+    return await service.create_task(payload)
 ```
 
 ---
@@ -669,59 +705,49 @@ export const handlers = [
 
 ### Validate Implementation Against OpenAPI Spec
 
-```typescript
-// test/contract/api-contract.spec.ts
-import * as request from 'supertest';
-import { Test } from '@nestjs/testing';
-import { AppModule } from '@/app.module';
-import { INestApplication } from '@nestjs/common';
-import * as OpenAPIValidator from 'express-openapi-validator';
-import * as YAML from 'yamljs';
+```python
+# tests/contract/test_api_contract.py
+import pytest
+import yaml
+from fastapi.testclient import TestClient
+from openapi_core import Spec
+from openapi_core.contrib.starlette import StarletteOpenAPIRequest, StarletteOpenAPIResponse
+from openapi_core.validation.request import openapi_request_validator
+from openapi_core.validation.response import openapi_response_validator
 
-describe('API Contract Tests', () => {
-  let app: INestApplication;
-  const spec = YAML.load('./openapi.yaml');
+from app.main import app
 
-  beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
 
-    app = moduleRef.createNestApplication();
+@pytest.fixture(scope="module")
+def spec():
+    with open("./openapi.yaml", "r") as f:
+        return Spec.from_dict(yaml.safe_load(f))
 
-    // Add OpenAPI validator middleware
-    app.use(
-      OpenAPIValidator.middleware({
-        apiSpec: spec,
-        validateRequests: true,
-        validateResponses: true,
-      })
-    );
 
-    await app.init();
-  });
+@pytest.fixture(scope="module")
+def client():
+    return TestClient(app)
 
-  it('POST /tasks should match OpenAPI spec', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/api/v1/tasks')
-      .send({
-        title: 'Test Task',
-        projectId: '550e8400-e29b-41d4-a716-446655440000',
-      });
 
-    expect(response.status).toBe(201);
-    // Validator automatically checks response matches spec
-  });
+def test_post_tasks_matches_openapi_spec(client, spec):
+    response = client.post(
+        "/api/v1/tasks",
+        json={
+            "title": "Test Task",
+            "project_id": "550e8400-e29b-41d4-a716-446655440000",
+        },
+    )
 
-  it('GET /tasks should match OpenAPI spec', async () => {
-    const response = await request(app.getHttpServer())
-      .get('/api/v1/tasks')
-      .query({ status: 'TODO', limit: 20 });
+    assert response.status_code == 201
+    # openapi-core validates response payload against the spec
+    openapi_response_validator.validate(spec, response.request, response)
 
-    expect(response.status).toBe(200);
-    // Validator automatically checks response structure
-  });
-});
+
+def test_get_tasks_matches_openapi_spec(client, spec):
+    response = client.get("/api/v1/tasks", params={"status": "TODO", "limit": 20})
+
+    assert response.status_code == 200
+    openapi_response_validator.validate(spec, response.request, response)
 ```
 
 ---
@@ -740,17 +766,24 @@ paths:
       # Version 2 with breaking changes
 ```
 
-```typescript
-// NestJS controller
-@Controller('v1/tasks')
-export class TasksV1Controller {
-  // V1 implementation
-}
+```python
+# FastAPI routers per version
+from fastapi import APIRouter
 
-@Controller('v2/tasks')
-export class TasksV2Controller {
-  // V2 implementation with breaking changes
-}
+tasks_v1 = APIRouter(prefix="/v1/tasks", tags=["tasks-v1"])
+tasks_v2 = APIRouter(prefix="/v2/tasks", tags=["tasks-v2"])
+
+
+@tasks_v1.get("")
+async def list_tasks_v1():
+    # V1 implementation
+    ...
+
+
+@tasks_v2.get("")
+async def list_tasks_v2():
+    # V2 implementation with breaking changes
+    ...
 ```
 
 ### Deprecation Headers

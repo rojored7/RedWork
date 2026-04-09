@@ -1,0 +1,48 @@
+# ============================================================================
+# Child Pipeline: API CONTRACT
+# ============================================================================
+# Agents 05c (OpenAPI Spec) + 09b (Implementation Contract)
+# ============================================================================
+
+include:
+  - local: .gitlab/ci/_templates.yml
+
+stages:
+  - openapi
+  - contract
+
+"05c: api-specification":
+  stage: openapi
+  extends: .wait-for-file
+  variables:
+    AGENT_LABEL: "Agent 05c - API-First Specification (OpenAPI 3.0)"
+    FILE_NAME: "outputs/05c_api_specification.yaml"
+    REQUIRED_SECTIONS: "openapi|paths|components"
+  environment:
+    name: agents/api-contract/05c-openapi
+    action: prepare
+  after_script:
+    - |
+      printf "\n"
+      if [ -f outputs/05c_api_specification.yaml ]; then
+        printf "  >> FastAPI compatibility check...\n"
+        if grep -qi "nestjs\|@nestjs\|class-validator" outputs/05c_api_specification.yaml; then
+          printf "  >> \e[33mWARN\e[0m  | NestJS references in OpenAPI spec (legacy project)\n"
+        else
+          printf "  >> \e[32mOK\e[0m    | Spec is FastAPI-compatible\n"
+        fi
+      fi
+
+"09b: implementation-contract":
+  stage: contract
+  extends: .wait-for-file
+  variables:
+    AGENT_LABEL: "Agent 09b - Implementation Contract Generator"
+    FILE_NAME: "outputs/09b_implementation_contract.md"
+    # Case-insensitive match: matches "WAVE 1", "Wave 1", "wave 1"
+    REQUIRED_SECTIONS: "WAVE 1|WAVE 2|Quality Gates"
+  environment:
+    name: agents/api-contract/09b-implementation
+    action: prepare
+  needs:
+    - "05c: api-specification"

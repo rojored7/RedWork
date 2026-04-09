@@ -240,7 +240,7 @@ Here's what a correctly structured sprint plan looks like:
 ├── sprint_01/
 │   ├── sprint_goal.md                           # "Sprint 1 Goal: Foundation & Authentication"
 │   ├── sprint_overview.md                       # "This sprint delivers infrastructure and auth"
-│   ├── backend_tasks.md                         # "S1-BE-001: Setup NestJS project..."
+│   ├── backend_tasks.md                         # "S1-BE-001: Setup FastAPI project..."
 │   ├── frontend_tasks.md                        # "S1-FE-001: Initialize React app..."
 │   ├── infrastructure_tasks.md                  # "S1-INFRA-001: Provision AWS VPC..."
 │   ├── dependencies.md                          # "S1-BE-005 depends on S1-INFRA-002..."

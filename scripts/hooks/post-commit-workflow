@@ -1,165 +1,155 @@
 #!/bin/bash
-# Post-commit hook for workflow automation
-# Detects agent completions and updates workflow status
+# framework-workflow-hook-v2
+# ============================================================================
+# Post-commit hook for Framework workflow automation
+# ============================================================================
+# Two responsibilities:
+#   1. Agent-artifact commits (01..05_*.md): run validate-agent-XX.sh, push.
+#   2. Task commits ([TASK-SN-XX-NNN] ...): update workflow status, detect
+#      wave completion, trigger post-wave-N hook and completeness gate.
+#
+# This hook is IDEMPOTENT and NON-BLOCKING for the commit itself. A failing
+# post-wave validation prints a loud error and leaves a flag file, but does
+# NOT rewrite history.
+#
+# The marker line above ("framework-workflow-hook-v2") is checked by
+# Agent 25's Phase 0 to verify the correct version is installed.
+# ============================================================================
 
-set -e
+set +e
 
 echo ""
 echo "======================================"
-echo "POST-COMMIT: Workflow Automation"
+echo "POST-COMMIT: Framework Workflow v2"
 echo "======================================"
 
-# Get list of files in the last commit
-CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD)
-
-# Check if agent_01 output was committed
-if echo "$CHANGED_FILES" | grep -q "01_product_discovery.md"; then
-    echo "Detected: 01_product_discovery.md"
-    echo ""
-
-    # Run validation
-    if bash scripts/workflow/validate-agent-01.sh; then
-        echo ""
-        echo "Validation PASSED. Pushing to GitLab..."
-
-        # Push to GitLab (this triggers the pipeline detection)
-        git push origin framework
-
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "======================================"
-            echo "Agent 01 pushed to GitLab successfully"
-            echo "Pipeline will detect it within 30 seconds"
-            echo "======================================"
-        else
-            echo ""
-            echo "ERROR: Failed to push to GitLab"
-            echo "Please push manually: git push origin framework"
-        fi
-    else
-        echo ""
-        echo "WARNING: Validation FAILED for agent_01"
-        echo "Please fix issues and commit again"
-        exit 1
-    fi
+# ----------------------------------------------------------------------------
+# Detect framework scripts path (project vs framework repo mode)
+# ----------------------------------------------------------------------------
+if [ -d ".framework/scripts" ]; then
+    SCRIPTS="./.framework/scripts"
+else
+    SCRIPTS="./scripts"
 fi
 
-# Check if agent_02 output was committed
-if echo "$CHANGED_FILES" | grep -q "02_domain_model.md"; then
-    echo "Detected: 02_domain_model.md"
-    echo ""
+CHANGED_FILES=$(git diff-tree --no-commit-id --name-only -r HEAD 2>/dev/null || true)
+COMMIT_MSG=$(git log -1 --pretty=%B 2>/dev/null || true)
+COMMIT_SHA=$(git rev-parse HEAD 2>/dev/null || true)
 
-    # Run validation
-    if bash scripts/workflow/validate-agent-02.sh; then
-        echo ""
-        echo "Validation PASSED. Pushing to GitLab..."
-
-        # Push to GitLab (this triggers the pipeline detection)
-        git push origin framework
-
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "======================================"
-            echo "Agent 02 pushed to GitLab successfully"
-            echo "Pipeline will detect it within 30 seconds"
-            echo "======================================"
-        else
-            echo ""
-            echo "ERROR: Failed to push to GitLab"
-            echo "Please push manually: git push origin framework"
+# ============================================================================
+# BRANCH A — Agent artifact commits (01..05_*.md)
+# ============================================================================
+handle_agent_artifact() {
+    local agent_num="$1"
+    local pattern="$2"
+    if echo "$CHANGED_FILES" | grep -q "$pattern"; then
+        echo "Detected agent_${agent_num} artifact: $pattern"
+        if [ -x "$SCRIPTS/workflow/validate-agent-${agent_num}.sh" ]; then
+            if bash "$SCRIPTS/workflow/validate-agent-${agent_num}.sh"; then
+                echo "Validation PASSED for agent_${agent_num}"
+                bash "$SCRIPTS/workflow/update-workflow-status.sh" "agent_${agent_num}" || true
+            else
+                echo "WARNING: agent_${agent_num} validation FAILED"
+                return 1
+            fi
         fi
-    else
-        echo ""
-        echo "WARNING: Validation FAILED for agent_02"
-        echo "Please fix issues and commit again"
-        exit 1
     fi
-fi
+    return 0
+}
 
-# Check if agent_03 output was committed
-if echo "$CHANGED_FILES" | grep -q "03_context_map.md"; then
-    echo "Detected: 03_context_map.md"
-    echo ""
+handle_agent_artifact "01" "01_product_discovery.md" || true
+handle_agent_artifact "02" "02_domain_model.md"      || true
+handle_agent_artifact "03" "03_context_map.md"       || true
+handle_agent_artifact "04" "04_architecture_decision.md" || true
+handle_agent_artifact "05" "05_service_design.md"    || true
 
-    if bash scripts/workflow/validate-agent-03.sh; then
-        echo ""
-        echo "Validation PASSED. Pushing to GitLab..."
-        git push origin framework
+# ============================================================================
+# BRANCH B — Task commits: [TASK-SN-XX-NNN] description
+# ============================================================================
+TASK_PATTERN='^\[TASK-(S([0-9]+)-([A-Z]+)-([0-9]{3}))\]'
+if [[ "$COMMIT_MSG" =~ $TASK_PATTERN ]]; then
+    TASK_ID="${BASH_REMATCH[1]}"
+    SPRINT_NUM=$(printf "%02d" "${BASH_REMATCH[2]}")
+    AGENT_CODE="${BASH_REMATCH[3]}"
 
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "======================================"
-            echo "Agent 03 pushed to GitLab successfully"
-            echo "Pipeline will detect it within 30 seconds"
-            echo "======================================"
-        else
-            echo ""
-            echo "ERROR: Failed to push to GitLab"
-            echo "Please push manually: git push origin framework"
-        fi
-    else
-        echo ""
-        echo "WARNING: Validation FAILED for agent_03"
-        echo "Please fix issues and commit again"
-        exit 1
+    echo "Detected task commit: $TASK_ID (sprint=$SPRINT_NUM, agent=$AGENT_CODE)"
+
+    # Map agent code to wave
+    case "$AGENT_CODE" in
+        BE)         WAVE_NAME="backend";  WAVE_NUM="3"; POST_WAVE_SCRIPT="post-wave-3-backend.sh" ;;
+        API)        WAVE_NAME="api";      WAVE_NUM="4"; POST_WAVE_SCRIPT="post-wave-4-api.sh" ;;
+        FE)         WAVE_NAME="frontend"; WAVE_NUM="5"; POST_WAVE_SCRIPT="post-wave-5-frontend.sh" ;;
+        INFRA|INF)  WAVE_NAME="infra";    WAVE_NUM="0"; POST_WAVE_SCRIPT="" ;;
+        TEST|QA)    WAVE_NAME="test";     WAVE_NUM="6"; POST_WAVE_SCRIPT="" ;;
+        *)          WAVE_NAME="unknown";  WAVE_NUM="";  POST_WAVE_SCRIPT="" ;;
+    esac
+
+    # Refresh workflow status (idempotent, no self-commit)
+    if [ -x "$SCRIPTS/workflow/update-workflow-status.sh" ]; then
+        bash "$SCRIPTS/workflow/update-workflow-status.sh" "$TASK_ID" || true
     fi
-fi
 
-# Check if agent_04 output was committed
-if echo "$CHANGED_FILES" | grep -q "04_architecture_decision.md"; then
-    echo "Detected: 04_architecture_decision.md"
-    echo ""
-
-    if bash scripts/workflow/validate-agent-04.sh; then
-        echo ""
-        echo "Validation PASSED. Pushing to GitLab..."
-        git push origin framework
-
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "======================================"
-            echo "Agent 04 pushed to GitLab successfully"
-            echo "Pipeline will detect it within 30 seconds"
-            echo "======================================"
-        else
-            echo ""
-            echo "ERROR: Failed to push to GitLab"
-            echo "Please push manually: git push origin framework"
-        fi
-    else
-        echo ""
-        echo "WARNING: Validation FAILED for agent_04"
-        echo "Please fix issues and commit again"
-        exit 1
+    # Detect wave completion: are ALL tasks of this wave marked completed?
+    STATE_FILE=$(find .project-state -name "sprint_${SPRINT_NUM}_*_tasks.json" -type f 2>/dev/null | head -n 1)
+    WAVE_COMPLETE="no"
+    if [ -n "$STATE_FILE" ] && command -v python3 >/dev/null 2>&1; then
+        WAVE_COMPLETE=$(python3 -c "
+import json, sys
+try:
+    with open('$STATE_FILE') as f:
+        d = json.load(f)
+    tasks = d.get('tasks', [])
+    if not tasks:
+        print('no'); sys.exit()
+    all_done = all(t.get('status') == 'completed' for t in tasks)
+    print('yes' if all_done else 'no')
+except Exception:
+    print('no')
+" 2>/dev/null)
     fi
-fi
 
-# Check if agent_05 output was committed
-if echo "$CHANGED_FILES" | grep -q "05_service_design.md"; then
-    echo "Detected: 05_service_design.md"
-    echo ""
+    if [ "${FRAMEWORK_SKIP_POSTWAVE:-0}" = "1" ]; then
+        echo "FRAMEWORK_SKIP_POSTWAVE=1 — skipping post-wave validation"
+        WAVE_COMPLETE="skipped"
+    fi
 
-    if bash scripts/workflow/validate-agent-05.sh; then
+    if [ "$WAVE_COMPLETE" = "yes" ] && [ -n "$POST_WAVE_SCRIPT" ]; then
         echo ""
-        echo "Validation PASSED. Pushing to GitLab..."
-        git push origin framework
+        echo "======================================"
+        echo "WAVE ${WAVE_NUM} (${WAVE_NAME}) COMPLETE"
+        echo "Invoking $POST_WAVE_SCRIPT..."
+        echo "======================================"
 
-        if [ $? -eq 0 ]; then
-            echo ""
-            echo "======================================"
-            echo "Agent 05 pushed to GitLab successfully"
-            echo "Pipeline will detect it within 30 seconds"
-            echo "======================================"
+        WAVE_HOOK="$SCRIPTS/hooks/$POST_WAVE_SCRIPT"
+        if [ -x "$WAVE_HOOK" ]; then
+            if bash "$WAVE_HOOK"; then
+                echo "Wave ${WAVE_NUM} post-hook PASSED"
+
+                # Run completeness gate for this wave
+                if [ -x "$SCRIPTS/workflow/validate-sprint-completeness.sh" ]; then
+                    bash "$SCRIPTS/workflow/validate-sprint-completeness.sh" \
+                         "$SPRINT_NUM" --wave "$WAVE_NAME"
+                    GATE_EXIT=$?
+                    if [ $GATE_EXIT -eq 0 ]; then
+                        echo "Wave ${WAVE_NUM} completeness gate CLEARED"
+                    else
+                        echo "WARNING: Wave ${WAVE_NUM} completeness gate FAILED"
+                        mkdir -p .project-state
+                        touch ".project-state/wave_${WAVE_NUM}_blocked.flag"
+                    fi
+                fi
+            else
+                echo "ERROR: Wave ${WAVE_NUM} post-hook FAILED"
+                mkdir -p .project-state
+                touch ".project-state/wave_${WAVE_NUM}_blocked.flag"
+            fi
         else
-            echo ""
-            echo "ERROR: Failed to push to GitLab"
-            echo "Please push manually: git push origin framework"
+            echo "WARNING: $WAVE_HOOK not found or not executable"
         fi
     else
-        echo ""
-        echo "WARNING: Validation FAILED for agent_05"
-        echo "Please fix issues and commit again"
-        exit 1
+        if [ "$WAVE_COMPLETE" = "no" ]; then
+            echo "Wave ${WAVE_NUM} progress: waiting for more tasks"
+        fi
     fi
 fi
 

@@ -137,11 +137,61 @@ For each bounded context relationship identified in the context map:
 
 ### 8. Technology Stack Recommendations
 
-- Programming languages and frameworks
-- Data storage technologies
-- Infrastructure and platform choices
-- Monitoring and observability tools
-- CI/CD pipeline approach
+**CRITICAL - MANDATORY BACKEND FRAMEWORK:**
+
+**Backend Framework: FastAPI (Python)**
+- **NON-NEGOTIABLE**: All backend services MUST use FastAPI
+- **Version**: FastAPI 0.104+ with Python 3.11+
+- **Rationale**: Type-safe, async-native, automatic OpenAPI generation, high performance, native Pydantic integration
+- **ORM**: SQLAlchemy 2.0+ (async)
+- **Validation**: Pydantic v2+
+- **Migration**: Alembic
+
+**DO NOT RECOMMEND (PROHIBITED):**
+- NestJS (TypeScript) - PROHIBITED for backend
+- Express.js (Node.js) - PROHIBITED for backend
+- Spring Boot (Java) - PROHIBITED for backend
+- Django (Python) - PROHIBITED (use FastAPI instead)
+- Flask (Python) - PROHIBITED (use FastAPI instead)
+- Any other backend framework - PROHIBITED
+
+**If this agent suggests anything other than FastAPI for backend, this is a CRITICAL ERROR that MUST trigger Agent 04c for correction.**
+
+**Frontend Framework: React 18+ with TypeScript**
+- Build tool: Vite 4+
+- State management: Zustand or React Query (TanStack Query)
+- UI library: Tailwind CSS 3+ or Material UI
+- Routing: React Router v6+
+
+**Database: PostgreSQL 15+**
+- Primary database for all structured data
+- Redis 7+ for caching and sessions
+- No NoSQL unless explicitly justified
+
+**Infrastructure:**
+- Containerization: Docker + Docker Compose
+- Orchestration: Kubernetes (production)
+- CI/CD: GitLab CI or GitHub Actions
+
+**Monitoring & Observability:**
+- Metrics: Prometheus + Grafana
+- Tracing: OpenTelemetry
+- Error tracking: Sentry
+- Logging: Loki or ELK Stack
+
+**Testing:**
+- Backend: pytest, pytest-cov, pytest-asyncio, httpx
+- Frontend: Vitest, React Testing Library, Playwright
+- Integration: pytest with FastAPI TestClient
+
+**Code Quality:**
+- Python: Ruff (linter + formatter), mypy (types)
+- TypeScript: ESLint, Prettier, TypeScript strict mode
+
+**Other concerns to document:**
+- CI/CD pipeline approach (specific implementation)
+- Data storage technologies (if additional to PostgreSQL)
+- Infrastructure and platform choices (cloud provider)
 
 ### 9. Migration Path (if applicable)
 

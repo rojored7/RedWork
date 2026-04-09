@@ -261,11 +261,13 @@ From these inputs, you must:
 
 **Define in `05c_api_client_specification.md`:**
 
-1. **Backend (NestJS) Code Generation:**
-   - Tool: `@nestjs/swagger` + manual DTO creation
-   - Generate: Request/Response DTOs
-   - Generate: Controller interfaces
-   - Validate: Implementation matches spec
+1. **Backend (FastAPI) Code Generation:**
+   - Tool: `datamodel-code-generator` (generates Pydantic models from OpenAPI)
+   - Command: `datamodel-codegen --input 05c_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
+   - Generate: Pydantic v2 models for request/response
+   - Generate: FastAPI router skeletons (optional: `fastapi-code-generator`)
+   - Validate: Implementation matches spec using FastAPI's automatic OpenAPI generation
+   - Pattern: Pydantic BaseModel with Field validation, async endpoints
 
 2. **Frontend (TypeScript) Code Generation:**
    - Tool: `openapi-typescript` for types
@@ -320,7 +322,7 @@ Generate:
 3. **`05c_openapi_validation_report.md`** - Validation report against service design and security requirements
 
 Optionally generate (recommended):
-4. **`backend/src/api/generated/dtos.ts`** - Generated TypeScript DTOs for NestJS
+4. **`backend/app/schemas/generated.py`** - Generated Pydantic models for FastAPI
 5. **`frontend/src/api/generated/types.ts`** - Generated TypeScript types
 6. **`frontend/src/api/generated/client.ts`** - Generated Axios API client
 7. **`openapi.json`** - JSON version of spec (for tools)
@@ -410,7 +412,7 @@ Before delivering, verify:
 
 ### 4. Code Generation
 - [ ] Generated TypeScript types compile without errors
-- [ ] Generated backend DTOs match NestJS patterns
+- [ ] Generated backend DTOs match FastAPI/Pydantic v2 patterns
 - [ ] Generated frontend client is type-safe
 - [ ] Mock server works with generated spec
 
@@ -486,11 +488,11 @@ When you encounter ambiguity in service design API contracts, proactively seek c
 
 ## 2. Code Generation
 
-### Backend (NestJS)
-- Tool: [tool name]
-- Command: `[generation command]`
-- Output: [where generated files go]
-- Pattern: [DTO naming convention]
+### Backend (FastAPI)
+- Tool: datamodel-code-generator
+- Command: `datamodel-codegen --input 05c_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
+- Output: backend/app/schemas/generated.py
+- Pattern: Pydantic v2 BaseModel with Field validation (snake_case)
 
 ### Frontend (TypeScript)
 - Tool: openapi-typescript

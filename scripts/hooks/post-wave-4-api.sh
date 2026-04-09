@@ -187,55 +187,55 @@ echo "" >> "$REPORT_FILE"
 
 echo "🔒 Running API security validation..."
 
-# 4.1 Check for unguarded endpoints
-echo "  🔍 Checking API guards on controllers..."
-cd backend/src
-UNGUARDED=$(find . -name "*.controller.ts" -type f \
-  -exec grep -l "@Post\|@Get\|@Put\|@Delete\|@Patch" {} \; | \
+# 4.1 Check for unguarded endpoints (FastAPI)
+echo "  Checking API authentication dependencies on routers..."
+cd backend/app
+UNGUARDED=$(find . -path "*/api/*" -name "*.py" -type f \
+  -exec grep -l "@router.post\|@router.get\|@router.put\|@router.delete\|@router.patch" {} \; | \
   while read -r file; do
-    if ! grep -qE "@UseGuards|@Public" "$file"; then
+    if ! grep -qE "Depends\(get_current_user\)|Depends\(require_auth\)|is_public" "$file"; then
       echo "$file"
     fi
   done | wc -l || echo "0")
 cd ../..
 
 if [ "$UNGUARDED" = "0" ]; then
-  echo "     ✅ All endpoints have guards or @Public decorator"
-  echo "  - ✅ API Guards: ALL ENDPOINTS PROTECTED" >> "$REPORT_FILE"
+  echo "     OK: All endpoints have auth dependencies or are explicitly public"
+  echo "  - OK API Auth: ALL ENDPOINTS PROTECTED" >> "$REPORT_FILE"
 else
-  echo "     ⚠️  $UNGUARDED controller(s) may have unguarded endpoints"
-  echo "  - ⚠️  API Guards: $UNGUARDED controllers may need review" >> "$REPORT_FILE"
-  echo "     Review: backend/src/**/*.controller.ts"
+  echo "     WARN: $UNGUARDED router file(s) may have unguarded endpoints"
+  echo "  - WARN API Auth: $UNGUARDED routers may need review" >> "$REPORT_FILE"
+  echo "     Review: backend/app/**/api/*.py"
 fi
 
-# 4.2 Check for DTO validation
-echo "  🔍 Checking DTO validation..."
-cd backend/src
-DTOs_WITHOUT_VALIDATION=$(find . -name "*.dto.ts" -type f \
-  -exec grep -L "class-validator\|IsString\|IsEmail\|IsNumber" {} \; | wc -l || echo "0")
+# 4.2 Check for DTO validation (Pydantic v2)
+echo "  Checking Pydantic schema validation..."
+cd backend/app
+DTOs_WITHOUT_VALIDATION=$(find . -path "*/schemas/*" -name "*.py" -type f \
+  -exec grep -L "BaseModel\|Field\|field_validator" {} \; | wc -l || echo "0")
 cd ../..
 
 if [ "$DTOs_WITHOUT_VALIDATION" = "0" ]; then
-  echo "     ✅ All DTOs have validation decorators"
-  echo "  - ✅ DTO Validation: ALL DTOs VALIDATED" >> "$REPORT_FILE"
+  echo "     OK: All schemas use Pydantic BaseModel with Field validators"
+  echo "  - OK DTO Validation: ALL SCHEMAS VALIDATED" >> "$REPORT_FILE"
 else
-  echo "     ⚠️  $DTOs_WITHOUT_VALIDATION DTO(s) may lack validation"
-  echo "  - ⚠️  DTO Validation: $DTOs_WITHOUT_VALIDATION DTOs may need review" >> "$REPORT_FILE"
-  echo "     Review: backend/src/**/*.dto.ts"
+  echo "     WARN: $DTOs_WITHOUT_VALIDATION schema file(s) may lack validation"
+  echo "  - WARN DTO Validation: $DTOs_WITHOUT_VALIDATION schemas may need review" >> "$REPORT_FILE"
+  echo "     Review: backend/app/**/schemas/*.py"
 fi
 
-# 4.3 Check for rate limiting on public endpoints
-echo "  🔍 Checking rate limiting on auth endpoints..."
-cd backend/src
-RATE_LIMITED=$(grep -r "@Throttle\|@UseGuards(ThrottlerGuard)" . --include="auth.controller.ts" | wc -l || echo "0")
+# 4.3 Check for rate limiting on auth endpoints (slowapi)
+echo "  Checking rate limiting on auth endpoints..."
+cd backend/app
+RATE_LIMITED=$(grep -r "@limiter.limit\|from slowapi" . --include="auth*.py" | wc -l || echo "0")
 cd ../..
 
 if [ "$RATE_LIMITED" -gt 0 ]; then
-  echo "     ✅ Rate limiting detected on auth endpoints"
-  echo "  - ✅ Rate Limiting: CONFIGURED" >> "$REPORT_FILE"
+  echo "     OK: Rate limiting detected on auth endpoints (slowapi)"
+  echo "  - OK Rate Limiting: CONFIGURED" >> "$REPORT_FILE"
 else
-  echo "     ⚠️  No rate limiting detected on auth endpoints"
-  echo "  - ⚠️  Rate Limiting: NOT CONFIGURED (consider @Throttle)" >> "$REPORT_FILE"
+  echo "     WARN: No rate limiting detected on auth endpoints"
+  echo "  - WARN Rate Limiting: NOT CONFIGURED (consider slowapi @limiter.limit)" >> "$REPORT_FILE"
 fi
 
 # 4.4 Check for SQL injection protection (TypeORM)

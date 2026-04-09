@@ -9,7 +9,7 @@
 
 ## Overview
 
-This skill document provides **complete, authoritative guidance** on implementing Domain-Driven Design (DDD) and Clean Architecture patterns in TypeScript/JavaScript backends (particularly NestJS/FastAPI equivalents).
+This skill document provides **complete, authoritative guidance** on implementing Domain-Driven Design (DDD) and Clean Architecture patterns in Python backends (specifically FastAPI with SQLAlchemy 2.0 async and Pydantic v2).
 
 **Core Philosophy**: Domain logic should be pure, independent of infrastructure, and expressed using rich domain models with strong invariants.
 
@@ -44,121 +44,105 @@ Use DDD/Clean Architecture when:
 - Two entities with same ID are the same entity
 - Encapsulates business logic and invariants
 
-**TypeScript Pattern**:
-```typescript
-export class User {
-  private readonly _id: string;
-  private _email: Email; // Value object
-  private _name: string;
-  private _isActive: boolean;
+**Python Pattern**:
+```python
+from __future__ import annotations
 
-  // PRIVATE constructor - prevents direct instantiation
-  private constructor(props: {
-    id: string;
-    email: Email;
-    name: string;
-    isActive: boolean;
-  }) {
-    this._id = props.id;
-    this._email = props.email;
-    this._name = props.name;
-    this._isActive = props.isActive;
-  }
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
 
-  // Factory method for NEW entities
-  public static create(props: {
-    email: string;
-    name: string;
-  }): Result<User> {
-    // Validation
-    const emailOrError = Email.create(props.email);
-    if (emailOrError.isFailure) {
-      return Result.fail<User>(emailOrError.error);
-    }
+from app.common.core.result import Result
+from app.modules.user.domain.value_objects.email import Email
 
-    if (!props.name || props.name.trim().length < 2) {
-      return Result.fail<User>('Name must be at least 2 characters');
-    }
 
-    // Create entity
-    const user = new User({
-      id: uuidv4(),
-      email: emailOrError.getValue(),
-      name: props.name.trim(),
-      isActive: true, // Default for new users
-    });
+@dataclass
+class User:
+    # Use a "private" naming convention; constructor is treated as internal.
+    # Always create instances through the create()/reconstitute() factories.
+    _id: UUID
+    _email: Email
+    _name: str
+    _is_active: bool
 
-    return Result.ok<User>(user);
-  }
+    # Factory method for NEW entities
+    @classmethod
+    def create(cls, *, email: str, name: str) -> Result["User"]:
+        email_result = Email.create(email)
+        if email_result.is_failure:
+            return Result.fail(email_result.error)
 
-  // Factory method for EXISTING entities (from persistence)
-  public static reconstitute(props: {
-    id: string;
-    email: string;
-    name: string;
-    isActive: boolean;
-  }): Result<User> {
-    const emailOrError = Email.create(props.email);
-    if (emailOrError.isFailure) {
-      return Result.fail<User>(emailOrError.error);
-    }
+        if not name or len(name.strip()) < 2:
+            return Result.fail("Name must be at least 2 characters")
 
-    const user = new User({
-      id: props.id,
-      email: emailOrError.getValue(),
-      name: props.name,
-      isActive: props.isActive,
-    });
+        user = cls(
+            _id=uuid4(),
+            _email=email_result.get_value(),
+            _name=name.strip(),
+            _is_active=True,  # Default for new users
+        )
+        return Result.ok(user)
 
-    return Result.ok<User>(user);
-  }
+    # Factory method for EXISTING entities (from persistence)
+    @classmethod
+    def reconstitute(
+        cls,
+        *,
+        id: UUID,
+        email: str,
+        name: str,
+        is_active: bool,
+    ) -> Result["User"]:
+        email_result = Email.create(email)
+        if email_result.is_failure:
+            return Result.fail(email_result.error)
 
-  // Getters (no setters - use domain methods)
-  get id(): string {
-    return this._id;
-  }
+        user = cls(
+            _id=id,
+            _email=email_result.get_value(),
+            _name=name,
+            _is_active=is_active,
+        )
+        return Result.ok(user)
 
-  get email(): Email {
-    return this._email;
-  }
+    # Read-only properties (no setters - use domain methods)
+    @property
+    def id(self) -> UUID:
+        return self._id
 
-  get name(): string {
-    return this._name;
-  }
+    @property
+    def email(self) -> Email:
+        return self._email
 
-  get isActive(): boolean {
-    return this._isActive;
-  }
+    @property
+    def name(self) -> str:
+        return self._name
 
-  // Domain methods (business logic)
-  public changeEmail(newEmail: string): Result<void> {
-    const emailOrError = Email.create(newEmail);
-    if (emailOrError.isFailure) {
-      return Result.fail<void>(emailOrError.error);
-    }
+    @property
+    def is_active(self) -> bool:
+        return self._is_active
 
-    this._email = emailOrError.getValue();
-    return Result.ok<void>();
-  }
+    # Domain methods (business logic)
+    def change_email(self, new_email: str) -> Result[None]:
+        email_result = Email.create(new_email)
+        if email_result.is_failure:
+            return Result.fail(email_result.error)
 
-  public deactivate(): Result<void> {
-    if (!this._isActive) {
-      return Result.fail<void>('User already deactivated');
-    }
+        self._email = email_result.get_value()
+        return Result.ok(None)
 
-    this._isActive = false;
-    return Result.ok<void>();
-  }
+    def deactivate(self) -> Result[None]:
+        if not self._is_active:
+            return Result.fail("User already deactivated")
 
-  public activate(): Result<void> {
-    if (this._isActive) {
-      return Result.fail<void>('User already active');
-    }
+        self._is_active = False
+        return Result.ok(None)
 
-    this._isActive = true;
-    return Result.ok<void>();
-  }
-}
+    def activate(self) -> Result[None]:
+        if self._is_active:
+            return Result.fail("User already active")
+
+        self._is_active = True
+        return Result.ok(None)
 ```
 
 ### 2. Value Objects
@@ -172,46 +156,35 @@ export class User {
 - Encapsulates validation logic
 - Can be shared across entities
 
-**TypeScript Pattern**:
-```typescript
-export class Email {
-  private readonly _value: string;
+**Python Pattern**:
+```python
+from __future__ import annotations
 
-  // PRIVATE constructor
-  private constructor(value: string) {
-    this._value = value;
-  }
+import re
+from dataclasses import dataclass
 
-  // Factory method - ONLY way to create
-  public static create(email: string): Result<Email> {
-    if (!email) {
-      return Result.fail<Email>('Email is required');
-    }
+from app.common.core.result import Result
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return Result.fail<Email>('Invalid email format');
-    }
+_EMAIL_REGEX = re.compile(r"^[^\s@]+@[^\s@]+\.[^\s@]+$")
 
-    return Result.ok<Email>(new Email(email.toLowerCase().trim()));
-  }
 
-  // Getter
-  get value(): string {
-    return this._value;
-  }
+@dataclass(frozen=True)  # frozen=True makes it immutable + provides __eq__/__hash__
+class Email:
+    value: str
 
-  // Equality comparison
-  public equals(other: Email): boolean {
-    if (!other) return false;
-    return this._value === other._value;
-  }
+    # Factory method - ONLY way to create
+    @classmethod
+    def create(cls, email: str) -> Result["Email"]:
+        if not email:
+            return Result.fail("Email is required")
 
-  // String representation
-  public toString(): string {
-    return this._value;
-  }
-}
+        if not _EMAIL_REGEX.match(email):
+            return Result.fail("Invalid email format")
+
+        return Result.ok(cls(value=email.strip().lower()))
+
+    def __str__(self) -> str:
+        return self.value
 ```
 
 ### 3. Aggregates
@@ -225,111 +198,84 @@ export class Email {
 - Transactions should not span multiple aggregates
 
 **Example**:
-```typescript
-// Order is Aggregate Root
-export class Order {
-  private readonly _id: string;
-  private readonly _customerId: string;
-  private _items: OrderItem[]; // Part of aggregate
-  private _status: OrderStatus; // Value object
-  private _total: Money; // Value object
+```python
+from __future__ import annotations
 
-  private constructor(props: OrderProps) {
-    this._id = props.id;
-    this._customerId = props.customerId;
-    this._items = props.items;
-    this._status = props.status;
-    this._total = props.total;
-  }
+from dataclasses import dataclass, field
+from uuid import UUID, uuid4
 
-  public static create(props: {
-    customerId: string;
-  }): Result<Order> {
-    const order = new Order({
-      id: uuidv4(),
-      customerId: props.customerId,
-      items: [],
-      status: OrderStatus.create('DRAFT').getValue(),
-      total: Money.create(0, 'USD').getValue(),
-    });
+from app.common.core.result import Result
+from app.modules.order.domain.value_objects.money import Money
+from app.modules.order.domain.value_objects.order_status import OrderStatus
 
-    return Result.ok<Order>(order);
-  }
 
-  // Domain method - modifies aggregate
-  public addItem(productId: string, quantity: number, price: Money): Result<void> {
-    if (this._status.value !== 'DRAFT') {
-      return Result.fail<void>('Cannot add items to non-draft order');
-    }
+@dataclass
+class OrderItem:  # Part of Order aggregate (not a separate aggregate)
+    _product_id: UUID
+    _quantity: int
+    _price: Money
+    _subtotal: Money
 
-    const itemOrError = OrderItem.create({ productId, quantity, price });
-    if (itemOrError.isFailure) {
-      return Result.fail<void>(itemOrError.error);
-    }
+    @classmethod
+    def create(cls, *, product_id: UUID, quantity: int, price: Money) -> Result["OrderItem"]:
+        if quantity <= 0:
+            return Result.fail("Quantity must be positive")
 
-    this._items.push(itemOrError.getValue());
-    this._recalculateTotal();
+        subtotal = Money.create(price.amount * quantity, price.currency).get_value()
+        return Result.ok(cls(_product_id=product_id, _quantity=quantity, _price=price, _subtotal=subtotal))
 
-    return Result.ok<void>();
-  }
+    @property
+    def subtotal(self) -> Money:
+        return self._subtotal
 
-  // Private method - enforces invariants
-  private _recalculateTotal(): void {
-    const total = this._items.reduce(
-      (sum, item) => sum + item.subtotal.amount,
-      0
-    );
-    this._total = Money.create(total, 'USD').getValue();
-  }
 
-  // Domain method - state transition
-  public submit(): Result<void> {
-    if (this._status.value !== 'DRAFT') {
-      return Result.fail<void>('Order already submitted');
-    }
+@dataclass
+class Order:  # Order is Aggregate Root
+    _id: UUID
+    _customer_id: UUID
+    _items: list[OrderItem] = field(default_factory=list)
+    _status: OrderStatus = field(default=None)  # type: ignore[assignment]
+    _total: Money = field(default=None)  # type: ignore[assignment]
 
-    if (this._items.length === 0) {
-      return Result.fail<void>('Cannot submit empty order');
-    }
+    @classmethod
+    def create(cls, *, customer_id: UUID) -> Result["Order"]:
+        order = cls(
+            _id=uuid4(),
+            _customer_id=customer_id,
+            _items=[],
+            _status=OrderStatus.create("DRAFT").get_value(),
+            _total=Money.create(0, "USD").get_value(),
+        )
+        return Result.ok(order)
 
-    this._status = OrderStatus.create('SUBMITTED').getValue();
-    return Result.ok<void>();
-  }
-}
+    # Domain method - modifies aggregate
+    def add_item(self, *, product_id: UUID, quantity: int, price: Money) -> Result[None]:
+        if self._status.value != "DRAFT":
+            return Result.fail("Cannot add items to non-draft order")
 
-// OrderItem is part of Order aggregate (not a separate aggregate)
-class OrderItem {
-  private readonly _productId: string;
-  private readonly _quantity: number;
-  private readonly _price: Money;
-  private readonly _subtotal: Money;
+        item_result = OrderItem.create(product_id=product_id, quantity=quantity, price=price)
+        if item_result.is_failure:
+            return Result.fail(item_result.error)
 
-  private constructor(props: OrderItemProps) {
-    this._productId = props.productId;
-    this._quantity = props.quantity;
-    this._price = props.price;
-    this._subtotal = Money.create(
-      props.price.amount * props.quantity,
-      props.price.currency
-    ).getValue();
-  }
+        self._items.append(item_result.get_value())
+        self._recalculate_total()
+        return Result.ok(None)
 
-  public static create(props: {
-    productId: string;
-    quantity: number;
-    price: Money;
-  }): Result<OrderItem> {
-    if (props.quantity <= 0) {
-      return Result.fail<OrderItem>('Quantity must be positive');
-    }
+    # Private method - enforces invariants
+    def _recalculate_total(self) -> None:
+        total_amount = sum(item.subtotal.amount for item in self._items)
+        self._total = Money.create(total_amount, "USD").get_value()
 
-    return Result.ok<OrderItem>(new OrderItem(props));
-  }
+    # Domain method - state transition
+    def submit(self) -> Result[None]:
+        if self._status.value != "DRAFT":
+            return Result.fail("Order already submitted")
 
-  get subtotal(): Money {
-    return this._subtotal;
-  }
-}
+        if not self._items:
+            return Result.fail("Cannot submit empty order")
+
+        self._status = OrderStatus.create("SUBMITTED").get_value()
+        return Result.ok(None)
 ```
 
 ---
@@ -339,75 +285,75 @@ class OrderItem {
 **Purpose**: Handle errors without exceptions, making error paths explicit and type-safe.
 
 **Implementation**:
-```typescript
-export class Result<T> {
-  public readonly isSuccess: boolean;
-  public readonly isFailure: boolean;
-  private readonly _error?: string;
-  private readonly _value?: T;
+```python
+from __future__ import annotations
 
-  private constructor(isSuccess: boolean, error?: string, value?: T) {
-    if (isSuccess && error) {
-      throw new Error('InvalidOperation: A result cannot be successful and contain an error');
-    }
-    if (!isSuccess && !error) {
-      throw new Error('InvalidOperation: A failing result needs an error message');
-    }
+from typing import Generic, Optional, TypeVar
 
-    this.isSuccess = isSuccess;
-    this.isFailure = !isSuccess;
-    this._error = error;
-    this._value = value;
+T = TypeVar("T")
 
-    Object.freeze(this);
-  }
 
-  public static ok<U>(value?: U): Result<U> {
-    return new Result<U>(true, undefined, value);
-  }
+class Result(Generic[T]):
+    def __init__(self, is_success: bool, error: Optional[str] = None, value: Optional[T] = None) -> None:
+        if is_success and error:
+            raise ValueError("InvalidOperation: A result cannot be successful and contain an error")
+        if not is_success and not error:
+            raise ValueError("InvalidOperation: A failing result needs an error message")
 
-  public static fail<U>(error: string): Result<U> {
-    return new Result<U>(false, error);
-  }
+        self._is_success = is_success
+        self._error = error
+        self._value = value
 
-  public getValue(): T {
-    if (!this.isSuccess) {
-      throw new Error('Cannot get value from failed result');
-    }
+    @property
+    def is_success(self) -> bool:
+        return self._is_success
 
-    return this._value!;
-  }
+    @property
+    def is_failure(self) -> bool:
+        return not self._is_success
 
-  public get error(): string {
-    if (!this.isFailure) {
-      throw new Error('Cannot get error from successful result');
-    }
+    @classmethod
+    def ok(cls, value: Optional[T] = None) -> "Result[T]":
+        return cls(True, None, value)
 
-    return this._error!;
-  }
-}
+    @classmethod
+    def fail(cls, error: str) -> "Result[T]":
+        return cls(False, error)
+
+    def get_value(self) -> T:
+        if not self._is_success:
+            raise RuntimeError("Cannot get value from failed result")
+        return self._value  # type: ignore[return-value]
+
+    @property
+    def error(self) -> str:
+        if self._is_success:
+            raise RuntimeError("Cannot get error from successful result")
+        return self._error  # type: ignore[return-value]
 ```
 
 **Usage**:
-```typescript
-// Creating entities
-const userOrError = User.create({ email: 'john@example.com', name: 'John' });
+```python
+from fastapi import HTTPException, status
 
-if (userOrError.isFailure) {
-  // Handle error
-  console.error(userOrError.error);
-  return;
-}
+# Creating entities
+user_result = User.create(email="john@example.com", name="John")
 
-const user = userOrError.getValue();
+if user_result.is_failure:
+    # Handle error
+    print(user_result.error)
+    return
 
-// Domain operations
-const emailChangeResult = user.changeEmail('jane@example.com');
+user = user_result.get_value()
 
-if (emailChangeResult.isFailure) {
-  // Handle error
-  throw new BadRequestException(emailChangeResult.error);
-}
+# Domain operations
+email_change_result = user.change_email("jane@example.com")
+
+if email_change_result.is_failure:
+    raise HTTPException(
+        status_code=status.HTTP_400_BAD_REQUEST,
+        detail=email_change_result.error,
+    )
 ```
 
 ---
@@ -418,8 +364,8 @@ if (emailChangeResult.isFailure) {
 
 ```
 ┌─────────────────────────────────────┐
-│          API/Presentation           │  Controllers, DTOs, Guards
-│  (framework-specific: NestJS/etc)  │
+│          API/Presentation           │  Routers, Schemas, Dependencies
+│       (FastAPI-specific layer)      │
 └─────────────────────────────────────┘
               ↓ depends on
 ┌─────────────────────────────────────┐
@@ -444,27 +390,27 @@ if (emailChangeResult.isFailure) {
    - NO dependencies on outer layers
    - NO framework dependencies
    - NO I/O operations (no DB, no HTTP, no file system)
-   - Pure TypeScript classes
+   - Pure Python classes (dataclasses, plain classes)
    - Contains: Entities, Value Objects, Domain Services, Aggregates
 
 2. **Application Layer**:
    - Depends on Domain Layer
    - NO dependencies on Infrastructure or API layers
    - Orchestrates domain objects
-   - Defines interfaces for repositories (ports)
+   - Defines interfaces for repositories (ports) using `abc.ABC` or `typing.Protocol`
    - Contains: Use Cases, Application Services, DTOs
 
 3. **Infrastructure Layer**:
    - Depends on Domain and Application layers
    - Implements repository interfaces
-   - Contains framework-specific code (TypeORM entities)
+   - Contains framework-specific code (SQLAlchemy ORM models)
    - Contains: Repository implementations, Mappers, External adapters
 
 4. **API/Presentation Layer** (Outermost):
    - Depends on Application layer
-   - Framework-specific (NestJS controllers, guards)
+   - Framework-specific (FastAPI routers, Depends)
    - Handles HTTP concerns
-   - Contains: Controllers, Guards, API DTOs, Middleware
+   - Contains: Routers, Pydantic schemas, Auth dependencies, Middleware
 
 ---
 
@@ -474,89 +420,93 @@ if (emailChangeResult.isFailure) {
 
 ### Domain Layer: Repository Interface (Port)
 
-```typescript
-// src/modules/user/domain/repositories/user.repository.interface.ts
-import { User } from '../entities/user.entity';
-import { Email } from '../value-objects/email.vo';
+```python
+# app/modules/user/domain/repositories/user_repository.py
+from abc import ABC, abstractmethod
+from uuid import UUID
 
-export interface IUserRepository {
-  save(user: User): Promise<void>;
-  findById(id: string): Promise<User | null>;
-  findByEmail(email: Email): Promise<User | null>;
-  findAll(): Promise<User[]>;
-  delete(id: string): Promise<void>;
-}
+from app.modules.user.domain.entities.user import User
+from app.modules.user.domain.value_objects.email import Email
+
+
+class IUserRepository(ABC):
+    @abstractmethod
+    async def save(self, user: User) -> None: ...
+
+    @abstractmethod
+    async def find_by_id(self, user_id: UUID) -> User | None: ...
+
+    @abstractmethod
+    async def find_by_email(self, email: Email) -> User | None: ...
+
+    @abstractmethod
+    async def find_all(self) -> list[User]: ...
+
+    @abstractmethod
+    async def delete(self, user_id: UUID) -> None: ...
 ```
 
 ### Infrastructure Layer: Repository Implementation (Adapter)
 
-```typescript
-// src/modules/user/infrastructure/persistence/typeorm-user.repository.ts
-import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { IUserRepository } from '../../domain/repositories/user.repository.interface';
-import { User } from '../../domain/entities/user.entity';
-import { Email } from '../../domain/value-objects/email.vo';
-import { UserEntity } from './entities/user.entity'; // TypeORM entity
-import { UserMapper } from './mappers/user.mapper';
+```python
+# app/modules/user/infrastructure/persistence/sqlalchemy_user_repository.py
+from uuid import UUID
 
-@Injectable()
-export class TypeOrmUserRepository implements IUserRepository {
-  constructor(
-    @InjectRepository(UserEntity)
-    private readonly ormRepository: Repository<UserEntity>,
-  ) {}
+from fastapi import Depends
+from sqlalchemy import delete as sa_delete, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-  async save(user: User): Promise<void> {
-    const ormEntity = UserMapper.toPersistence(user);
-    await this.ormRepository.save(ormEntity);
-  }
+from app.core.database import get_db_session
+from app.modules.user.domain.entities.user import User
+from app.modules.user.domain.repositories.user_repository import IUserRepository
+from app.modules.user.domain.value_objects.email import Email
+from app.modules.user.infrastructure.persistence.models import UserModel  # SQLAlchemy model
+from app.modules.user.infrastructure.persistence.mappers.user_mapper import UserMapper
 
-  async findById(id: string): Promise<User | null> {
-    const ormEntity = await this.ormRepository.findOne({ where: { id } });
-    if (!ormEntity) return null;
 
-    const userOrError = UserMapper.toDomain(ormEntity);
-    if (userOrError.isFailure) {
-      throw new Error(userOrError.error);
-    }
+class SqlAlchemyUserRepository(IUserRepository):
+    def __init__(self, session: AsyncSession = Depends(get_db_session)) -> None:
+        self._session = session
 
-    return userOrError.getValue();
-  }
+    async def save(self, user: User) -> None:
+        model = UserMapper.to_persistence(user)
+        await self._session.merge(model)
 
-  async findByEmail(email: Email): Promise<User | null> {
-    const ormEntity = await this.ormRepository.findOne({
-      where: { email: email.value }
-    });
-    if (!ormEntity) return null;
+    async def find_by_id(self, user_id: UUID) -> User | None:
+        stmt = select(UserModel).where(UserModel.id == user_id)
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model is None:
+            return None
 
-    const userOrError = UserMapper.toDomain(ormEntity);
-    if (userOrError.isFailure) {
-      throw new Error(userOrError.error);
-    }
+        user_result = UserMapper.to_domain(model)
+        if user_result.is_failure:
+            raise RuntimeError(user_result.error)
+        return user_result.get_value()
 
-    return userOrError.getValue();
-  }
+    async def find_by_email(self, email: Email) -> User | None:
+        stmt = select(UserModel).where(UserModel.email == email.value)
+        result = await self._session.execute(stmt)
+        model = result.scalar_one_or_none()
+        if model is None:
+            return None
 
-  async findAll(): Promise<User[]> {
-    const ormEntities = await this.ormRepository.find();
+        user_result = UserMapper.to_domain(model)
+        if user_result.is_failure:
+            raise RuntimeError(user_result.error)
+        return user_result.get_value()
 
-    const users: User[] = [];
-    for (const ormEntity of ormEntities) {
-      const userOrError = UserMapper.toDomain(ormEntity);
-      if (userOrError.isSuccess) {
-        users.push(userOrError.getValue());
-      }
-    }
+    async def find_all(self) -> list[User]:
+        result = await self._session.execute(select(UserModel))
+        users: list[User] = []
+        for model in result.scalars().all():
+            user_result = UserMapper.to_domain(model)
+            if user_result.is_success:
+                users.append(user_result.get_value())
+        return users
 
-    return users;
-  }
-
-  async delete(id: string): Promise<void> {
-    await this.ormRepository.delete(id);
-  }
-}
+    async def delete(self, user_id: UUID) -> None:
+        await self._session.execute(sa_delete(UserModel).where(UserModel.id == user_id))
 ```
 
 ---
@@ -565,145 +515,155 @@ export class TypeOrmUserRepository implements IUserRepository {
 
 **Purpose**: Convert between domain entities and ORM/persistence entities without polluting domain with ORM concerns.
 
-```typescript
-// src/modules/user/infrastructure/persistence/mappers/user.mapper.ts
-import { User } from '../../../domain/entities/user.entity';
-import { Email } from '../../../domain/value-objects/email.vo';
-import { UserEntity } from '../entities/user.entity'; // TypeORM entity
-import { Result } from '../../../../../common/core/result';
+```python
+# app/modules/user/infrastructure/persistence/mappers/user_mapper.py
+from app.common.core.result import Result
+from app.modules.user.api.schemas import UserResponseSchema
+from app.modules.user.domain.entities.user import User
+from app.modules.user.infrastructure.persistence.models import UserModel  # SQLAlchemy model
 
-export class UserMapper {
-  // Domain → Persistence (ORM entity)
-  public static toPersistence(user: User): UserEntity {
-    const ormEntity = new UserEntity();
-    ormEntity.id = user.id;
-    ormEntity.email = user.email.value;
-    ormEntity.name = user.name;
-    ormEntity.isActive = user.isActive;
-    return ormEntity;
-  }
 
-  // Persistence → Domain
-  public static toDomain(ormEntity: UserEntity): Result<User> {
-    return User.reconstitute({
-      id: ormEntity.id,
-      email: ormEntity.email,
-      name: ormEntity.name,
-      isActive: ormEntity.isActive,
-    });
-  }
+class UserMapper:
+    # Domain to Persistence (ORM model)
+    @staticmethod
+    def to_persistence(user: User) -> UserModel:
+        return UserModel(
+            id=user.id,
+            email=user.email.value,
+            name=user.name,
+            is_active=user.is_active,
+        )
 
-  // Domain → API DTO (for responses)
-  public static toDTO(user: User): UserDTO {
-    return {
-      id: user.id,
-      email: user.email.value,
-      name: user.name,
-      isActive: user.isActive,
-    };
-  }
-}
+    # Persistence to Domain
+    @staticmethod
+    def to_domain(model: UserModel) -> Result[User]:
+        return User.reconstitute(
+            id=model.id,
+            email=model.email,
+            name=model.name,
+            is_active=model.is_active,
+        )
+
+    # Domain to API response (Pydantic schema)
+    @staticmethod
+    def to_response(user: User) -> UserResponseSchema:
+        return UserResponseSchema(
+            id=user.id,
+            email=user.email.value,
+            name=user.name,
+            is_active=user.is_active,
+        )
 ```
 
 ---
 
 ## Anti-Patterns to AVOID
 
-### 1. Public Constructors
-```typescript
-// WRONG - public constructor
-export class User {
-  public constructor(public email: string, public name: string) {}
-}
+### 1. Public/Unchecked Constructors
+```python
+# WRONG - allows unvalidated instantiation
+class User:
+    def __init__(self, email: str, name: str) -> None:
+        self.email = email
+        self.name = name
 
-// RIGHT - private constructor + factory
-export class User {
-  private constructor(props: UserProps) { /* ... */ }
-  public static create(props): Result<User> { /* ... */ }
-}
+
+# RIGHT - factory method enforces invariants
+class User:
+    def __init__(self, *, _id, _email, _name) -> None:  # treat as internal
+        self._id = _id
+        self._email = _email
+        self._name = _name
+
+    @classmethod
+    def create(cls, *, email: str, name: str) -> "Result[User]":
+        ...
 ```
 
-### 2. Casting to Create Entities
-```typescript
-// WRONG - casting bypasses validation
-const user = { email: 'test@example.com', name: 'Test' } as User;
+### 2. Bypassing Factories
+```python
+# WRONG - bypasses validation
+user = User.__new__(User)
+user.email = "test@example.com"
 
-// RIGHT - use factory method
-const userOrError = User.create({ email: 'test@example.com', name: 'Test' });
-const user = userOrError.getValue();
+# RIGHT - use factory
+user_result = User.create(email="test@example.com", name="Test")
+user = user_result.get_value()
 ```
 
 ### 3. Throwing Exceptions in Domain
-```typescript
-// WRONG - exceptions in domain
-export class User {
-  changeEmail(email: string): void {
-    if (!email.includes('@')) {
-      throw new Error('Invalid email'); // NO!
-    }
-    this._email = email;
-  }
-}
+```python
+# WRONG - raising exceptions for expected validation failures
+class User:
+    def change_email(self, email: str) -> None:
+        if "@" not in email:
+            raise ValueError("Invalid email")  # NO!
+        self._email = email
 
-// RIGHT - return Result<T>
-export class User {
-  changeEmail(email: string): Result<void> {
-    const emailOrError = Email.create(email);
-    if (emailOrError.isFailure) {
-      return Result.fail<void>(emailOrError.error);
-    }
-    this._email = emailOrError.getValue();
-    return Result.ok<void>();
-  }
-}
+
+# RIGHT - return Result[T]
+class User:
+    def change_email(self, email: str) -> Result[None]:
+        email_result = Email.create(email)
+        if email_result.is_failure:
+            return Result.fail(email_result.error)
+        self._email = email_result.get_value()
+        return Result.ok(None)
 ```
 
 ### 4. Anemic Domain Model
-```typescript
-// WRONG - anemic (just data, no behavior)
-export class User {
-  public email: string;
-  public name: string;
-}
+```python
+# WRONG - anemic (just data, no behavior)
+@dataclass
+class User:
+    email: str
+    name: str
 
-// Business logic in service instead of domain
-export class UserService {
-  changeEmail(user: User, email: string) {
-    // validation logic here - should be in User entity
-  }
-}
 
-// RIGHT - rich domain model
-export class User {
-  public changeEmail(email: string): Result<void> {
-    // validation + logic here
-  }
-}
+# Business logic in service instead of domain
+class UserService:
+    def change_email(self, user: User, email: str) -> None:
+        # validation logic here - should be in User entity
+        ...
+
+
+# RIGHT - rich domain model
+class User:
+    def change_email(self, email: str) -> Result[None]:
+        # validation + logic here
+        ...
 ```
 
 ### 5. Violating Layer Dependencies
-```typescript
-// WRONG - domain depends on infrastructure
-// src/modules/user/domain/entities/user.entity.ts
-import { Entity, Column } from 'typeorm'; // NO TypeORM in domain!
+```python
+# WRONG - domain depends on infrastructure
+# app/modules/user/domain/entities/user.py
+from sqlalchemy.orm import Mapped, mapped_column  # NO SQLAlchemy in domain!
+from app.core.database import Base
 
-@Entity()
-export class User { }
 
-// RIGHT - domain is pure, infrastructure depends on domain
-// Domain entity (pure TypeScript)
-export class User {
-  private readonly _id: string;
-  // ...
-}
+class User(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(primary_key=True)
 
-// Infrastructure ORM entity (separate)
-@Entity('users')
-export class UserEntity {
-  @PrimaryColumn()
-  id: string;
-  // ...
-}
+
+# RIGHT - domain is pure, infrastructure depends on domain
+# Domain entity (pure Python)
+class User:
+    def __init__(self, *, _id, _email) -> None:
+        self._id = _id
+        self._email = _email
+
+
+# Infrastructure ORM model (separate file)
+from sqlalchemy.orm import Mapped, mapped_column
+from app.core.database import Base
+
+
+class UserModel(Base):
+    __tablename__ = "users"
+    id: Mapped[str] = mapped_column(primary_key=True)
+    email: Mapped[str]
 ```
 
 ---
@@ -712,98 +672,79 @@ export class UserEntity {
 
 ### Testing Entities with Factory Methods
 
-```typescript
-// user.entity.spec.ts
-describe('User', () => {
-  describe('create', () => {
-    it('should create a user with valid data', () => {
-      const result = User.create({
-        email: 'john@example.com',
-        name: 'John Doe',
-      });
+```python
+# tests/modules/user/domain/test_user_entity.py
+from app.modules.user.domain.entities.user import User
 
-      expect(result.isSuccess).toBe(true);
-      const user = result.getValue();
-      expect(user.email.value).toBe('john@example.com');
-      expect(user.name).toBe('John Doe');
-      expect(user.isActive).toBe(true);
-    });
 
-    it('should fail with invalid email', () => {
-      const result = User.create({
-        email: 'invalid-email',
-        name: 'John Doe',
-      });
+class TestUserCreate:
+    def test_should_create_user_with_valid_data(self):
+        result = User.create(email="john@example.com", name="John Doe")
 
-      expect(result.isFailure).toBe(true);
-      expect(result.error).toContain('email');
-    });
-  });
+        assert result.is_success
+        user = result.get_value()
+        assert user.email.value == "john@example.com"
+        assert user.name == "John Doe"
+        assert user.is_active is True
 
-  describe('changeEmail', () => {
-    it('should change email successfully', () => {
-      const user = User.create({
-        email: 'old@example.com',
-        name: 'John',
-      }).getValue();
+    def test_should_fail_with_invalid_email(self):
+        result = User.create(email="invalid-email", name="John Doe")
 
-      const result = user.changeEmail('new@example.com');
+        assert result.is_failure
+        assert "email" in result.error.lower()
 
-      expect(result.isSuccess).toBe(true);
-      expect(user.email.value).toBe('new@example.com');
-    });
-  });
-});
+
+class TestChangeEmail:
+    def test_should_change_email_successfully(self):
+        user = User.create(email="old@example.com", name="John").get_value()
+
+        result = user.change_email("new@example.com")
+
+        assert result.is_success
+        assert user.email.value == "new@example.com"
 ```
 
 ### Testing with Repository Mocks
 
-```typescript
-// register-user.use-case.spec.ts
-describe('RegisterUserUseCase', () => {
-  let useCase: RegisterUserUseCase;
-  let mockUserRepository: jest.Mocked<IUserRepository>;
+```python
+# tests/modules/user/application/test_register_user_use_case.py
+from unittest.mock import AsyncMock
 
-  beforeEach(() => {
-    mockUserRepository = {
-      save: jest.fn(),
-      findByEmail: jest.fn(),
-    } as any;
+import pytest
 
-    useCase = new RegisterUserUseCase(mockUserRepository);
-  });
+from app.modules.user.application.use_cases.register_user import RegisterUserUseCase
+from app.modules.user.domain.entities.user import User
 
-  it('should register a new user', async () => {
-    mockUserRepository.findByEmail.mockResolvedValue(null);
-    mockUserRepository.save.mockResolvedValue(undefined);
 
-    const result = await useCase.execute({
-      email: 'john@example.com',
-      name: 'John Doe',
-    });
+@pytest.fixture
+def user_repository():
+    repo = AsyncMock()
+    repo.find_by_email = AsyncMock(return_value=None)
+    repo.save = AsyncMock(return_value=None)
+    return repo
 
-    expect(result.isSuccess).toBe(true);
-    expect(mockUserRepository.save).toHaveBeenCalledTimes(1);
-  });
 
-  it('should fail if email already exists', async () => {
-    const existingUser = User.create({
-      email: 'john@example.com',
-      name: 'Existing',
-    }).getValue();
+@pytest.fixture
+def use_case(user_repository):
+    return RegisterUserUseCase(user_repository=user_repository)
 
-    mockUserRepository.findByEmail.mockResolvedValue(existingUser);
 
-    const result = await useCase.execute({
-      email: 'john@example.com',
-      name: 'John Doe',
-    });
+class TestRegisterUserUseCase:
+    async def test_should_register_new_user(self, use_case, user_repository):
+        result = await use_case.execute(email="john@example.com", name="John Doe")
 
-    expect(result.isFailure).toBe(true);
-    expect(result.error).toContain('already exists');
-    expect(mockUserRepository.save).not.toHaveBeenCalled();
-  });
-});
+        assert result.is_success
+        user_repository.save.assert_awaited_once()
+
+    async def test_should_fail_if_email_already_exists(self, use_case, user_repository):
+        existing_user = User.create(email="john@example.com", name="Existing").get_value()
+        user_repository.find_by_email.return_value = existing_user
+
+        result = await use_case.execute(email="john@example.com", name="John Doe")
+
+        assert result.is_failure
+        assert "already exists" in result.error
+        user_repository.save.assert_not_awaited()
 ```
 
 ---

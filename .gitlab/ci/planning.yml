@@ -1,0 +1,56 @@
+# ============================================================================
+# Child Pipeline: PLANNING
+# ============================================================================
+# Agents 06 through 09: Epics, User Stories, Breakdown, Sprints
+# ============================================================================
+
+include:
+  - local: .gitlab/ci/_templates.yml
+
+stages:
+  - epics
+  - stories
+  - breakdown
+  - sprints
+
+"06: epic-generation":
+  stage: epics
+  extends: .wait-for-directory
+  variables:
+    AGENT_LABEL: "Agent 06 - Epic Generation"
+    DIR_NAME: "outputs/06_epics"
+    FILE_PATTERN: "epic_*.md"
+    MIN_FILES: "1"
+
+"07: user-story-generation":
+  stage: stories
+  extends: .wait-for-directory
+  variables:
+    AGENT_LABEL: "Agent 07 - User Story Generation"
+    DIR_NAME: "outputs/07_user_stories"
+    FILE_PATTERN: "story_*.md"
+    MIN_FILES: "3"
+  needs:
+    - "06: epic-generation"
+
+"08: tech-lead-delivery":
+  stage: breakdown
+  extends: .wait-for-directory
+  variables:
+    AGENT_LABEL: "Agent 08 - Tech Lead Delivery (Implementation Breakdown)"
+    DIR_NAME: "outputs/08_implementation_breakdown"
+    FILE_PATTERN: "*_breakdown.md"
+    MIN_FILES: "3"
+  needs:
+    - "07: user-story-generation"
+
+"09: sprint-orchestrator":
+  stage: sprints
+  extends: .wait-for-directory
+  variables:
+    AGENT_LABEL: "Agent 09 - Sprint Orchestrator"
+    DIR_NAME: "outputs/09_sprint_plan"
+    FILE_PATTERN: "*.md"
+    MIN_FILES: "5"
+  needs:
+    - "08: tech-lead-delivery"

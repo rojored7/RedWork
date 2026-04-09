@@ -9,35 +9,53 @@
 
 ## Input Validation
 
-### Backend Validation (NestJS)
+### Backend Validation (FastAPI)
 
-```typescript
-import { IsEmail, IsString, MinLength, MaxLength, Matches } from 'class-validator';
+```python
+import re
+from typing import Annotated
 
-export class CreateUserDto {
-  @IsEmail()
-  @MaxLength(255)
-  email: string;
+from fastapi import APIRouter, Depends
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
-  @IsString()
-  @MinLength(8)
-  @MaxLength(128)
-  @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/)
-  password: string;
 
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
-  @Matches(/^[a-zA-Z\s'-]+$/)
-  name: string;
-}
+PASSWORD_PATTERN = re.compile(
+    r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]+$"
+)
+NAME_PATTERN = re.compile(r"^[a-zA-Z\s'-]+$")
 
-// Usage in controller
-@Post('register')
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
-async register(@Body() dto: CreateUserDto) {
-  return this.authService.register(dto);
-}
+
+class CreateUserDto(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
+    email: Annotated[EmailStr, Field(max_length=255)]
+    password: Annotated[str, Field(min_length=8, max_length=128)]
+    name: Annotated[str, Field(min_length=2, max_length=100)]
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        if not PASSWORD_PATTERN.match(v):
+            raise ValueError(
+                "Password must include uppercase, lowercase, number, and special character"
+            )
+        return v
+
+    @field_validator("name")
+    @classmethod
+    def validate_name(cls, v: str) -> str:
+        if not NAME_PATTERN.match(v):
+            raise ValueError("Name contains invalid characters")
+        return v
+
+
+router = APIRouter()
+
+
+@router.post("/register")
+async def register(dto: CreateUserDto, auth_service=Depends()):
+    # Pydantic already rejects unknown fields (extra="forbid") and validates input
+    return await auth_service.register(dto)
 ```
 
 ### Frontend Validation
@@ -69,115 +87,121 @@ const { register, handleSubmit, formState: { errors } } = useForm({
 
 ### JWT Best Practices
 
-```typescript
-// Generate secure tokens
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
+```python
+# Generate secure tokens with python-jose
+from datetime import datetime, timedelta, timezone
 
-@Injectable()
-export class AuthService {
-  constructor(
-    private jwtService: JwtService,
-    private config: ConfigService,
-  ) {}
+from fastapi import Depends, HTTPException, status
+from jose import JWTError, jwt
 
-  async generateTokens(userId: string) {
-    const payload = { sub: userId };
+from app.core.config import Settings, get_settings
 
-    const accessToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get('JWT_ACCESS_SECRET'),
-      expiresIn: '15m', // Short-lived
-    });
 
-    const refreshToken = await this.jwtService.signAsync(payload, {
-      secret: this.config.get('JWT_REFRESH_SECRET'),
-      expiresIn: '7d',
-    });
+class AuthService:
+    def __init__(self, settings: Settings = Depends(get_settings)) -> None:
+        self._settings = settings
 
-    return { accessToken, refreshToken };
-  }
+    def generate_tokens(self, user_id: str) -> dict:
+        now = datetime.now(timezone.utc)
 
-  async refreshAccessToken(refreshToken: string) {
-    try {
-      const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.config.get('JWT_REFRESH_SECRET'),
-      });
+        access_token = jwt.encode(
+            {"sub": user_id, "exp": now + timedelta(minutes=15)},  # Short-lived
+            self._settings.jwt.access_secret.get_secret_value(),
+            algorithm="HS256",
+        )
+        refresh_token = jwt.encode(
+            {"sub": user_id, "exp": now + timedelta(days=7)},
+            self._settings.jwt.refresh_secret.get_secret_value(),
+            algorithm="HS256",
+        )
+        return {"access_token": access_token, "refresh_token": refresh_token}
 
-      // Check if refresh token is blacklisted
-      const isBlacklisted = await this.tokenBlacklistService.isBlacklisted(
-        refreshToken
-      );
-      if (isBlacklisted) {
-        throw new UnauthorizedException('Token has been revoked');
-      }
+    async def refresh_access_token(self, refresh_token: str, blacklist) -> dict:
+        try:
+            payload = jwt.decode(
+                refresh_token,
+                self._settings.jwt.refresh_secret.get_secret_value(),
+                algorithms=["HS256"],
+            )
+        except JWTError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token",
+            ) from exc
 
-      return this.generateTokens(payload.sub);
-    } catch (error) {
-      throw new UnauthorizedException('Invalid refresh token');
-    }
-  }
-}
+        if await blacklist.is_blacklisted(refresh_token):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Token has been revoked",
+            )
+
+        return self.generate_tokens(payload["sub"])
 ```
 
 ### Secure Password Hashing
 
-```typescript
-import * as bcrypt from 'bcrypt';
+```python
+from passlib.context import CryptContext
 
-export class PasswordService {
-  private readonly SALT_ROUNDS = 12; // OWASP recommendation
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto", bcrypt__rounds=12)
 
-  async hash(plainPassword: string): Promise<string> {
-    return bcrypt.hash(plainPassword, this.SALT_ROUNDS);
-  }
 
-  async verify(plainPassword: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, hashedPassword);
-  }
-}
+class PasswordService:
+    def hash(self, plain_password: str) -> str:
+        return pwd_context.hash(plain_password)
 
-// NEVER store passwords in plain text
-// NEVER use weak hashing (MD5, SHA1)
-// ALWAYS use bcrypt, argon2, or scrypt
+    def verify(self, plain_password: str, hashed_password: str) -> bool:
+        return pwd_context.verify(plain_password, hashed_password)
+
+
+# NEVER store passwords in plain text
+# NEVER use weak hashing (MD5, SHA1)
+# ALWAYS use bcrypt, argon2, or scrypt (passlib supports all of them)
 ```
 
-### Authorization Guards
+### Authorization Dependencies
 
-```typescript
-import { CanActivate, ExecutionContext } from '@nestjs/common';
+```python
+from uuid import UUID
 
-@Injectable()
-export class OwnershipGuard implements CanActivate {
-  constructor(
-    private projectRepository: ProjectRepository,
-  ) {}
+from fastapi import APIRouter, Depends, HTTPException, status
 
-  async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context.switchToHttp().getRequest();
-    const userId = request.user.id;
-    const projectId = request.params.id;
+from app.modules.auth.dependencies import get_current_user
+from app.modules.project.repositories import ProjectRepository
 
-    const project = await this.projectRepository.findById(projectId);
 
-    if (!project) {
-      throw new NotFoundException('Project not found');
-    }
+async def require_project_ownership(
+    project_id: UUID,
+    current_user=Depends(get_current_user),
+    project_repo: ProjectRepository = Depends(),
+):
+    project = await project_repo.find_by_id(project_id)
 
-    // Verify ownership
-    if (project.ownerId !== userId) {
-      throw new ForbiddenException('You do not own this resource');
-    }
+    if project is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
 
-    return true;
-  }
-}
+    if project.owner_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not own this resource",
+        )
 
-// Usage
-@UseGuards(JwtAuthGuard, OwnershipGuard)
-@Delete(':id')
-async deleteProject(@Param('id') id: string) {
-  return this.projectService.delete(id);
-}
+    return project
+
+
+router = APIRouter()
+
+
+@router.delete("/projects/{project_id}")
+async def delete_project(
+    project_id: UUID,
+    project=Depends(require_project_ownership),
+    project_service=Depends(),
+):
+    return await project_service.delete(project_id)
 ```
 
 ---
@@ -186,29 +210,23 @@ async deleteProject(@Param('id') id: string) {
 
 ### Backend Response Sanitization
 
-```typescript
-import { Injectable } from '@nestjs/common';
-import * as sanitizeHtml from 'sanitize-html';
+```python
+import bleach
 
-@Injectable()
-export class SanitizationService {
-  sanitizeUserInput(input: string): string {
-    return sanitizeHtml(input, {
-      allowedTags: [], // No HTML allowed
-      allowedAttributes: {},
-    });
-  }
 
-  sanitizeRichText(input: string): string {
-    return sanitizeHtml(input, {
-      allowedTags: ['b', 'i', 'em', 'strong', 'a', 'p', 'ul', 'li'],
-      allowedAttributes: {
-        'a': ['href'],
-      },
-      allowedSchemes: ['http', 'https', 'mailto'],
-    });
-  }
-}
+class SanitizationService:
+    def sanitize_user_input(self, value: str) -> str:
+        # No HTML allowed
+        return bleach.clean(value, tags=[], attributes={}, strip=True)
+
+    def sanitize_rich_text(self, value: str) -> str:
+        return bleach.clean(
+            value,
+            tags=["b", "i", "em", "strong", "a", "p", "ul", "li"],
+            attributes={"a": ["href"]},
+            protocols=["http", "https", "mailto"],
+            strip=True,
+        )
 ```
 
 ### Frontend XSS Protection
@@ -239,24 +257,38 @@ function RichComment({ comment }: { comment: string }) {
 
 ### Backend CSRF Protection
 
-```typescript
-import { csurf } from 'csurf';
+```python
+# Using starlette-csrf middleware with FastAPI
+from fastapi import APIRouter, Depends, FastAPI, Request
+from starlette_csrf import CSRFMiddleware
 
-// Enable CSRF protection
-app.use(csurf({ cookie: true }));
+from app.core.config import get_settings
 
-// Send CSRF token to client
-@Get('csrf-token')
-getCsrfToken(@Req() req: Request) {
-  return { csrfToken: req.csrfToken() };
-}
+settings = get_settings()
 
-// Validate CSRF on state-changing operations
-@Post('transfer')
-@UseGuards(CsrfGuard)
-async transfer(@Body() dto: TransferDto) {
-  return this.transferService.execute(dto);
-}
+app = FastAPI()
+app.add_middleware(
+    CSRFMiddleware,
+    secret=settings.jwt.access_secret.get_secret_value(),
+    cookie_name="csrftoken",
+    header_name="x-csrf-token",
+    exempt_urls=[r"^/api/public/"],
+)
+
+
+router = APIRouter()
+
+
+@router.get("/csrf-token")
+async def get_csrf_token(request: Request) -> dict:
+    # starlette-csrf sets the cookie automatically; expose it for SPAs if needed
+    return {"csrf_token": request.cookies.get("csrftoken")}
+
+
+@router.post("/transfer")
+async def transfer(dto: "TransferDto", transfer_service=Depends()):
+    # CSRF enforcement happens in middleware before reaching the handler
+    return await transfer_service.execute(dto)
 ```
 
 ### Frontend CSRF Handling
@@ -293,27 +325,31 @@ async function submitForm(data: FormData) {
 
 ### Use ORMs with Parameterization
 
-```typescript
-// GOOD - TypeORM parameterized query
-async findUserByEmail(email: string): Promise<User | null> {
-  return this.userRepository.findOne({
-    where: { email }, // Parameterized
-  });
-}
+```python
+# GOOD - SQLAlchemy 2.0 async parameterized query
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
-// GOOD - Query builder with parameters
-async searchUsers(searchTerm: string): Promise<User[]> {
-  return this.userRepository
-    .createQueryBuilder('user')
-    .where('user.name LIKE :searchTerm', { searchTerm: `%${searchTerm}%` })
-    .getMany();
-}
+from app.modules.user.models import User
 
-// BAD - String concatenation (SQL injection)
-async searchUsers(searchTerm: string): Promise<User[]> {
-  const query = `SELECT * FROM users WHERE name LIKE '%${searchTerm}%'`;
-  return this.userRepository.query(query); // VULNERABLE
-}
+
+async def find_user_by_email(session: AsyncSession, email: str) -> User | None:
+    stmt = select(User).where(User.email == email)  # Parameterized
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
+
+
+# GOOD - LIKE with bound parameters
+async def search_users(session: AsyncSession, search_term: str) -> list[User]:
+    stmt = select(User).where(User.name.ilike(f"%{search_term}%"))  # Bound parameter
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
+
+
+# BAD - String interpolation into raw SQL (SQL injection)
+async def search_users_bad(session: AsyncSession, search_term: str):
+    raw = f"SELECT * FROM users WHERE name LIKE '%{search_term}%'"  # VULNERABLE
+    return await session.execute(raw)
 ```
 
 ---
@@ -322,13 +358,15 @@ async searchUsers(searchTerm: string): Promise<User[]> {
 
 ### Environment Variables
 
-```typescript
-// .env (NEVER commit to git)
-JWT_ACCESS_SECRET=your-super-secret-key-min-32-chars
-JWT_REFRESH_SECRET=another-super-secret-key-min-32-chars
-DATABASE_URL=postgresql://user:pass@localhost:5432/db
+```bash
+# .env (NEVER commit to git)
+JWT__ACCESS_SECRET=your-super-secret-key-min-32-chars
+JWT__REFRESH_SECRET=another-super-secret-key-min-32-chars
+DATABASE_URL=postgresql+asyncpg://user:pass@localhost:5432/db
+```
 
-// .gitignore
+```gitignore
+# .gitignore
 .env
 .env.local
 .env.*.local
@@ -336,26 +374,39 @@ DATABASE_URL=postgresql://user:pass@localhost:5432/db
 
 ### Centralized Configuration
 
-```typescript
-// config/configuration.ts
-export default () => ({
-  jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET,
-    refreshSecret: process.env.JWT_REFRESH_SECRET,
-    accessExpiration: '15m',
-    refreshExpiration: '7d',
-  },
-  database: {
-    url: process.env.DATABASE_URL,
-  },
-});
+```python
+# app/core/config.py
+from functools import lru_cache
 
-// NEVER hardcode secrets
-// BAD
-const secret = 'my-secret-key'; // NEVER DO THIS
+from pydantic import Field, SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-// GOOD
-const secret = this.config.get('JWT_ACCESS_SECRET');
+
+class JwtSettings(BaseSettings):
+    access_secret: SecretStr = Field(..., min_length=32)
+    refresh_secret: SecretStr = Field(..., min_length=32)
+    access_expiration: str = "15m"
+    refresh_expiration: str = "7d"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", env_nested_delimiter="__")
+
+    jwt: JwtSettings
+    database_url: str
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+# NEVER hardcode secrets
+# BAD
+secret = "my-secret-key"  # NEVER DO THIS
+
+# GOOD
+secret = get_settings().jwt.access_secret.get_secret_value()
 ```
 
 ---
@@ -364,206 +415,243 @@ const secret = this.config.get('JWT_ACCESS_SECRET');
 
 ### Backend Rate Limiting
 
-```typescript
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+```python
+# Rate limiting with slowapi
+from fastapi import APIRouter, FastAPI, Request
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
-@Module({
-  imports: [
-    ThrottlerModule.forRoot({
-      ttl: 60, // Time window in seconds
-      limit: 10, // Max requests per window
-    }),
-  ],
-})
-export class AppModule {}
+limiter = Limiter(key_func=get_remote_address, default_limits=["10/minute"])
 
-// Apply to specific endpoints
-@UseGuards(ThrottlerGuard)
-@Post('login')
-async login(@Body() dto: LoginDto) {
-  return this.authService.login(dto);
-}
+app = FastAPI()
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
-// Custom rate limit for sensitive endpoints
-@Throttle(3, 60) // 3 requests per minute
-@Post('forgot-password')
-async forgotPassword(@Body() dto: ForgotPasswordDto) {
-  return this.authService.forgotPassword(dto);
-}
+
+router = APIRouter()
+
+
+# Default rate limit (10 requests per minute)
+@router.post("/login")
+@limiter.limit("10/minute")
+async def login(request: Request, dto: "LoginDto", auth_service=Depends()):
+    return await auth_service.login(dto)
+
+
+# Stricter rate limit for sensitive endpoints
+@router.post("/forgot-password")
+@limiter.limit("3/minute")
+async def forgot_password(request: Request, dto: "ForgotPasswordDto", auth_service=Depends()):
+    return await auth_service.forgot_password(dto)
 ```
 
 ---
 
 ## CORS Configuration
 
-```typescript
-import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
+```python
+import os
 
-const corsOptions: CorsOptions = {
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true, // Allow cookies
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  exposedHeaders: ['X-Total-Count'],
-  maxAge: 3600, // Cache preflight for 1 hour
-};
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
-app.enableCors(corsOptions);
+app = FastAPI()
 
-// NEVER use origin: '*' in production
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[os.environ.get("FRONTEND_URL", "http://localhost:3000")],
+    allow_credentials=True,  # Allow cookies
+    allow_methods=["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allow_headers=["Content-Type", "Authorization", "X-CSRF-Token"],
+    expose_headers=["X-Total-Count"],
+    max_age=3600,  # Cache preflight for 1 hour
+)
+
+# NEVER use allow_origins=["*"] in production
 ```
 
 ---
 
 ## Security Headers
 
-```typescript
-import helmet from 'helmet';
+```python
+# Using secure (https://github.com/TypeError/secure) with FastAPI
+from fastapi import FastAPI, Request
+from fastapi.responses import Response
+from secure import Secure
 
-app.use(helmet({
-  contentSecurityPolicy: {
-    directives: {
-      defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'"],
-      imgSrc: ["'self'", 'data:', 'https:'],
-    },
-  },
-  hsts: {
-    maxAge: 31536000,
-    includeSubDomains: true,
-    preload: true,
-  },
-  noSniff: true,
-  xssFilter: true,
-  hidePoweredBy: true,
-}));
+secure_headers = Secure.with_default_headers()
+
+app = FastAPI()
+
+
+@app.middleware("http")
+async def set_secure_headers(request: Request, call_next):
+    response: Response = await call_next(request)
+    secure_headers.set_headers(response)
+    # Customize CSP and HSTS as needed
+    response.headers["Content-Security-Policy"] = (
+        "default-src 'self'; "
+        "style-src 'self' 'unsafe-inline'; "
+        "script-src 'self'; "
+        "img-src 'self' data: https:"
+    )
+    response.headers["Strict-Transport-Security"] = (
+        "max-age=31536000; includeSubDomains; preload"
+    )
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers.pop("Server", None)
+    return response
 ```
 
 ---
 
 ## File Upload Security
 
-```typescript
-import { diskStorage } from 'multer';
-import { extname } from 'path';
+```python
+import secrets
+from pathlib import Path
 
-const ALLOWED_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.pdf'];
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+import magic  # python-magic for content-based MIME detection
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 
-@Post('upload')
-@UseInterceptors(
-  FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + extname(file.originalname));
-      },
-    }),
-    fileFilter: (req, file, cb) => {
-      const ext = extname(file.originalname).toLowerCase();
-      if (!ALLOWED_EXTENSIONS.includes(ext)) {
-        return cb(new BadRequestException('Invalid file type'), false);
-      }
-      cb(null, true);
-    },
-    limits: {
-      fileSize: MAX_FILE_SIZE,
-    },
-  }),
-)
-async uploadFile(@UploadedFile() file: Express.Multer.File) {
-  // Validate file content (not just extension)
-  const fileType = await this.fileValidationService.detectFileType(file.path);
+ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png", ".pdf"}
+ALLOWED_MIME_TYPES = {"image/jpeg", "image/png", "application/pdf"}
+MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
+UPLOAD_DIR = Path("./uploads")
+UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-  if (!this.isAllowedFileType(fileType)) {
-    fs.unlinkSync(file.path); // Delete invalid file
-    throw new BadRequestException('File content does not match extension');
-  }
+router = APIRouter()
 
-  return { filename: file.filename };
-}
+
+@router.post("/upload")
+async def upload_file(file: UploadFile = File(...)):
+    # 1. Validate extension
+    extension = Path(file.filename or "").suffix.lower()
+    if extension not in ALLOWED_EXTENSIONS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid file type",
+        )
+
+    # 2. Read content with size enforcement
+    content = await file.read(MAX_FILE_SIZE + 1)
+    if len(content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="File too large",
+        )
+
+    # 3. Validate file content (not just extension)
+    detected_mime = magic.from_buffer(content, mime=True)
+    if detected_mime not in ALLOWED_MIME_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File content does not match extension",
+        )
+
+    # 4. Persist with a random, safe filename
+    safe_name = f"{secrets.token_urlsafe(16)}{extension}"
+    target = UPLOAD_DIR / safe_name
+    target.write_bytes(content)
+
+    return {"filename": safe_name}
 ```
 
 ---
 
 ## Logging Security Events
 
-```typescript
-@Injectable()
-export class SecurityLogger {
-  private readonly logger = new Logger('Security');
+```python
+import logging
+from datetime import datetime, timezone
 
-  logLoginAttempt(email: string, success: boolean, ip: string) {
-    this.logger.log({
-      event: 'LOGIN_ATTEMPT',
-      email,
-      success,
-      ip,
-      timestamp: new Date().toISOString(),
-    });
-  }
 
-  logPasswordChange(userId: string, ip: string) {
-    this.logger.log({
-      event: 'PASSWORD_CHANGE',
-      userId,
-      ip,
-      timestamp: new Date().toISOString(),
-    });
-  }
+class SecurityLogger:
+    def __init__(self) -> None:
+        self._logger = logging.getLogger("security")
 
-  logSuspiciousActivity(userId: string, activity: string, ip: string) {
-    this.logger.warn({
-      event: 'SUSPICIOUS_ACTIVITY',
-      userId,
-      activity,
-      ip,
-      timestamp: new Date().toISOString(),
-    });
-  }
+    def log_login_attempt(self, email: str, success: bool, ip: str) -> None:
+        self._logger.info(
+            "LOGIN_ATTEMPT",
+            extra={
+                "event": "LOGIN_ATTEMPT",
+                "email": email,
+                "success": success,
+                "ip": ip,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
 
-  // NEVER log sensitive data
-  // BAD: this.logger.log({ password: user.password })
-  // GOOD: this.logger.log({ userId: user.id })
-}
+    def log_password_change(self, user_id: str, ip: str) -> None:
+        self._logger.info(
+            "PASSWORD_CHANGE",
+            extra={
+                "event": "PASSWORD_CHANGE",
+                "user_id": user_id,
+                "ip": ip,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    def log_suspicious_activity(self, user_id: str, activity: str, ip: str) -> None:
+        self._logger.warning(
+            "SUSPICIOUS_ACTIVITY",
+            extra={
+                "event": "SUSPICIOUS_ACTIVITY",
+                "user_id": user_id,
+                "activity": activity,
+                "ip": ip,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            },
+        )
+
+    # NEVER log sensitive data
+    # BAD: logger.info("login", extra={"password": user.password})
+    # GOOD: logger.info("login", extra={"user_id": user.id})
 ```
 
 ---
 
 ## Error Handling
 
-```typescript
-// NEVER expose internal errors to clients
-@Catch()
-export class GlobalExceptionFilter implements ExceptionFilter {
-  catch(exception: unknown, host: ArgumentsHost) {
-    const ctx = host.switchToHttp();
-    const response = ctx.getResponse();
+```python
+# NEVER expose internal errors to clients
+import logging
 
-    // Log full error internally
-    console.error(exception);
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import JSONResponse
 
-    // Send safe error to client
-    if (exception instanceof HttpException) {
-      return response.status(exception.getStatus()).json({
-        message: exception.message,
-      });
-    }
+logger = logging.getLogger(__name__)
+app = FastAPI()
 
-    // Generic error for unknown exceptions
-    return response.status(500).json({
-      message: 'An error occurred. Please try again later.',
-    });
-  }
-}
 
-// BAD - Exposes internal details
-throw new Error(`Database connection failed: ${connectionString}`);
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+    return JSONResponse(status_code=exc.status_code, content={"message": exc.detail})
 
-// GOOD - Generic error
-throw new InternalServerErrorException('Unable to process request');
+
+@app.exception_handler(Exception)
+async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+    # Log full error internally with traceback
+    logger.exception("Unhandled exception", exc_info=exc)
+
+    # Generic error for unknown exceptions
+    return JSONResponse(
+        status_code=500,
+        content={"message": "An error occurred. Please try again later."},
+    )
+
+
+# BAD - Exposes internal details
+# raise RuntimeError(f"Database connection failed: {connection_string}")
+
+# GOOD - Generic error
+raise HTTPException(status_code=500, detail="Unable to process request")
 ```
 
 ---

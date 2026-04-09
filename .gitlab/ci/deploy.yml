@@ -1,0 +1,54 @@
+# ============================================================================
+# Child Pipeline: DEPLOY
+# ============================================================================
+# Staging -> Production (both manual)
+# ============================================================================
+
+include:
+  - local: .gitlab/ci/_templates.yml
+
+stages:
+  - staging
+  - production
+
+"deploy: staging":
+  stage: staging
+  timeout: 30m
+  script:
+    - |
+      echo ""
+      echo "  ================================================"
+      echo "  Deploy: STAGING"
+      echo "  ================================================"
+      echo "  Commit: $CI_COMMIT_SHORT_SHA"
+      echo "  Branch: $CI_COMMIT_REF_NAME"
+      echo "  User:   $GITLAB_USER_NAME"
+      echo "  ================================================"
+      echo ""
+      echo "  TODO: Implement staging deployment"
+  environment:
+    name: staging
+    url: https://staging.example.com
+  when: manual
+
+"deploy: production":
+  stage: production
+  timeout: 30m
+  script:
+    - |
+      echo ""
+      echo "  ================================================"
+      echo "  Deploy: PRODUCTION"
+      echo "  ================================================"
+      echo "  Commit: $CI_COMMIT_SHORT_SHA"
+      echo "  Branch: $CI_COMMIT_REF_NAME"
+      echo "  User:   $GITLAB_USER_NAME"
+      echo "  ================================================"
+      echo ""
+      echo "  TODO: Implement production deployment"
+  environment:
+    name: production
+    url: https://production.example.com
+  needs:
+    - "deploy: staging"
+  when: manual

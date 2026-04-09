@@ -38,7 +38,7 @@
 12. **09b-implementation-contract-generator** - Create binding implementation contract (NEW v1.2)
 
 ### Backend (10, 13)
-10. **10-backend-fastapi-dev** - Implement backend services (FastAPI/NestJS)
+10. **10-backend-fastapi-dev** - Implement backend services (FastAPI MANDATORY)
 13. **13-backend-test-agent** - Create/audit/repair backend tests (MEJORADO v1.2.1 - DDD/Clean Architecture support)
 
 ### Frontend (11, 14)
@@ -365,7 +365,7 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
 - **openapi-code-generation.md** - Complete OpenAPI patterns and code generation strategies
   - Complete OpenAPI 3.0 example with tasks/projects
   - Frontend TypeScript type generation (openapi-typescript)
-  - Backend NestJS DTO patterns with class-validator
+  - Backend FastAPI/Pydantic v2 DTO patterns with Field validation
   - Mock server setup (Prism CLI, MSW)
   - Contract testing patterns (express-openapi-validator)
   - API versioning strategies
@@ -548,20 +548,20 @@ El Agent 13 ahora ENTIENDE y RESPETA:
    - Mock de repositories siguiendo interfaces
    - Separation of Concerns
 
-3. **NestJS + TypeScript + Jest**
-   - Testing Module setup
-   - Controller testing
-   - Guard testing
-   - TypeORM repository mocking
-   - Async vs Sync mock patterns
+3. **FastAPI + Python + pytest**
+   - TestClient setup
+   - Async endpoint testing (pytest-asyncio)
+   - Dependency override testing
+   - SQLAlchemy repository mocking
+   - Pydantic model validation testing
 
 **Nuevas Secciones Agregadas:**
 - CRITICAL: DDD/Clean Architecture Testing Patterns
 - CORRECT Patterns for Creating Test Entities
-- CORRECT Mock Patterns for Jest
+- CORRECT Mock Patterns for pytest
 - CORRECT Result<T> Pattern Testing
 - Common Anti-Patterns to AVOID
-- NestJS-Specific Expertise
+- FastAPI-Specific Expertise
 - MANDATORY: Read Existing Tests First
 - Self-Verification Checklist
 

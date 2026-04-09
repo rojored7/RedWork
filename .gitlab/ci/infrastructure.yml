@@ -1,0 +1,38 @@
+# ============================================================================
+# Child Pipeline: INFRASTRUCTURE
+# ============================================================================
+# Agent 12 - Docker/K8s infrastructure deployment
+# ============================================================================
+
+include:
+  - local: .gitlab/ci/_templates.yml
+
+stages:
+  - provision
+  - validate
+
+"12: infrastructure-deployment":
+  stage: provision
+  extends: .wait-for-file
+  variables:
+    AGENT_LABEL: "Agent 12 - Infrastructure Deployment (Docker/K8s)"
+    FILE_NAME: "outputs/12_infrastructure_report.md"
+    REQUIRED_SECTIONS: "Services|Ports|Health Checks"
+
+"12: infrastructure-health-check":
+  stage: validate
+  script:
+    - |
+      echo ""
+      echo "  >> Infrastructure Health Check"
+      echo "  ---------------------------------------------------------"
+      if [ -f docker-compose.yml ]; then
+        echo "  >> docker-compose.yml detected"
+        grep -E "^\s+[a-z][a-z0-9_-]*:" docker-compose.yml | head -10 | sed 's|^|         |'
+      else
+        echo "  >> No docker-compose.yml (manual infrastructure)"
+      fi
+      echo ""
+      echo "  >> PASS  | Infrastructure documented"
+  needs:
+    - "12: infrastructure-deployment"

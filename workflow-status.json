@@ -1,24 +1,38 @@
 {
-  "workflow_version": "1.0.0",
-  "last_updated": null,
+  "workflow_version": "2.0.0",
+  "last_updated": "2026-04-09T04:25:49Z",
+  "last_trigger": "smoke-test",
   "agents": {
+    "agent_00_project_detection": {
+      "status": "pending"
+    },
     "agent_01_product_discovery": {
-      "status": "pending",
-      "output_file": "01_product_discovery.md",
-      "completed_at": null,
-      "validation_passed": false
+      "status": "pending"
     },
     "agent_02_domain_modeling": {
-      "status": "pending",
-      "output_file": "02_domain_model.md",
-      "completed_at": null,
-      "validation_passed": false
+      "status": "pending"
     },
     "agent_03_context_mapping": {
-      "status": "pending",
-      "output_file": "03_context_map.md",
-      "completed_at": null,
-      "validation_passed": false
+      "status": "pending"
+    },
+    "agent_04_architecture_decision": {
+      "status": "pending"
+    },
+    "agent_05_service_design": {
+      "status": "pending"
+    },
+    "agent_06_epics": {
+      "status": "pending"
+    },
+    "agent_07_user_stories": {
+      "status": "pending"
+    },
+    "agent_08_implementation": {
+      "status": "pending"
+    },
+    "agent_09_sprint_plan": {
+      "status": "pending"
     }
-  }
+  },
+  "sprints": {}
 }

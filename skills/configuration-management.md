@@ -7,95 +7,123 @@
 
 ---
 
-## Backend Configuration (NestJS)
+## Backend Configuration (FastAPI)
 
-### Centralized Configuration Module
+### Centralized Configuration with Pydantic Settings
 
-```typescript
-// config/configuration.ts
-export default () => ({
-  app: {
-    port: parseInt(process.env.PORT || '3000', 10),
-    env: process.env.NODE_ENV || 'development',
-  },
-  database: {
-    host: process.env.DATABASE_HOST || 'localhost',
-    port: parseInt(process.env.DATABASE_PORT || '5432', 10),
-    username: process.env.DATABASE_USERNAME,
-    password: process.env.DATABASE_PASSWORD,
-    database: process.env.DATABASE_NAME,
-  },
-  jwt: {
-    accessSecret: process.env.JWT_ACCESS_SECRET,
-    refreshSecret: process.env.JWT_REFRESH_SECRET,
-    accessExpiration: process.env.JWT_ACCESS_EXPIRATION || '15m',
-    refreshExpiration: process.env.JWT_REFRESH_EXPIRATION || '7d',
-  },
-  redis: {
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
-  },
-  email: {
-    host: process.env.EMAIL_HOST,
-    port: parseInt(process.env.EMAIL_PORT || '587', 10),
-    user: process.env.EMAIL_USER,
-    password: process.env.EMAIL_PASSWORD,
-    from: process.env.EMAIL_FROM,
-  },
-  cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
-    credentials: true,
-  },
-});
+```python
+# app/core/config.py
+from functools import lru_cache
+from typing import Literal
 
-// app.module.ts
-import { ConfigModule } from '@nestjs/config';
-import configuration from './config/configuration';
+from pydantic import Field, SecretStr, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-@Module({
-  imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-      load: [configuration],
-      envFilePath: ['.env.local', '.env'],
-      validationSchema: Joi.object({
-        NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
-        PORT: Joi.number().default(3000),
-        DATABASE_HOST: Joi.string().required(),
-        JWT_ACCESS_SECRET: Joi.string().min(32).required(),
-        JWT_REFRESH_SECRET: Joi.string().min(32).required(),
-      }),
-    }),
-  ],
-})
-export class AppModule {}
+
+class AppSettings(BaseSettings):
+    port: int = 8000
+    env: Literal["development", "staging", "production", "test"] = "development"
+
+
+class DatabaseSettings(BaseSettings):
+    host: str = "localhost"
+    port: int = 5432
+    username: str
+    password: SecretStr
+    name: str
+
+
+class JwtSettings(BaseSettings):
+    access_secret: SecretStr = Field(..., min_length=32)
+    refresh_secret: SecretStr = Field(..., min_length=32)
+    access_expiration: str = "15m"
+    refresh_expiration: str = "7d"
+
+
+class RedisSettings(BaseSettings):
+    host: str = "localhost"
+    port: int = 6379
+    password: SecretStr | None = None
+
+
+class EmailSettings(BaseSettings):
+    host: str | None = None
+    port: int = 587
+    user: str | None = None
+    password: SecretStr | None = None
+    sender: str | None = None
+
+
+class CorsSettings(BaseSettings):
+    origin: str = "http://localhost:3000"
+    credentials: bool = True
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(
+        env_file=(".env.local", ".env"),
+        env_nested_delimiter="__",
+        case_sensitive=False,
+        extra="ignore",
+    )
+
+    app: AppSettings = AppSettings()
+    database: DatabaseSettings
+    jwt: JwtSettings
+    redis: RedisSettings = RedisSettings()
+    email: EmailSettings = EmailSettings()
+    cors: CorsSettings = CorsSettings()
+
+    @field_validator("jwt")
+    @classmethod
+    def validate_jwt_secrets(cls, v: JwtSettings) -> JwtSettings:
+        if len(v.access_secret.get_secret_value()) < 32:
+            raise ValueError("JWT_ACCESS_SECRET must be at least 32 characters")
+        return v
+
+
+@lru_cache
+def get_settings() -> Settings:
+    return Settings()
+
+
+# app/main.py
+from fastapi import FastAPI
+from app.core.config import get_settings
+
+settings = get_settings()
+
+app = FastAPI(title="Task Manager API")
 ```
 
 ### Using Configuration in Services
 
-```typescript
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+```python
+from datetime import datetime, timedelta, timezone
 
-@Injectable()
-export class AuthService {
-  constructor(private configService: ConfigService) {}
+from fastapi import Depends
+from jose import jwt
 
-  generateToken(userId: string): string {
-    const secret = this.configService.get<string>('jwt.accessSecret');
-    const expiresIn = this.configService.get<string>('jwt.accessExpiration');
+from app.core.config import Settings, get_settings
 
-    return jwt.sign({ sub: userId }, secret, { expiresIn });
-  }
 
-  isProduction(): boolean {
-    return this.configService.get<string>('app.env') === 'production';
-  }
-}
+class AuthService:
+    def __init__(self, settings: Settings = Depends(get_settings)) -> None:
+        self._settings = settings
 
-// NEVER do this
-// const secret = 'hardcoded-secret'; // BAD
+    def generate_token(self, user_id: str) -> str:
+        secret = self._settings.jwt.access_secret.get_secret_value()
+        expires_at = datetime.now(timezone.utc) + timedelta(minutes=15)
+
+        payload = {"sub": user_id, "exp": expires_at}
+        return jwt.encode(payload, secret, algorithm="HS256")
+
+    def is_production(self) -> bool:
+        return self._settings.app.env == "production"
+
+
+# NEVER do this
+# secret = "hardcoded-secret"  # BAD
 ```
 
 ---
@@ -196,38 +224,44 @@ export function log(level: string, message: string): void {
 
 ### Backend Feature Flags
 
-```typescript
-// config/features.ts
-export interface FeatureFlags {
-  enableNewDashboard: boolean;
-  enableEmailNotifications: boolean;
-  enableFileUpload: boolean;
-  maxUploadSize: number;
-}
+```python
+# app/core/features.py
+from functools import lru_cache
 
-export const featureFlags: FeatureFlags = {
-  enableNewDashboard: process.env.FEATURE_NEW_DASHBOARD === 'true',
-  enableEmailNotifications: process.env.FEATURE_EMAIL_NOTIFICATIONS === 'true',
-  enableFileUpload: process.env.FEATURE_FILE_UPLOAD === 'true',
-  maxUploadSize: parseInt(process.env.MAX_UPLOAD_SIZE || '5242880', 10), // 5MB default
-};
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-// Usage in service
-@Injectable()
-export class NotificationService {
-  constructor(private configService: ConfigService) {}
 
-  async sendEmail(to: string, subject: string, body: string): Promise<void> {
-    const emailEnabled = this.configService.get<boolean>('features.enableEmailNotifications');
+class FeatureFlags(BaseSettings):
+    model_config = SettingsConfigDict(env_prefix="FEATURE_", env_file=".env")
 
-    if (!emailEnabled) {
-      console.log('Email notifications disabled, skipping');
-      return;
-    }
+    enable_new_dashboard: bool = False
+    enable_email_notifications: bool = False
+    enable_file_upload: bool = False
+    max_upload_size: int = 5 * 1024 * 1024  # 5MB default
 
-    await this.emailService.send(to, subject, body);
-  }
-}
+
+@lru_cache
+def get_feature_flags() -> FeatureFlags:
+    return FeatureFlags()
+
+
+# Usage in service
+from fastapi import Depends
+import logging
+
+logger = logging.getLogger(__name__)
+
+
+class NotificationService:
+    def __init__(self, flags: FeatureFlags = Depends(get_feature_flags)) -> None:
+        self._flags = flags
+
+    async def send_email(self, to: str, subject: str, body: str) -> None:
+        if not self._flags.enable_email_notifications:
+            logger.info("Email notifications disabled, skipping")
+            return
+
+        await self._email_client.send(to, subject, body)
 ```
 
 ### Frontend Feature Flags
@@ -273,41 +307,54 @@ const BetaDashboard = withFeatureFlag(NewDashboard, 'enableBetaFeatures', Legacy
 
 ## Database Configuration
 
-### TypeORM Configuration
+### SQLAlchemy 2.0 Async Configuration
 
-```typescript
-// config/database.config.ts
-import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { ConfigService } from '@nestjs/config';
+```python
+# app/core/database.py
+from functools import lru_cache
+from typing import AsyncIterator
 
-export const getDatabaseConfig = (
-  configService: ConfigService,
-): TypeOrmModuleOptions => ({
-  type: 'postgres',
-  host: configService.get<string>('database.host'),
-  port: configService.get<number>('database.port'),
-  username: configService.get<string>('database.username'),
-  password: configService.get<string>('database.password'),
-  database: configService.get<string>('database.database'),
-  entities: [__dirname + '/../**/*.entity{.ts,.js}'],
-  synchronize: configService.get<string>('app.env') === 'development',
-  logging: configService.get<string>('app.env') === 'development',
-  ssl: configService.get<string>('app.env') === 'production' ? {
-    rejectUnauthorized: false,
-  } : false,
-});
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 
-// app.module.ts
-@Module({
-  imports: [
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: getDatabaseConfig,
-    }),
-  ],
-})
-export class AppModule {}
+from app.core.config import Settings, get_settings
+
+
+def build_database_url(settings: Settings) -> str:
+    db = settings.database
+    password = db.password.get_secret_value()
+    return f"postgresql+asyncpg://{db.username}:{password}@{db.host}:{db.port}/{db.name}"
+
+
+@lru_cache
+def get_engine() -> AsyncEngine:
+    settings = get_settings()
+    return create_async_engine(
+        build_database_url(settings),
+        echo=settings.app.env == "development",
+        pool_pre_ping=True,
+        connect_args={"ssl": True} if settings.app.env == "production" else {},
+    )
+
+
+@lru_cache
+def get_session_factory() -> async_sessionmaker[AsyncSession]:
+    return async_sessionmaker(bind=get_engine(), expire_on_commit=False)
+
+
+async def get_db_session() -> AsyncIterator[AsyncSession]:
+    session_factory = get_session_factory()
+    async with session_factory() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
 ```
 
 ---
@@ -377,100 +424,104 @@ REDIS_PASSWORD=redis-secret
 
 ### Using Secret Management Services
 
-```typescript
-// AWS Secrets Manager example
-import { SecretsManagerClient, GetSecretValueCommand } from '@aws-sdk/client-secrets-manager';
+```python
+# AWS Secrets Manager example
+import os
 
-export async function getSecret(secretName: string): Promise<string> {
-  const client = new SecretsManagerClient({
-    region: process.env.AWS_REGION,
-  });
+import boto3
 
-  const command = new GetSecretValueCommand({
-    SecretId: secretName,
-  });
 
-  const response = await client.send(command);
-  return response.SecretString || '';
-}
+def get_secret(secret_name: str) -> str:
+    client = boto3.client("secretsmanager", region_name=os.environ.get("AWS_REGION"))
+    response = client.get_secret_value(SecretId=secret_name)
+    return response.get("SecretString", "")
 
-// Usage
-async function bootstrap() {
-  if (process.env.NODE_ENV === 'production') {
-    const jwtSecret = await getSecret('prod/jwt-access-secret');
-    process.env.JWT_ACCESS_SECRET = jwtSecret;
-  }
 
-  const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
-}
+# Usage during app startup
+from contextlib import asynccontextmanager
+from fastapi import FastAPI
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    if os.environ.get("APP_ENV") == "production":
+        os.environ["JWT__ACCESS_SECRET"] = get_secret("prod/jwt-access-secret")
+    yield
+
+
+app = FastAPI(lifespan=lifespan)
 ```
 
 ### Vault Integration
 
-```typescript
-import * as vault from 'node-vault';
+```python
+import os
 
-const vaultClient = vault({
-  endpoint: process.env.VAULT_ADDR,
-  token: process.env.VAULT_TOKEN,
-});
+import hvac
 
-export async function loadSecretsFromVault(): Promise<void> {
-  const secrets = await vaultClient.read('secret/data/taskmanager');
 
-  process.env.DATABASE_PASSWORD = secrets.data.data.database_password;
-  process.env.JWT_ACCESS_SECRET = secrets.data.data.jwt_access_secret;
-  process.env.JWT_REFRESH_SECRET = secrets.data.data.jwt_refresh_secret;
-}
+def load_secrets_from_vault() -> None:
+    client = hvac.Client(
+        url=os.environ["VAULT_ADDR"],
+        token=os.environ["VAULT_TOKEN"],
+    )
+
+    response = client.secrets.kv.v2.read_secret_version(path="taskmanager")
+    data = response["data"]["data"]
+
+    os.environ["DATABASE__PASSWORD"] = data["database_password"]
+    os.environ["JWT__ACCESS_SECRET"] = data["jwt_access_secret"]
+    os.environ["JWT__REFRESH_SECRET"] = data["jwt_refresh_secret"]
 ```
 
 ---
 
 ## Configuration Validation
 
-### Joi Schema Validation
+### Pydantic Settings Validation
 
-```typescript
-import * as Joi from 'joi';
+```python
+from typing import Literal
 
-const configSchema = Joi.object({
-  NODE_ENV: Joi.string()
-    .valid('development', 'staging', 'production', 'test')
-    .default('development'),
-  PORT: Joi.number().default(3000),
+from pydantic import Field, SecretStr, model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
-  DATABASE_HOST: Joi.string().required(),
-  DATABASE_PORT: Joi.number().default(5432),
-  DATABASE_USERNAME: Joi.string().required(),
-  DATABASE_PASSWORD: Joi.string().required(),
-  DATABASE_NAME: Joi.string().required(),
 
-  JWT_ACCESS_SECRET: Joi.string().min(32).required(),
-  JWT_REFRESH_SECRET: Joi.string().min(32).required(),
-  JWT_ACCESS_EXPIRATION: Joi.string().default('15m'),
-  JWT_REFRESH_EXPIRATION: Joi.string().default('7d'),
+class AppConfig(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", case_sensitive=False, extra="ignore")
 
-  REDIS_HOST: Joi.string().default('localhost'),
-  REDIS_PORT: Joi.number().default(6379),
-  REDIS_PASSWORD: Joi.string().when('NODE_ENV', {
-    is: 'production',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
+    node_env: Literal["development", "staging", "production", "test"] = "development"
+    port: int = 8000
 
-  CORS_ORIGIN: Joi.string().default('http://localhost:3000'),
-});
+    database_host: str
+    database_port: int = 5432
+    database_username: str
+    database_password: SecretStr
+    database_name: str
 
-// Validate on startup
-const { error, value: validatedEnv } = configSchema.validate(process.env, {
-  abortEarly: false,
-  allowUnknown: true,
-});
+    jwt_access_secret: SecretStr = Field(..., min_length=32)
+    jwt_refresh_secret: SecretStr = Field(..., min_length=32)
+    jwt_access_expiration: str = "15m"
+    jwt_refresh_expiration: str = "7d"
 
-if (error) {
-  throw new Error(`Config validation error: ${error.message}`);
-}
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: SecretStr | None = None
+
+    cors_origin: str = "http://localhost:3000"
+
+    @model_validator(mode="after")
+    def require_redis_password_in_production(self) -> "AppConfig":
+        if self.node_env == "production" and not self.redis_password:
+            raise ValueError("REDIS_PASSWORD is required in production")
+        return self
+
+
+# Validate on startup - Pydantic raises ValidationError with full details
+try:
+    config = AppConfig()
+except Exception as exc:
+    raise RuntimeError(f"Config validation error: {exc}") from exc
 ```
 
 ---
@@ -479,46 +530,43 @@ if (error) {
 
 ### Hot Reload Configuration
 
-```typescript
-import { watch } from 'fs';
-import { join } from 'path';
+```python
+import json
+import logging
+from pathlib import Path
+from threading import Lock
 
-interface AppConfig {
-  maxConnections: number;
-  timeout: number;
-  features: FeatureFlags;
-}
+from watchfiles import watch
 
-class ConfigManager {
-  private config: AppConfig;
-  private configPath = join(__dirname, 'config.json');
+logger = logging.getLogger(__name__)
 
-  constructor() {
-    this.loadConfig();
-    this.watchConfig();
-  }
 
-  private loadConfig(): void {
-    const data = readFileSync(this.configPath, 'utf-8');
-    this.config = JSON.parse(data);
-    console.log('Configuration loaded');
-  }
+class ConfigManager:
+    def __init__(self, config_path: Path) -> None:
+        self._config_path = config_path
+        self._lock = Lock()
+        self._config: dict = {}
+        self._load_config()
 
-  private watchConfig(): void {
-    watch(this.configPath, (eventType) => {
-      if (eventType === 'change') {
-        this.loadConfig();
-        console.log('Configuration reloaded');
-      }
-    });
-  }
+    def _load_config(self) -> None:
+        with self._lock:
+            self._config = json.loads(self._config_path.read_text(encoding="utf-8"))
+        logger.info("Configuration loaded")
 
-  get<K extends keyof AppConfig>(key: K): AppConfig[K] {
-    return this.config[key];
-  }
-}
+    def watch_forever(self) -> None:
+        for _ in watch(self._config_path):
+            try:
+                self._load_config()
+                logger.info("Configuration reloaded")
+            except Exception as exc:
+                logger.error("Failed to reload config: %s", exc)
 
-export const configManager = new ConfigManager();
+    def get(self, key: str, default=None):
+        with self._lock:
+            return self._config.get(key, default)
+
+
+config_manager = ConfigManager(Path(__file__).parent / "config.json")
 ```
 
 ---

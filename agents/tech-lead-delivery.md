@@ -42,6 +42,39 @@ Every breakdown must include these sections in order:
 - Error handling and logging requirements
 - Each task should be concrete and independently testable
 
+**MANDATORY — Expected Files section per task (v2, added after Sprint 1 post-mortem):**
+
+Every single task MUST include a `### Expected Files:` sub-section
+immediately under the task heading. This is parsed by
+`scripts/workflow/validate-sprint-completeness.sh` to verify that planned
+tasks have physical files in the repo. Without this section, a task is
+marked `unverifiable` and the sprint cannot close cleanly.
+
+Format for each task in backend_tasks.md / frontend_tasks.md / etc.:
+
+```markdown
+### S1-BE-007: Implement JWT authentication endpoint
+
+Description: ...
+Effort: 4h
+Dependencies: S1-BE-003
+
+### Expected Files:
+- backend/app/endpoints/auth.py
+- backend/app/schemas/auth_schemas.py
+- backend/app/services/auth_service.py
+- backend/tests/test_auth_endpoint.py
+```
+
+Rules for Expected Files entries:
+- One glob/path per line, starting with `-`
+- Paths are relative to repo root
+- Directory prefixes ending in `/` match any file under them
+- Globs (`*`, `?`, `[abc]`) are supported
+- Every task MUST list at least one concrete expected file
+- If a task produces no file (e.g., pure config change), list the config
+  file itself — no task is allowed to be file-less
+
 ### 4. Frontend Tasks
 - UI components to create/modify
 - State management updates

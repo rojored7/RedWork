@@ -287,22 +287,24 @@ const canEdit = true;
 
 ## Import Organization
 
+This skill applies to **frontend TypeScript code (React)**. Backend is Python/FastAPI only.
+
 ```typescript
-// 1. Built-in Node modules
-import { readFile } from 'fs/promises';
-import { join } from 'path';
+// 1. Built-in / React core
+import { useState, useEffect, useMemo } from 'react';
 
 // 2. External libraries
-import { Injectable } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { z } from 'zod';
 
 // 3. Internal modules (absolute imports)
-import { User } from '@/modules/user/domain/entities/user.entity';
-import { IUserRepository } from '@/modules/user/domain/repositories/user.repository.interface';
+import { Button } from '@/components/ui/Button';
+import { useAuthStore } from '@/stores/auth-store';
+import type { User } from '@/api/generated/types';
 
-// 4. Relative imports (same module)
-import { CreateUserDto } from '../dto/create-user.dto';
-import { UserMapper } from './user.mapper';
+// 4. Relative imports (same feature)
+import { UserCard } from './UserCard';
+import { formatUserName } from '../utils/format';
 ```
 
 ---
