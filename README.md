@@ -1,394 +1,220 @@
-# Framework Agents - Complete Development Automation
+# Framework Agents v2 - Complete Development Automation
 
-Automated workflow with 21 specialized agents for full-stack development with GitLab CI/CD integration and auto-learning.
+Automated workflow with 25+ specialized agents for full-stack development with GitLab CI/CD.
 
----
-
-## What This Does
-
-Automates the complete development lifecycle:
-- Discovery: Product → Domain → Architecture → Design
-- Planning: Epics → User Stories → Technical Tasks → Sprints
-- Development: Backend + Frontend + Tests
-- Quality: Integration → E2E → Security → Linting
-- Learning: Auto-detect patterns → Generate new skills
-
-**Result**: Production-ready application with 100% test coverage, quality, and continuous improvement.
+Backend: FastAPI (Python) exclusively. Frontend: Full UX design system. API: Beautiful DX-first.
 
 ---
 
-## Quick Start
+## Setup on a New Machine
 
-### 1. Clone Framework
+### 1. Clone
 
 ```bash
-git clone https://gitlab.com/rojored7-group/redwork.git framework-agents
-cd framework-agents
+git clone https://gitlab.com/rojored7-group/redwork.git Framework
+cd Framework
 ```
 
-### 2. Create New Project
+### 2. Create a Project
 
 ```bash
 bash init-new-project.sh my-project
-```
-
-Creates:
-```
-../my-project/
-├── .framework/          # Framework (agents, scripts, hooks)
-├── .learning/           # Learning data (Agent 21, NOT committed)
-├── outputs/             # Agent outputs (*.md files)
-├── backend/             # Your backend code
-├── frontend/            # Your frontend code
-├── .gitlab-ci.yml       # CI/CD pipeline
-└── README.md            # Project README
-```
-
-### 3. Setup Project
-
-```bash
 cd ../my-project
-bash .framework/scripts/install-workflow-hooks.sh
 ```
 
-### 4. Push to GitLab
+This copies ALL framework files:
+- `.framework/` — agents, scripts, skills, hooks, templates
+- `scripts/` — workflow scripts and hooks (for CI access, since .framework/ is gitignored)
+- `.gitlab-ci.yml` + `.gitlab/ci/` — pipeline v3.0 (parent-child, 8 stages)
+- `.project-state-templates/` — task state templates for Agent 25
+
+### 3. Push to GitLab
 
 ```bash
-git remote add origin https://gitlab.com/your-group/my-project.git
+git remote add origin <your-gitlab-repo-url>
 git push -u origin main
 ```
 
-### 5. Start Pipeline
-
-Go to GitLab Pipelines → Run pipeline → Click Play on agent_01
-
-### 6. Execute First Agent
+### 4. Run Agents in Order
 
 In Claude Code:
+
 ```
-lanza el agente 01-product-discovery quiero un LMS
+a) "lanza el agente 00-project-type-detector"
+   -> Detects project type, validates FastAPI mandate
+   -> Output: outputs/00_project_detection.md
+
+b) "lanza el agente 01-product-discovery quiero un [IDEA]"
+   -> Then agents 02, 03, 04, 05 (Discovery phase)
+
+c) "lanza el agente 05c-api-first-specification"
+   -> Then agents 06, 07, 08, 09 (Planning phase)
+
+d) "lanza el agente 25-development-orchestrator"
+   -> Phase 0 installs git hooks v2 AUTOMATICALLY
+   -> Activates completeness gate
+   -> Runs development agents (10-14, 18-20) in wave order
 ```
 
-Output: `outputs/01_product_discovery.md`
-
-### 7. Auto-Commit
-
-```bash
-bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/01_product_discovery.md
-```
-
-Automatically:
-- Validates file
-- Commits
-- Pushes to GitLab
-- Pipeline detects (30s max)
-- Marks agent complete
-- Starts next agent
-
-### 8. Continue
-
-Repeat for agents 02-05 (Discovery phase complete).
+**NO manual hook installation needed.** Agent 25 Phase 0 handles everything.
 
 ---
 
-## Workflow Automation
+## How It Works (v2)
+
+### Discovery + Planning (Agents 00-09)
+
+You invoke each agent manually in sequence. Each generates a `.md` file in `outputs/`.
+
+### Development (Agent 25 orchestrates)
+
+Agent 25 is the single entry point for development. On first run:
 
 ```
-Execute Agent (Claude Code)
-   ↓
-Generate output file
-   ↓
-Auto-commit script
-   ↓
-Post-commit hook validates
-   ↓
-Push to GitLab
-   ↓
-Pipeline detects (30s)
-   ↓
-Validates content
-   ↓
-Marks complete
-   ↓
-Next agent auto-starts
+Phase 0 — Framework Activation (BLOCKING)
+  [OK] install-workflow-hooks.sh (installs pre-commit + post-commit v2)
+  [OK] post-commit hook v2 marker verified
+  [OK] 00_project_detection.md exists (FastAPI validated)
+  [OK] validate-sprint-completeness.sh present
+  [OK] validate-git-setup.sh passes
+  >>> FRAMEWORK ACTIVATED <<<
 ```
 
-**Completely automated after agent execution.**
+Then Agent 25 reads the sprint plan and invokes development agents in wave order:
+- Wave 0: Infrastructure (Agent 12) — once per group (compose, monitoring, logging, staging, backup, perf)
+- Wave 3: Backend (Agent 10) + Backend Tests (Agent 13)
+- Wave 4: API integration
+- Wave 5: Frontend (Agent 11) + Frontend Tests (Agent 14, independent auditor)
+
+### Automatic Machinery (fires on every commit)
+
+Once hooks are installed, every `git commit` triggers:
+
+1. **Pre-commit hook**: blocks NestJS/Express/Spring contamination in `backend/`
+2. **Post-commit hook v2**: detects task commits `[TASK-SN-XX-NNN]` and:
+   - Updates `workflow-status.json` dynamically
+   - Detects if the task closes a wave (all tasks in that wave completed)
+   - If wave closed: runs `post-wave-N-*.sh` (linting, smoke tests, security)
+   - If wave passed: runs `validate-sprint-completeness.sh` (tasks vs repo)
+   - If 100% complete: clears the wave for next one
+
+### Completeness Gate
+
+`validate-sprint-completeness.sh` is the structural piece that prevents silent descope:
+- Parses `09_sprint_plan/sprint_NN/*_tasks.md`
+- Reads `### Expected Files:` section from each task
+- Diffs expected files against actual repo tree via `git ls-files`
+- Emits `outputs/compliance/sprint_NN_completeness.json`
+- Exit 0 = 100% implemented, Exit 1 = missing tasks (wave blocked)
 
 ---
 
-## Available Agents
+## Agent Sequence
 
-### Discovery Phase (01-05) - Currently Configured
-1. **Product Discovery** → `01_product_discovery.md`
-2. **Domain Modeling** → `02_domain_model.md`
-3. **Context Mapping** → `03_context_map.md`
-4. **Architecture Decision** → `04_architecture_decision.md`
-5. **Service Design** → `05_service_design.md`
-
-### Planning Phase (06-09) - To Be Configured
-6. Epic Generation
-7. User Story Generation
-8. Tech Lead Delivery
-9. Sprint Orchestrator
-
-### Infrastructure (12) - To Be Configured
-12. Infrastructure Deployment
-
-### Development (10-11, 13-14, 20) - To Be Configured
-10. Backend Development
-11. Frontend Development
-13. Backend Test Agent
-14. Frontend Test Auditor
-20. Linting Validator
-
-### Testing (15-16, 18) - To Be Configured
-15. Integration Test Validator
-16. E2E Test Validator
-18. Smoke Test Validator
-
-### Quality (19-20) - To Be Configured
-19. Security Review Agent
-20. Final Linting
-
-### Learning & Optimization (21) - Configured
-21. **Learning Agent** → Analyzes patterns → Proposes new skills
-
----
-
-## Auto-Learning System
-
-**Agent 21** runs periodically to analyze your project:
-- Git history (agent execution patterns)
-- Agent outputs (content structures)
-- Error logs (problems and solutions)
-
-**Proposes new skills** when patterns detected ≥3 times:
-- Saves in `.learning/proposed-skills/`
-- You review and approve
-- Approved skills become part of framework
-
-**Usage**:
-```bash
-# In Claude Code (every 2-3 weeks)
-lanza el agente 21-learning-agent
-
-# Review proposals
-ls .learning/proposed-skills/
-
-# Approve a skill
-cp .learning/proposed-skills/09-skill-name.md \
-   .framework/agents/workflow-orchestrator/skills/
 ```
-
-See `learning/README.md` for complete documentation.
-
----
-
-## Commands Reference
-
-### Create New Project
-```bash
-bash init-new-project.sh <project-name>
-```
-
-### Install Hooks
-```bash
-bash .framework/scripts/install-workflow-hooks.sh
-```
-
-### Execute Agent (in Claude Code)
-```
-lanza el agente <agent-name> [context]
-```
-
-### Auto-Commit Output
-```bash
-bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/<file>
-```
-
-### Validate Manually
-```bash
-bash .framework/scripts/workflow/validate-agent-XX.sh
+00  Project Type Detector      (MANDATORY first, validates FastAPI)
+01  Product Discovery
+02  Domain Modeling
+03  Context Mapping
+04  Architecture Decision
+04b Security by Design
+05  Service Design
+05c API-First Specification    (Beautiful API with DX-first principles)
+06  Epic Generation
+07  User Story Generation
+08  Tech Lead Delivery         (Expected Files per task — mandatory)
+09  Sprint Orchestrator
+09b Implementation Contract Generator
+25  Development Orchestrator   (Phase 0: activates all machinery)
+    |
+    +-- 12  Infrastructure     (once per group, not once total)
+    +-- 10  Backend Dev        (FastAPI)
+    +-- 13  Backend Tests      (independent auditor)
+    +-- 11  Frontend Dev       (full UX design system)
+    +-- 14  Frontend Tests     (independent auditor)
+    +-- 18  Smoke Tests
+    +-- 19  Security Review
+    +-- 20  Linting Validator
+15  Integration Tests
+16  E2E Tests
+22  Design Compliance
+23  Quick Reference Generator
+24  Build & Deploy Analyzer
 ```
 
 ---
 
-## Project Structure
+## Framework Mandates
 
-```
-my-project/
-├── .framework/
-│   ├── agents/                      # 20 specialized agents
-│   │   ├── 01-product-discovery.md
-│   │   ├── 02-domain-modeling-agent.md
-│   │   └── ... (18 more)
-│   └── scripts/
-│       ├── install-workflow-hooks.sh
-│       ├── workflow/
-│       │   ├── validate-agent-01.sh ... 05.sh
-│       │   ├── auto-commit-agent-output.sh
-│       │   └── update-workflow-status.sh
-│       └── hooks/
-│           └── post-commit-workflow
-│
-├── outputs/                         # Agent outputs
-│   ├── 01_product_discovery.md
-│   ├── 02_domain_model.md
-│   └── ...
-│
-├── backend/                         # Backend code
-├── frontend/                        # Frontend code
-├── .gitlab-ci.yml                   # Pipeline config
-└── README.md                        # Project README
-```
+| Rule | Enforcement |
+|---|---|
+| Backend = FastAPI (Python) | Pre-commit hook blocks NestJS/TS. Pipeline setup exits 1. Agent 00 marks UNSUPPORTED. |
+| Frontend = Full UX design | Agent 11 requires Design System Phase 0 before any screen. No blank pages. |
+| API = Beautiful DX | Agent 05c enforces 7 DX principles: naming, envelopes, suggestions in errors, etc. |
+| Sprint completeness = 100% | `validate-sprint-completeness.sh` blocks wave if tasks are missing. |
+| Author != Reviewer | Agent 25 mandates frontend-test-auditor as independent pass after frontend-development. |
+| Tasks have Expected Files | Agent 08 must include `### Expected Files:` per task or completeness gate fails. |
 
 ---
 
-## How It Works
+## Key Files
 
-### 1. Agent Execution
-Execute agent in Claude Code with your project idea.
-
-### 2. Auto-Commit Script
-```bash
-bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/01_product_discovery.md
 ```
-- Detects which agent (01-05)
-- Creates commit with proper message
-- Triggers post-commit hook
-
-### 3. Post-Commit Hook (Automatic)
-- Validates file has required sections
-- Pushes to GitLab if valid
-- Shows error if validation fails
-
-### 4. GitLab Pipeline (Automatic)
-- Polls for file every 30 seconds
-- Detects file when pushed
-- Validates content
-- Marks agent as complete
-- Auto-starts next agent
-
-### 5. Next Agent
-Repeat process for next agent.
-
----
-
-## Validation Rules
-
-Each agent validates specific sections:
-
-**Agent 01**: Product Vision, Problem Statement, System Objectives
-**Agent 02**: Domain Entities, Value Objects
-**Agent 03**: Bounded Contexts, Context Relationships
-**Agent 04**: Architecture Pattern, Deployment Strategy, Technology Stack
-**Agent 05**: Service Design, Clean Architecture, Domain Layer
+Framework/
+  init-new-project.sh              # Creates new projects with all v2 scripts
+  .gitlab-ci.yml                   # Pipeline v3.0 (FastAPI mandate, no LEGACY-TOLERANT)
+  .gitlab/ci/*.yml                 # Child pipeline definitions (8 stages)
+  workflow-status.json             # Status template (regenerated dynamically)
+  agents/                          # 25+ agent definitions
+  skills/                          # 14 skill documents (including ux-design-system, api-dx-design)
+  scripts/
+    install-workflow-hooks.sh      # Installs pre-commit + post-commit v2
+    hooks/
+      post-commit-workflow         # framework-workflow-hook-v2 (wave detection + completeness)
+      post-wave-3-backend.sh       # Backend validation (lint, smoke, security)
+      post-wave-4-api.sh           # API validation
+      post-wave-5-frontend.sh      # Frontend + system validation
+    workflow/
+      validate-sprint-completeness.sh   # THE completeness gate (tasks vs repo)
+      auto-commit-task.sh               # Task commits with state tracking
+      update-workflow-status.sh          # Dynamic JSON regeneration (no self-commit)
+      validate-no-nestjs-contamination.sh  # FastAPI mandate for framework files
+      validate-agent-*.sh               # Per-agent output validators
+      validate-git-setup.sh             # Git repo health check
+      resume-development.sh             # Resume after disconnect
+```
 
 ---
 
 ## Troubleshooting
 
-### Hooks Not Running
-```bash
-# Verify installed
-ls -la .git/hooks/post-commit
+### "FRAMEWORK ACTIVATED" never appears
 
-# Reinstall
-bash .framework/scripts/install-workflow-hooks.sh
-```
+Agent 25 Phase 0 failed. Check which step failed:
+- Missing `00_project_detection.md` -> run Agent 00 first
+- Hook marker missing -> delete `.git/hooks/post-commit` and re-run Agent 25
+- `validate-sprint-completeness.sh` missing -> framework copy incomplete, re-run `init-new-project.sh`
 
-### Pipeline Not Detecting File
-- Check file is in `outputs/` directory
-- Check file pushed: `git log --oneline`
-- Wait up to 30 seconds for polling
-- Check pipeline running in GitLab
+### Pre-commit rejects my commit
 
-### Validation Fails
-```bash
-# Run validator manually
-bash .framework/scripts/workflow/validate-agent-01.sh
+The pre-commit hook detected non-FastAPI code in `backend/`:
+- TypeScript files under `backend/` -> remove them, use Python
+- `@nestjs` in `backend/package.json` -> this project requires FastAPI
+- To bypass (NOT recommended): `git commit --no-verify`
 
-# Check error message
-# Fix file
-# Recommit
-```
+### Wave blocked
 
-### Agent Won't Execute
-- Check agent file exists in `.framework/agents/`
-- Use correct agent name
-- Provide context from previous agent
+A `.project-state/wave_N_blocked.flag` file appeared. Check:
+- `outputs/compliance/sprint_NN_completeness.json` for missing tasks
+- Post-wave report in `.project-orchestration/post-wave-N-report-*.md`
+- Fix the missing tasks, then re-run the completeness validator
+
+### Sprint at < 100%
+
+Run manually: `bash scripts/workflow/validate-sprint-completeness.sh 01`
+The JSON report lists every task with status (implemented/missing/unverifiable).
 
 ---
 
-## Essential Files
-
-Framework requires only these files:
-
-```
-Framework/
-├── README.md                              # This file
-├── CLAUDE.md                              # Claude Code instructions
-├── init-new-project.sh                    # Project setup
-├── .gitlab-ci.yml                         # Pipeline template
-├── workflow-status.json                   # Status tracker
-├── .gitignore                             # Git ignore rules
-│
-├── agents/                                # 21 agents
-│   ├── 01-product-discovery.md
-│   ├── 21-learning-agent.md
-│   └── ... (19 more)
-│
-├── learning/                              # Learning system
-│   └── README.md
-│
-└── scripts/
-    ├── install-workflow-hooks.sh
-    ├── workflow/
-    │   ├── validate-agent-01.sh ... 05.sh
-    │   ├── auto-commit-agent-output.sh
-    │   └── update-workflow-status.sh
-    └── hooks/
-        └── post-commit-workflow
-```
-
-**Total: ~40 files**
-
----
-
-## Benefits
-
-- **Automated**: Minimal manual intervention
-- **Quality**: 100% validation at every step
-- **Traceable**: GitLab shows complete flow
-- **Reusable**: One framework, infinite projects
-- **Self-Improving**: Learns patterns and generates new skills
-- **Tested**: Working Discovery phase (agents 01-05) + Learning Agent
-
----
-
-## Status
-
-**Working**:
-- Discovery phase (agents 01-05) - Fully configured
-- Learning Agent (agent 21) - Fully configured
-
-**Pending**: Planning, Infrastructure, Development, Testing, Quality phases
-
-**Next**: Configure remaining 15 agents with same pattern.
-
----
-
-## Support
-
-- Framework: https://gitlab.com/rojored7-group/redwork
-- Issues: Create issue in framework repo
-- Agents: See `agents/README.md`
-- Learning System: See `learning/README.md`
-
----
-
-**Version**: 1.1.0
-**Created**: 2026-03-31
-**Updated**: 2026-04-01 (Added Learning Agent)
-**Status**: Discovery Phase + Learning System Complete
+Version: 2.0.0
+Updated: 2026-04-09

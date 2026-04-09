@@ -53,7 +53,12 @@ cp -r agents "$PROJECT_PATH/.framework/"
 cp -r scripts "$PROJECT_PATH/.framework/"
 cp -r skills "$PROJECT_PATH/.framework/"
 
-# Copy workflow-status.json if present
+# Copy .project-state-templates for Agent 25 task initialization
+if [ -d .project-state-templates ]; then
+    cp -r .project-state-templates "$PROJECT_PATH/.framework/"
+fi
+
+# Copy workflow-status.json template
 if [ -f workflow-status.json ]; then
     cp workflow-status.json "$PROJECT_PATH/"
 fi
@@ -67,16 +72,59 @@ if [ -d .gitlab/ci ]; then
     cp .gitlab/ci/*.yml "$PROJECT_PATH/.gitlab/ci/"
 fi
 
-# Also copy critical validation scripts to project root scripts/ for CI access
+# Copy critical scripts to project root scripts/ for CI access
+# These must be accessible outside .framework/ since .framework/ is gitignored
 mkdir -p "$PROJECT_PATH/scripts/workflow"
-cp scripts/workflow/validate-no-nestjs-contamination.sh "$PROJECT_PATH/scripts/workflow/" 2>/dev/null || true
-cp scripts/workflow/pipeline-helper.sh "$PROJECT_PATH/scripts/workflow/" 2>/dev/null || true
+mkdir -p "$PROJECT_PATH/scripts/hooks"
+
+# Workflow scripts for CI and manual use
+for script in \
+    validate-no-nestjs-contamination.sh \
+    validate-sprint-completeness.sh \
+    auto-commit-task.sh \
+    update-workflow-status.sh \
+    resume-development.sh \
+    pipeline-helper.sh \
+    validate-agent-00.sh \
+    validate-agent-01.sh \
+    validate-agent-02.sh \
+    validate-agent-03.sh \
+    validate-agent-04.sh \
+    validate-agent-05.sh \
+    validate-agent-06bis.sh \
+    validate-agent-07bis.sh \
+    validate-agent-22.sh \
+    validate-agent-23.sh \
+    validate-agent-24.sh \
+    validate-git-setup.sh; do
+    cp "scripts/workflow/$script" "$PROJECT_PATH/scripts/workflow/" 2>/dev/null || true
+done
+
+# Post-wave hooks for CI and Agent 25
+for hook in \
+    post-wave-3-backend.sh \
+    post-wave-4-api.sh \
+    post-wave-5-frontend.sh \
+    post-commit-workflow; do
+    cp "scripts/hooks/$hook" "$PROJECT_PATH/scripts/hooks/" 2>/dev/null || true
+done
+
+# Hook installer (needs to be accessible from project root too)
+cp scripts/install-workflow-hooks.sh "$PROJECT_PATH/scripts/" 2>/dev/null || true
+
 chmod +x "$PROJECT_PATH/scripts/workflow/"*.sh 2>/dev/null || true
+chmod +x "$PROJECT_PATH/scripts/hooks/"*.sh 2>/dev/null || true
+chmod +x "$PROJECT_PATH/scripts/"*.sh 2>/dev/null || true
+chmod +x "$PROJECT_PATH/.framework/scripts/workflow/"*.sh 2>/dev/null || true
+chmod +x "$PROJECT_PATH/.framework/scripts/hooks/"*.sh 2>/dev/null || true
+chmod +x "$PROJECT_PATH/.framework/scripts/"*.sh 2>/dev/null || true
 
 echo "  OK - Framework files copied (agents + scripts + skills)"
 echo "  OK - Pipeline .gitlab-ci.yml v3.0 copied (parent-child, 8 cards)"
-echo "  OK - Child pipelines copied to .gitlab/ci/ (7 files)"
-echo "  OK - Validation scripts copied to scripts/workflow/"
+echo "  OK - Child pipelines copied to .gitlab/ci/"
+echo "  OK - ALL validation scripts copied to scripts/workflow/"
+echo "  OK - Post-wave hooks copied to scripts/hooks/"
+echo "  OK - .project-state-templates copied for Agent 25"
 echo ""
 
 # Create project-specific .gitignore
@@ -180,81 +228,92 @@ echo "Step 5: Creating README.md..."
 cat > "$PROJECT_PATH/README.md" << EOF
 # $PROJECT_NAME
 
-Project created with Framework Agents.
+Project created with Framework Agents v2.
+
+## Quick Start (v2 Workflow)
+
+### Step 1: Push to GitLab
+
+\`\`\`bash
+git remote add origin <your-gitlab-repo-url>
+git push -u origin main
+\`\`\`
+
+### Step 2: Run Agent 00 (Project Type Detection)
+
+\`\`\`
+In Claude Code:
+"lanza el agente 00-project-type-detector"
+\`\`\`
+
+This detects project type and validates FastAPI mandate. Must run before anything else.
+
+### Step 3: Discovery Phase (Agents 01-05)
+
+\`\`\`
+"lanza el agente 01-product-discovery quiero un [YOUR_PROJECT_IDEA]"
+"lanza el agente 02-domain-modeling-agent"
+"lanza el agente context-mapping-agent"
+"lanza el agente architecture-decision"
+"lanza el agente service-design-architect"
+\`\`\`
+
+### Step 4: Planning Phase (Agents 05c, 06-09)
+
+\`\`\`
+"lanza el agente 05c-api-first-specification"
+"lanza el agente 06-epic-generation"
+"lanza el agente 07-user-story-generator"
+"lanza el agente 08-tech-lead-delivery"
+"lanza el agente 09-sprint-orchestrator"
+\`\`\`
+
+### Step 5: Development (Agent 25 orchestrates everything)
+
+\`\`\`
+"lanza el agente 25-development-orchestrator"
+\`\`\`
+
+Agent 25 Phase 0 automatically:
+- Installs git hooks v2 (pre-commit + post-commit)
+- Verifies FastAPI mandate
+- Verifies completeness gate is present
+- Prints "FRAMEWORK ACTIVATED" banner
+- Then runs development agents (10, 11, 12, 13, 14) in wave order
+
+From this point, every commit automatically triggers:
+- Workflow status update
+- Wave completion detection
+- Post-wave validation (linting, smoke tests, security)
+- Sprint completeness gate
 
 ## Project Structure
 
 \`\`\`
 $PROJECT_NAME/
-├── .framework/          # Framework files (agents, scripts, hooks)
-├── .learning/           # Learning data (Agent 21, NOT committed)
-├── outputs/             # Agent outputs (discovery docs, models, etc.)
-├── backend/             # Backend application
-├── frontend/            # Frontend application
-├── docs/                # Additional documentation
-└── .gitlab-ci.yml       # CI/CD pipeline configuration
+├── .framework/          # Framework (agents, scripts, skills) — NOT committed
+├── .learning/           # Learning data (Agent 21) — NOT committed
+├── outputs/             # Agent outputs
+├── backend/             # FastAPI backend (Python) — MANDATORY STACK
+├── frontend/            # React frontend with UX design system
+├── scripts/             # Workflow scripts (for CI access)
+├── .gitlab-ci.yml       # Pipeline v3.0 (parent-child, 8 stages)
+└── .gitlab/ci/          # Child pipeline definitions
 \`\`\`
 
-## Quick Start
+## Framework Mandate
 
-### 1. Install hooks
-
-\`\`\`bash
-bash .framework/scripts/install-workflow-hooks.sh
-\`\`\`
-
-### 2. Start pipeline in GitLab
-
-1. Push this repo to GitLab
-2. Go to Pipelines
-3. Click "Run pipeline"
-4. Click Play on agent_01
-
-### 3. Execute Agent 01
-
-\`\`\`
-In Claude Code:
-"lanza el agente 01-product-discovery quiero un [YOUR_PROJECT_IDEA]"
-\`\`\`
-
-Agent will generate: \`outputs/01_product_discovery.md\`
-
-### 4. Auto-commit
-
-\`\`\`bash
-bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/01_product_discovery.md
-\`\`\`
-
-The workflow will:
-- Validate the file
-- Push to GitLab
-- GitLab pipeline detects it (30s max)
-- Agent 02 auto-starts
-
-### 5. Continue with remaining agents
-
-Repeat for agents 02-05 (Discovery phase).
-
-## Agents Available
-
-**Discovery Phase (01-05)**:
-1. Product Discovery
-2. Domain Modeling
-3. Context Mapping
-4. Architecture Decision
-5. Service Design
-
-## Documentation
-
-See \`.framework/agents/README.md\` for complete agent list and usage.
+- Backend: **FastAPI (Python) exclusively**. NestJS/Express/Spring are blocked.
+- Frontend: **Full UX design** with design system, not blank pages.
+- API: **Beautiful API with DX-first principles**.
+- Completeness: Every sprint is gated at 100% task implementation.
 
 ## Support
 
-Framework repository: https://gitlab.com/rojored7-group/redwork
-
+Framework: https://gitlab.com/rojored7-group/redwork
 Created: $(date +%Y-%m-%d)
 EOF
-echo "✓ README.md created"
+echo "OK - README.md created"
 echo ""
 
 # Update workflow paths in scripts
@@ -303,7 +362,7 @@ echo ""
 
 # Success message
 echo "=========================================="
-echo "PROJECT CREATED SUCCESSFULLY"
+echo "PROJECT CREATED SUCCESSFULLY (v2)"
 echo "=========================================="
 echo ""
 echo "Project: $PROJECT_NAME"
@@ -311,29 +370,31 @@ echo "Location: $PROJECT_PATH"
 echo ""
 echo "Next steps:"
 echo ""
-echo "1. Navigate to project:"
-echo "   cd $PROJECT_PATH"
+echo "  1. cd $PROJECT_PATH"
 echo ""
-echo "2. Install workflow hooks:"
-echo "   bash .framework/scripts/install-workflow-hooks.sh"
+echo "  2. Push to GitLab:"
+echo "     git remote add origin <your-gitlab-repo-url>"
+echo "     git push -u origin main"
 echo ""
-echo "3. Create GitLab repository and push:"
-echo "   git remote add origin <your-gitlab-repo-url>"
-echo "   git push -u origin main"
+echo "  3. In Claude Code, run agents in order:"
 echo ""
-echo "4. Start pipeline in GitLab:"
-echo "   - Go to Pipelines"
-echo "   - Click 'Run pipeline'"
-echo "   - Click Play on agent_01"
+echo "     a) \"lanza el agente 00-project-type-detector\""
+echo "        -> Detects project type, validates FastAPI mandate"
 echo ""
-echo "5. Execute first agent in Claude Code:"
-echo "   lanza el agente 01-product-discovery quiero un [YOUR_IDEA]"
+echo "     b) \"lanza el agente 01-product-discovery quiero un [IDEA]\""
+echo "        -> Then agents 02, 03, 04, 05 (Discovery)"
 echo ""
-echo "6. Auto-commit output:"
-echo "   bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/01_product_discovery.md"
+echo "     c) \"lanza el agente 05c-api-first-specification\""
+echo "        -> Then agents 06, 07, 08, 09 (Planning)"
 echo ""
-echo "=========================================="
-echo "Ready to start development!"
+echo "     d) \"lanza el agente 25-development-orchestrator\""
+echo "        -> Phase 0 installs hooks automatically"
+echo "        -> Activates completeness gate"
+echo "        -> Runs development agents in wave order"
+echo ""
+echo "  NO manual hook installation needed."
+echo "  Agent 25 Phase 0 handles it automatically."
+echo ""
 echo "=========================================="
 
 cd "$FRAMEWORK_PATH"
