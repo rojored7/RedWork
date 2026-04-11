@@ -40,6 +40,7 @@ echo ""
 echo "Step 1: Creating project structure..."
 mkdir -p "$PROJECT_PATH"
 mkdir -p "$PROJECT_PATH/.framework"
+mkdir -p "$PROJECT_PATH/.claude/hooks"
 mkdir -p "$PROJECT_PATH/outputs"
 mkdir -p "$PROJECT_PATH/backend"
 mkdir -p "$PROJECT_PATH/frontend"
@@ -118,6 +119,17 @@ chmod +x "$PROJECT_PATH/scripts/"*.sh 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.framework/scripts/workflow/"*.sh 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.framework/scripts/hooks/"*.sh 2>/dev/null || true
 chmod +x "$PROJECT_PATH/.framework/scripts/"*.sh 2>/dev/null || true
+
+# Copy Claude Code runtime hooks (Nivel 1 enforcement)
+if [ -f ".claude/settings.json" ]; then
+    cp .claude/settings.json "$PROJECT_PATH/.claude/"
+    echo "  OK - Claude Code settings.json copied (runtime hooks config)"
+fi
+if [ -d ".claude/hooks" ]; then
+    cp .claude/hooks/*.sh "$PROJECT_PATH/.claude/hooks/" 2>/dev/null || true
+    chmod +x "$PROJECT_PATH/.claude/hooks/"*.sh 2>/dev/null || true
+    echo "  OK - Claude Code runtime hooks copied (7 scripts)"
+fi
 
 echo "  OK - Framework files copied (agents + scripts + skills)"
 echo "  OK - Pipeline .gitlab-ci.yml v3.0 copied (parent-child, 8 cards)"
