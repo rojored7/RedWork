@@ -82,9 +82,11 @@ Phase 0 — Framework Activation (BLOCKING)
 
 Then Agent 25 reads the sprint plan and invokes development agents in wave order:
 - Wave 0: Infrastructure (Agent 12) — once per group (compose, monitoring, logging, staging, backup, perf)
-- Wave 3: Backend (Agent 10) + Backend Tests (Agent 13)
-- Wave 4: API integration
-- Wave 5: Frontend (Agent 11) + Frontend Tests (Agent 14, independent auditor)
+- Wave 3a: Backend TESTS first (Agent 13) — writes pytest from specs, all tests MUST fail (Red)
+- Wave 3b: Backend implementation (Agent 10) — makes the tests pass (Green)
+- Wave 4: API integration validation
+- Wave 5a: Frontend TESTS first (Agent 14) — writes Vitest tests from specs, all tests MUST fail (Red)
+- Wave 5b: Frontend implementation (Agent 11) — makes the tests pass (Green)
 
 ### Automatic Machinery (fires on every commit)
 
@@ -128,10 +130,10 @@ Once hooks are installed, every `git commit` triggers:
 25  Development Orchestrator   (Phase 0: activates all machinery)
     |
     +-- 12  Infrastructure     (once per group, not once total)
-    +-- 10  Backend Dev        (FastAPI)
-    +-- 13  Backend Tests      (independent auditor)
-    +-- 11  Frontend Dev       (full UX design system)
-    +-- 14  Frontend Tests     (independent auditor)
+    +-- 13  Backend TESTS FIRST (TDD Red phase — pytest from specs)
+    +-- 10  Backend Dev        (TDD Green phase — makes tests pass)
+    +-- 14  Frontend TESTS FIRST (TDD Red phase — Vitest from specs)
+    +-- 11  Frontend Dev       (TDD Green phase — makes tests pass)
     +-- 18  Smoke Tests
     +-- 19  Security Review
     +-- 20  Linting Validator

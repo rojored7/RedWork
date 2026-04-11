@@ -458,13 +458,41 @@ ls -la .project-state/
 
 ### Phase 6: Hand Off to Development Agent
 
-**Mandatory invocation rules (learned from Sprint 1 post-mortem):**
+**MANDATORY: TDD — Tests FIRST, implementation AFTER.**
 
-1. **frontend-test-auditor MUST run as an independent pass after
-   frontend-development.** Never let the author of the frontend code audit
-   its own tests. The orchestrator invokes `frontend-test-auditor` always,
-   as a separate Task-tool call, after Agent 11 finishes its tasks. The
-   principle: author and reviewer must not be the same agent.
+This framework follows Test-Driven Development by design. The order is
+non-negotiable:
+
+```
+1. Write tests    (Agent 13 / Agent 14)
+2. Run tests      (they MUST fail — Red phase)
+3. Implement code (Agent 10 / Agent 11)
+4. Run tests      (they MUST pass — Green phase)
+5. Refactor       (same agent, cleanup)
+```
+
+If the tests pass before the implementation exists, the tests are wrong.
+If the implementation is written before the tests exist, the order is wrong.
+
+**Wave execution order (TDD-correct):**
+
+```
+Wave 0: Infrastructure (Agent 12) — once per group
+Wave 3a: Backend TESTS first (Agent 13) — writes pytest tests from specs
+Wave 3b: Backend IMPLEMENTATION (Agent 10) — makes the tests pass
+Wave 4: API integration validation
+Wave 5a: Frontend TESTS first (Agent 14) — writes Vitest/Testing Library tests from specs
+Wave 5b: Frontend IMPLEMENTATION (Agent 11) — makes the tests pass
+```
+
+**Mandatory invocation rules:**
+
+1. **Tests are written by a DIFFERENT agent than the implementation.**
+   Agent 13 writes backend tests. Agent 10 writes backend code.
+   Agent 14 writes frontend tests. Agent 11 writes frontend code.
+   The test agent reads the sprint plan, user stories, and implementation
+   breakdown to write tests BEFORE any production code exists. The
+   implementation agent then writes code to make those tests pass.
 
 2. **infrastructure-deployment MUST be invoked once per group**, not once
    total. The groups are:
@@ -476,41 +504,51 @@ ls -la .project-state/
    - `perf`      — load-testing infra, perf dashboards
 
    For each group, the orchestrator makes a separate Task-tool invocation
-   of Agent 12 with a scoped task list. In Sprint 1, Agent 12 was run once
-   total and everything beyond `compose` was silently descoped — this
-   caused S1-INFRA-007, 008, 012, 014 to fall through the cracks.
+   of Agent 12 with a scoped task list.
 
-3. **backend-test-agent MUST run as an independent pass after
-   backend-development.** Same author/reviewer separation as rule 1.
-
-4. **After each wave commits its last task**, the post-commit hook
+3. **After each wave commits its last task**, the post-commit hook
    (framework-workflow-hook-v2) automatically triggers the post-wave
    validator and `validate-sprint-completeness.sh --wave <name>`. The
    orchestrator does NOT need to invoke these manually. If a
    `.project-state/wave_N_blocked.flag` file appears, STOP and show the
    user the completeness report before continuing.
 
-**Invoke appropriate development agent** with context:
+**Invoke agents in TDD order:**
 
-**For Backend Development:**
+**Wave 3a — Backend Tests FIRST:**
+```
+Launch Agent 13 (Backend Test Agent) with:
+- Sprint: 01
+- Task file: .project-state/sprint_01_backend_test_tasks.json
+- Input: user stories (07), implementation breakdown (08), domain model (02)
+- Goal: Write pytest tests for ALL backend tasks. Tests MUST fail (no implementation yet).
+```
+
+**Wave 3b — Backend Implementation (makes tests pass):**
 ```
 Launch Agent 10 (Backend Development) with:
 - Sprint: 01
 - Task file: .project-state/sprint_01_backend_tasks.json
 - First task: S1-BE-001
+- Goal: Implement code that makes Agent 13's tests pass. Run tests after each task.
 ```
 
-**For Frontend Development:**
+**Wave 5a — Frontend Tests FIRST:**
+```
+Launch Agent 14 (Frontend Test Auditor) with:
+- Sprint: 01
+- Task file: .project-state/sprint_01_frontend_test_tasks.json
+- Input: user stories (07), implementation breakdown (08), service design (05)
+- Goal: Write Vitest + Testing Library tests for ALL frontend tasks. Tests MUST fail.
+```
+
+**Wave 5b — Frontend Implementation (makes tests pass):**
 ```
 Launch Agent 11 (Frontend Development) with:
 - Sprint: 01
 - Task file: .project-state/sprint_01_frontend_tasks.json
 - First task: S1-FE-001
-```
-
-**For Testing:**
-```
-Launch Agent 13/14 with appropriate task file
+- Goal: Implement screens/components that make Agent 14's tests pass.
 ```
 
 **Provide clear handoff message:**
