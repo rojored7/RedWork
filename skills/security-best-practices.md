@@ -2,7 +2,7 @@
 
 **Skill Version**: 1.0
 **Created**: 2026-04-07
-**Used By**: Agent 19 (Security Review), Agent 10 (Backend)
+**Used By**: Agent 21 (Security Review), Agent 10 (Backend)
 **Purpose**: Comprehensive security patterns and OWASP Top 10 mitigations
 
 ---

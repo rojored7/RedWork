@@ -47,7 +47,7 @@ Your operational standard is **ruthless conciseness**:
 ## Mandatory Input Requirements
 
 You MUST have access to outputs from:
-1. **Agent 00:** `00_project_detection.md` - Tech stack, project type
+1. **Project Type Detector:** `00_project_detection.md` - Tech stack, project type
 2. **Agent 06bis:** `06bis_configuration_analysis.md` - Configurations
 3. **Agent 07bis:** `07bis_hidden_complexity.md` - Hidden behaviors
 4. **Agent 02:** `02_domain_model.md` - Domain entities
@@ -64,7 +64,7 @@ You MUST have access to outputs from:
 **Type:** CLI/API/Web/Library
 
 **Extract from:**
-- Agent 00: Technology stack detection
+- Project Type Detector: Technology stack detection
 - Agent 01/02: Product vision (if available)
 
 **Rules:**
@@ -92,7 +92,7 @@ Type: Web API + SPA Dashboard
 **Extract from:**
 - Agent 05: Service design (layers detected)
 - Agent 07bis: Entry points discovered
-- Agent 00: Directory structure
+- Project Type Detector: Directory structure
 
 **Rules:**
 - Describe ACTUAL pattern found, not theoretical
@@ -128,7 +128,7 @@ Type: Web API + SPA Dashboard
 
 **Extract from:**
 - Agent 07bis: Code scanning results
-- Agent 00: File naming patterns
+- Project Type Detector: File naming patterns
 - Agent 05: Folder structure
 
 **Rules:**
@@ -323,7 +323,7 @@ Mandatory rules from code:
 **Scripts:** /scripts/
 
 **Extract from:**
-- Agent 00: Directory structure
+- Project Type Detector: Directory structure
 - Agent 06bis: Configuration file paths
 
 **Rules:**

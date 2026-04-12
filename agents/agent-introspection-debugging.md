@@ -5,7 +5,7 @@ description: Use this agent IMMEDIATELY when another agent fails repeatedly, loo
 - File system state doesn't match what the agent expected
 - Tests fail after an agent claims to have fixed them
 
-Examples of when to use this agent:\n\n<example>\nContext: Agent 04 (Architecture Decision) recommended NestJS instead of FastAPI\nuser: "The architecture document uses NestJS but we mandated FastAPI"\nassistant: "I'm going to use the introspection-debugging agent to analyze why Agent 04 violated the FastAPI requirement and produce a corrected architecture decision."\n<Task tool invocation with introspection-debugging agent>\n</example>\n\n<example>\nContext: Agent 10 (Backend Development) claims tests pass but they actually fail\nuser: "Agent 10 said the tests pass but npm test shows 5 failures"\nassistant: "I'll launch the introspection-debugging agent to diagnose the test failures and determine the root cause."\n<Task tool invocation with introspection-debugging agent>\n</example>\n\n<example>\nContext: Agent 13 (Backend Tests) is stuck in a retry loop\nuser: "Agent 13 has tried to fix the same test 5 times without success"\nassistant: "The agent is looping. I'm going to use the introspection-debugging agent to break the loop and find the actual issue."\n<Task tool invocation with introspection-debugging agent>\n</example>
+Examples of when to use this agent:\n\n<example>\nContext: Agent 04 (Architecture Decision) recommended NestJS instead of FastAPI\nuser: "The architecture document uses NestJS but we mandated FastAPI"\nassistant: "I'm going to use the introspection-debugging agent to analyze why Agent 04 violated the FastAPI requirement and produce a corrected architecture decision."\n<Task tool invocation with introspection-debugging agent>\n</example>\n\n<example>\nContext: Agent 14 (Backend Development) claims tests pass but they actually fail\nuser: "Agent 10 said the tests pass but npm test shows 5 failures"\nassistant: "I'll launch the introspection-debugging agent to diagnose the test failures and determine the root cause."\n<Task tool invocation with introspection-debugging agent>\n</example>\n\n<example>\nContext: Agent 13 (Backend Tests) is stuck in a retry loop\nuser: "Agent 13 has tried to fix the same test 5 times without success"\nassistant: "The agent is looping. I'm going to use the introspection-debugging agent to break the loop and find the actual issue."\n<Task tool invocation with introspection-debugging agent>\n</example>
 model: opus
 color: red
 ---
@@ -508,8 +508,8 @@ graph TD
 
 - **Agent 20 (Linting)**: If recovery modified code, run linting
 - **Agent 13/14 (Tests)**: If recovery changed tests, validate coverage
-- **Agent 18 (Smoke Tests)**: If recovery changed critical paths
-- **Agent 19 (Security)**: If recovery modified auth/permissions
+- **Agent 19 (Smoke Tests)**: If recovery changed critical paths
+- **Agent 21 (Security)**: If recovery modified auth/permissions
 
 ### When to Use This Agent
 

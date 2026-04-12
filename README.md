@@ -40,7 +40,7 @@ git push -u origin main
 In Claude Code:
 
 ```
-a) "lanza el agente 00-project-type-detector"
+a) "lanza el agente project-type-detector"
    -> Detects project type, validates FastAPI mandate
    -> Output: outputs/00_project_detection.md
 
@@ -150,11 +150,11 @@ Once hooks are installed, every `git commit` triggers:
 
 | Rule | Enforcement |
 |---|---|
-| Backend = FastAPI (Python) | Pre-commit hook blocks NestJS/TS. Pipeline setup exits 1. Agent 00 marks UNSUPPORTED. |
+| Backend = FastAPI (Python) | Pre-commit hook blocks NestJS/TS. Pipeline setup exits 1. Project Type Detector marks UNSUPPORTED. |
 | Frontend = Full UX design | Agent 11 requires Design System Phase 0 before any screen. No blank pages. |
-| API = Beautiful DX | Agent 05c enforces 7 DX principles: naming, envelopes, suggestions in errors, etc. |
+| API = Beautiful DX | Agent 10 enforces 7 DX principles: naming, envelopes, suggestions in errors, etc. |
 | Sprint completeness = 100% | `validate-sprint-completeness.sh` blocks wave if tasks are missing. |
-| Author != Reviewer | Agent 25 mandates frontend-test-auditor as independent pass after frontend-development. |
+| Author != Reviewer | Agent 25 mandates 15-frontend-test as independent pass after 16-frontend-development. |
 | Tasks have Expected Files | Agent 08 must include `### Expected Files:` per task or completeness gate fails. |
 
 ---
@@ -193,7 +193,7 @@ Framework/
 ### "FRAMEWORK ACTIVATED" never appears
 
 Agent 25 Phase 0 failed. Check which step failed:
-- Missing `00_project_detection.md` -> run Agent 00 first
+- Missing `00_project_detection.md` -> run Project Type Detector first
 - Hook marker missing -> delete `.git/hooks/post-commit` and re-run Agent 25
 - `validate-sprint-completeness.sh` missing -> framework copy incomplete, re-run `init-new-project.sh`
 

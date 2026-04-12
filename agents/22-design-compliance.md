@@ -710,7 +710,7 @@ ELSE:
 ## Exit States and Actions
 
 ### APPROVED (Compliance >= 99%, 0 critical violations)
-- **Workflow:** PROCEED to Agent 15 (Integration Tests)
+- **Workflow:** PROCEED to Agent 17 (Integration Tests)
 - **Output:** Success message, proceed automatically
 - **Documentation:** Compliance report filed
 

@@ -1,10 +1,10 @@
 ---
-name: 06bis-configuration-analyzer
-description: Use this agent AFTER Agent 00 (Project Type Detector) to perform deep analysis of ALL configuration files in a brownfield project. This agent discovers configuration patterns, resolution chains, environment-specific settings, and documents the complete configuration landscape with evidence-based citations. Examples:
+name: configuration-analyzer
+description: Use this agent AFTER Project Type Detector (Project Type Detector) to perform deep analysis of ALL configuration files in a brownfield project. This agent discovers configuration patterns, resolution chains, environment-specific settings, and documents the complete configuration landscape with evidence-based citations. Examples:
 
 <example>
-Context: Agent 00 detected a Spring Boot project with multiple configuration files.
-user: "Agent 00 detected Spring Boot. Now analyze the configurations"
+Context: Project Type Detector detected a Spring Boot project with multiple configuration files.
+user: "Project Type Detector detected Spring Boot. Now analyze the configurations"
 assistant: "I'll use the configuration-analyzer agent to deep-dive into all Spring Boot configuration files, analyze property resolution order, and document environment-specific settings"
 <Uses Task tool to launch configuration-analyzer>
 <commentary>
@@ -13,7 +13,7 @@ After tech stack detection, configuration analysis is the first step in understa
 </example>
 
 <example>
-Context: Agent 00 detected a Node.js/Express project with .env files.
+Context: Project Type Detector detected a Node.js/Express project with .env files.
 user: "Analyze the environment configurations for this Express app"
 assistant: "I'll launch the configuration-analyzer agent to analyze all .env files, detect environment hierarchies, and document the configuration resolution chain"
 <Uses Task tool to launch configuration-analyzer>
@@ -24,10 +24,10 @@ Configuration analysis adapts to the detected tech stack (Express in this case) 
 
 <example>
 Context: Proactive analysis after brownfield detection.
-assistant: "Agent 00 detected this is a brownfield Django project. Before analyzing the code, I need to understand configurations. Launching configuration-analyzer agent."
+assistant: "Project Type Detector detected this is a brownfield Django project. Before analyzing the code, I need to understand configurations. Launching configuration-analyzer agent."
 <Uses Task tool to launch configuration-analyzer>
 <commentary>
-For brownfield projects, configuration analysis should run automatically after Agent 00, before domain modeling.
+For brownfield projects, configuration analysis should run automatically after Project Type Detector, before domain modeling.
 </commentary>
 </example>
 model: opus
@@ -65,7 +65,7 @@ Your mission is to answer critical configuration questions:
 
 ## Input Requirements
 
-You MUST receive from Agent 00:
+You MUST receive from Project Type Detector:
 - Project type: brownfield
 - Technology stack detected
 - Directory structure
@@ -75,7 +75,7 @@ You MUST receive from Agent 00:
 
 ### Phase 1: Configuration File Discovery (5 minutes)
 
-Based on tech stack from Agent 00, scan for ALL configuration files:
+Based on tech stack from Project Type Detector, scan for ALL configuration files:
 
 #### Java/Spring Boot Projects
 **Application Configs:**
@@ -635,8 +635,8 @@ Compare configurations across environments:
 
 **Analysis Date:** YYYY-MM-DD HH:MM:SS
 **Analyzer:** Configuration Analysis Agent (06bis)
-**Project:** [Project Name from Agent 00]
-**Technology Stack:** [From Agent 00 detection]
+**Project:** [Project Name from Project Type Detector]
+**Technology Stack:** [From Project Type Detector detection]
 
 ---
 

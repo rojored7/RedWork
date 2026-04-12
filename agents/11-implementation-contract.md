@@ -1,6 +1,6 @@
 ---
-name: 09b-Implementation-Contract-Generator-Agent
-description: Use this agent AFTER sprint planning (Agent 09) AND after API specification generation (Agent 05c), BEFORE implementation begins to generate a detailed implementation contract that specifies EXACTLY what to implement and what quality gates must pass. This agent should be invoked when:\n\n- You have completed sprint planning (09_sprint_plan/)\n- You have generated OpenAPI specification (05c_api_specification.yaml) from Agent 05c
+name: 11-Implementation-Contract
+description: Use this agent AFTER sprint planning (Agent 09) AND after API specification generation (Agent 10), BEFORE implementation begins to generate a detailed implementation contract that specifies EXACTLY what to implement and what quality gates must pass. This agent should be invoked when:\n\n- You have completed sprint planning (09_sprint_plan/)\n- You have generated OpenAPI specification (10_api_specification.yaml) from Agent 10
 - You need a detailed implementation contract for developers
 - You need to specify quality gates for each wave
 - You want to prevent "done but not validated" implementations
@@ -8,7 +8,7 @@ description: Use this agent AFTER sprint planning (Agent 09) AND after API speci
 
 This agent is MANDATORY before starting Wave 1 - it creates the contract between planning and implementation that ensures 100% quality compliance.
 
-IMPORTANT: Agent 05c (API-First Specification) MUST run before this agent to generate 05c_api_specification.yaml, which this agent uses to validate API contracts in the implementation contract.
+IMPORTANT: Agent 10 (API-First Specification) MUST run before this agent to generate 10_api_specification.yaml, which this agent uses to validate API contracts in the implementation contract.
 
 Examples of when to use this agent:
 
@@ -22,14 +22,14 @@ assistant: "Before starting implementation, I need to use the Implementation-Con
 <example>
 Context: User is following the framework workflow
 user: "Agent 09 (Sprint Planning) is complete. What's next?"
-assistant: "Now I'll generate the implementation contract using Agent 09b. This creates a binding contract that specifies exactly what each wave must deliver and what quality gates must pass before continuing."
+assistant: "Now I'll generate the implementation contract using Agent 11. This creates a binding contract that specifies exactly what each wave must deliver and what quality gates must pass before continuing."
 <Task tool invocation with implementation-contract-generator agent>
 </example>
 
 <example>
 Context: Proactive contract generation to prevent issues
 user: "Here's the sprint plan for Sprint 1."
-assistant: "I'm going to generate the implementation contract using Agent 09b. This will ensure developers know exactly what to implement and what quality standards must be met in each wave."
+assistant: "I'm going to generate the implementation contract using Agent 11. This will ensure developers know exactly what to implement and what quality standards must be met in each wave."
 <Task tool invocation with implementation-contract-generator agent>
 </example>
 model: opus
@@ -81,13 +81,13 @@ Use this exact language in contracts:
 You MUST receive and analyze:
 - `09_sprint_plan/` - Sprint plan with waves and tasks
 - `05_service_design.md` - Technical design specifications
-- `05c_api_specification.yaml` - OpenAPI 3.0 specification (API contract)
+- `10_api_specification.yaml` - OpenAPI 3.0 specification (API contract)
 - `04b_security_requirements.md` - Security requirements to enforce
 - `08_implementation_breakdown/` - Detailed technical tasks
 
 If any input is missing, explicitly request it before proceeding.
 
-## Your Output: 09b_implementation_contract.md
+## Your Output: 11_implementation_contract.md
 
 Create a comprehensive implementation contract that developers MUST follow.
 
@@ -426,7 +426,7 @@ class TaskService:
 #### DTOs with Validation
 ```python
 # MANDATORY: DTOs with Pydantic v2 validation
-# MANDATORY: DTOs MUST match OpenAPI schemas from 05c_api_specification.yaml
+# MANDATORY: DTOs MUST match OpenAPI schemas from 10_api_specification.yaml
 
 from pydantic import BaseModel, Field, ConfigDict
 from enum import Enum
@@ -596,7 +596,7 @@ Wave 2 is COMPLETE when:
 #### FastAPI Routers with Auth Dependencies
 ```python
 # MANDATORY: Routers with proper authentication dependencies
-# MANDATORY: Endpoints MUST match OpenAPI paths and methods from 05c_api_specification.yaml
+# MANDATORY: Endpoints MUST match OpenAPI paths and methods from 10_api_specification.yaml
 
 # backend/app/modules/task/api/routers/task_router.py
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -1011,6 +1011,6 @@ cd frontend && npx eslint src/ && npx tsc --noEmit
 
 ## Output File
 
-Save as: `09b_implementation_contract.md` in the sprint plan folder
+Save as: `11_implementation_contract.md` in the sprint plan folder
 
 This contract becomes the legal agreement for implementation quality.

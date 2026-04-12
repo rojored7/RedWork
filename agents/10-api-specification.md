@@ -1,5 +1,5 @@
 ---
-name: 05c-API-First-Specification-Agent
+name: 10-API-Specification
 description: Use this agent AFTER sprint planning (09) to consolidate all API information from user stories (07) and implementation breakdown (08) into a complete OpenAPI 3.0 specification. This agent ensures backend and frontend share a single source of truth for API contracts. Invoke when:\n\n- Sprint planning (09) is complete with detailed user stories and implementation breakdown
 - Before implementation contract generation (09b) to establish the formal API contract
 - Before backend/frontend implementation (10/11) so both teams implement from the same contract
@@ -22,7 +22,7 @@ assistant: "I'll use the api-first-specification agent to create a formal OpenAP
 <example>
 Context: Implementation contract generator (09b) needs OpenAPI specification.
 user: "Agent 09 (Sprint Orchestrator) is complete. What's next?"
-assistant: "Now I'll use the api-first-specification agent to aggregate all API details from user stories and implementation breakdown into OpenAPI 3.0 spec. Then Agent 09b can generate implementation contracts based on this formal API contract."
+assistant: "Now I'll use the api-first-specification agent to aggregate all API details from user stories and implementation breakdown into OpenAPI 3.0 spec. Then Agent 11 can generate implementation contracts based on this formal API contract."
 </example>
 model: opus
 color: cyan
@@ -262,7 +262,7 @@ From these inputs, you must:
    - Versioning approach
 7. **Generate code generation strategy** for backend and frontend
 8. **Validate against security requirements**
-9. **Produce executable specification** ready for Agent 09b and implementation (10/11)
+9. **Produce executable specification** ready for Agent 11 and implementation (10/11)
 
 ---
 
@@ -307,7 +307,7 @@ From these inputs, you must:
 
 ### Phase 2: OpenAPI Specification Generation
 
-**Generate complete `05c_api_specification.yaml` with:**
+**Generate complete `10_api_specification.yaml` with:**
 
 1. **Metadata:**
    ```yaml
@@ -363,7 +363,7 @@ From these inputs, you must:
 
 ### Phase 3: API Standards Definition
 
-**Define in `05c_api_client_specification.md`:**
+**Define in `10_api_client_specification.md`:**
 
 1. **Error Response Standard:**
    ```typescript
@@ -410,11 +410,11 @@ From these inputs, you must:
 
 ### Phase 4: Code Generation Strategy
 
-**Define in `05c_api_client_specification.md`:**
+**Define in `10_api_client_specification.md`:**
 
 1. **Backend (FastAPI) Code Generation:**
    - Tool: `datamodel-code-generator` (generates Pydantic models from OpenAPI)
-   - Command: `datamodel-codegen --input 05c_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
+   - Command: `datamodel-codegen --input 10_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
    - Generate: Pydantic v2 models for request/response
    - Generate: FastAPI router skeletons (optional: `fastapi-code-generator`)
    - Validate: Implementation matches spec using FastAPI's automatic OpenAPI generation
@@ -468,9 +468,9 @@ From these inputs, you must:
 ### Phase 6: Output Publication
 
 Generate:
-1. **`05c_api_specification.yaml`** - Complete OpenAPI 3.0 spec
-2. **`05c_api_client_specification.md`** - Code generation strategy and API standards
-3. **`05c_openapi_validation_report.md`** - Validation report against service design and security requirements
+1. **`10_api_specification.yaml`** - Complete OpenAPI 3.0 spec
+2. **`10_api_client_specification.md`** - Code generation strategy and API standards
+3. **`10_openapi_validation_report.md`** - Validation report against service design and security requirements
 
 Optionally generate (recommended):
 4. **`backend/app/schemas/generated.py`** - Generated Pydantic models for FastAPI
@@ -544,7 +544,7 @@ Your work is complete ONLY if:
 Before delivering, verify:
 
 ### 1. OpenAPI Spec Validity
-- [ ] Passes `npx @apidevtools/swagger-cli validate 05c_api_specification.yaml`
+- [ ] Passes `npx @apidevtools/swagger-cli validate 10_api_specification.yaml`
 - [ ] No undefined $refs
 - [ ] All required fields present
 - [ ] Examples are valid against schemas
@@ -613,7 +613,7 @@ When you encounter ambiguity in service design API contracts, proactively seek c
 
 ---
 
-## Output Template: 05c_api_client_specification.md
+## Output Template: 10_api_client_specification.md
 
 ```markdown
 # API Client Specification
@@ -642,13 +642,13 @@ When you encounter ambiguity in service design API contracts, proactively seek c
 
 ### Backend (FastAPI)
 - Tool: datamodel-code-generator
-- Command: `datamodel-codegen --input 05c_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
+- Command: `datamodel-codegen --input 10_api_specification.yaml --output app/schemas/generated.py --output-model-type pydantic_v2.BaseModel`
 - Output: backend/app/schemas/generated.py
 - Pattern: Pydantic v2 BaseModel with Field validation (snake_case)
 
 ### Frontend (TypeScript)
 - Tool: openapi-typescript
-- Command: `npx openapi-typescript 05c_api_specification.yaml -o src/api/generated/types.ts`
+- Command: `npx openapi-typescript 10_api_specification.yaml -o src/api/generated/types.ts`
 - Output: src/api/generated/
 - Pattern: [type naming convention]
 
@@ -664,7 +664,7 @@ When you encounter ambiguity in service design API contracts, proactively seek c
 
 ### Mock Server
 - Tool: Prism
-- Command: `npx @stoplight/prism-cli mock 05c_api_specification.yaml`
+- Command: `npx @stoplight/prism-cli mock 10_api_specification.yaml`
 
 ### Contract Testing
 [How to validate implementation against spec]

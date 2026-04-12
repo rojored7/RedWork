@@ -19,7 +19,7 @@ else
 fi
 CONTEXT_LINES+=("Mode: $MODE")
 
-# --- Agent 00: Project detection ---
+# --- Project Type Detector: Project detection ---
 DETECTION=""
 if [ -f "outputs/00_project_detection.md" ]; then
     DETECTION="completed"
@@ -30,9 +30,9 @@ elif [ -f "00_project_detection.md" ]; then
     DETECTION="completed (root)"
 else
     DETECTION="NOT RUN"
-    CONTEXT_LINES+=("WARNING: Agent 00 has NOT run. Run it before any other agent: lanza el agente 00-project-type-detector")
+    CONTEXT_LINES+=("WARNING: Project Type Detector has NOT run. Run it before any other agent: lanza el agente project-type-detector")
 fi
-CONTEXT_LINES+=("Agent 00 (detection): $DETECTION")
+CONTEXT_LINES+=("Project Type Detector (detection): $DETECTION")
 
 # --- Hooks v2 marker ---
 if [ -f ".git/hooks/post-commit" ] && grep -q "framework-workflow-hook-v2" ".git/hooks/post-commit" 2>/dev/null; then

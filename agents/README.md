@@ -25,7 +25,7 @@
 3. **03-context-mapping** - Identify bounded contexts (DDD)
 4. **04-architecture-decision** - Decide architecture (FastAPI backend MANDATORY)
 5. **04b-security-by-design** - Define OWASP-compliant security requirements (NEW v1.2)
-6. **04c-agent-introspection-debugging** - Debug agent failures with structured recovery (NEW v1.3 - AUTO-ACTIVATE ON FAILURES)
+6. **agent-introspection-debugging** - Debug agent failures with structured recovery (NEW v1.3 - AUTO-ACTIVATE ON FAILURES)
 7. **05-service-design-architect** - Design service internals (Clean Architecture)
 8. **05b-technical-design-validator** - Validate design completeness and security (NEW v1.2 - BLOCKING GATE)
 9. **05c-api-first-specification** - Extract API contracts into OpenAPI 3.0 spec (NEW v1.4 - API-FIRST)
@@ -38,12 +38,12 @@
 12. **09b-implementation-contract-generator** - Create binding implementation contract (NEW v1.2)
 
 ### Backend (10, 13)
-10. **10-backend-fastapi-dev** - Implement backend services (FastAPI MANDATORY)
-13. **13-backend-test-agent** - Create/audit/repair backend tests (MEJORADO v1.2.1 - DDD/Clean Architecture support)
+10. **10-14-backend-development** - Implement backend services (FastAPI MANDATORY)
+13. **13-13-backend-test** - Create/audit/repair backend tests (MEJORADO v1.2.1 - DDD/Clean Architecture support)
 
 ### Frontend (11, 14)
-11. **11-frontend-development** - Implement frontend features (React/Vue/etc.)
-14. **14-frontend-test-auditor** - Create/audit/repair frontend tests
+11. **11-16-frontend-development** - Implement frontend features (React/Vue/etc.)
+14. **14-15-frontend-test** - Create/audit/repair frontend tests
 
 ### Infrastructure & Testing (12, 15, 16, 18)
 12. **12-infrastructure-deployment** - Setup Docker, DB, Redis, networks
@@ -99,10 +99,10 @@ PLANNING PHASE
 09 Sprint Orchestrator → 09_sprint_plan/sprint_XX/*.md
      ↓
 API-FIRST PHASE
-05c API-First-Specification → 05c_api_specification.yaml (NEW v1.4 - consolidates 07+08+09)
-                           → 05c_api_client_specification.md
+05c API-First-Specification → 10_api_specification.yaml (NEW v1.4 - consolidates 07+08+09)
+                           → 10_api_client_specification.md
      ↓
-09b Implementation-Contract-Generator → 09b_implementation_contract.md (NEW)
+09b Implementation-Contract-Generator → 11_implementation_contract.md (NEW)
      ↓
 IMPLEMENTATION PHASE (WAVE-BASED)
 12 Infrastructure Deployment → docker-compose.yml, Dockerfile, etc.
@@ -249,7 +249,7 @@ Read agent files directly to understand:
 **Example**:
 ```bash
 # Read backend development agent
-cat agents/backend-fastapi-dev.md
+cat agents/14-backend-development.md
 
 # Understand when to invoke it
 # Understand what inputs it needs
@@ -282,11 +282,11 @@ agents/
 ├── tech-lead-delivery.md              # (08)
 ├── sprint-orchestrator.md             # (09)
 │
-├── backend-fastapi-dev.md             # Phase 3: Backend
-├── backend-test-agent.md              # (13)
+├── 14-backend-development.md             # Phase 3: Backend
+├── 13-backend-test.md              # (13)
 │
-├── frontend-development.md            # Phase 4: Frontend
-├── frontend-test-auditor.md           # (14)
+├── 16-frontend-development.md            # Phase 4: Frontend
+├── 15-frontend-test.md           # (14)
 │
 ├── infrastructure-deployment.md       # Phase 5: Infrastructure
 ├── integration-test-validator.md      # (15)
@@ -354,9 +354,9 @@ A project using all agents should have:
 Added complete API-First workflow to prevent backend-frontend divergence and enable type-safe development.
 
 **New Agent:**
-- **Agent 05c (API-First Specification)** - Consolidates API information from user stories (07), implementation breakdown (08), and service design (05) into formal OpenAPI 3.0 specification
-  - Output: `05c_api_specification.yaml` (single source of truth for all APIs)
-  - Output: `05c_api_client_specification.md` (code generation strategy)
+- **Agent 10 (API-First Specification)** - Consolidates API information from user stories (07), implementation breakdown (08), and service design (05) into formal OpenAPI 3.0 specification
+  - Output: `10_api_specification.yaml` (single source of truth for all APIs)
+  - Output: `10_api_client_specification.md` (code generation strategy)
   - Defines error response standards, pagination, filtering, versioning
   - Validates against security requirements (04b)
   - Enables automatic code generation for backend DTOs and frontend client
@@ -377,34 +377,34 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
    - Checks that endpoints have request/response schemas
    - Verifies HTTP methods and paths are specified
    - Validates authentication requirements per endpoint
-   - Ensures service design has sufficient API detail for Agent 05c (which runs later after planning)
+   - Ensures service design has sufficient API detail for Agent 10 (which runs later after planning)
 
 2. **Agent 06 (Epic Generation)** - MODIFIED (v1.4.0 correction)
-   - Agent 06 runs BEFORE Agent 05c (epics before API specification)
-   - Does NOT consume 05c_api_specification.yaml (doesn't exist yet when epics run)
+   - Agent 06 runs BEFORE Agent 10 (epics before API specification)
+   - Does NOT consume 10_api_specification.yaml (doesn't exist yet when epics run)
    - References service design for architectural components
 
-3. **Agent 09b (Implementation Contract)** - MODIFIED
+3. **Agent 11 (Implementation Contract)** - MODIFIED
    - Added OpenAPI specification as required input
    - DTOs must match OpenAPI schemas exactly
    - Validates implementation follows OpenAPI contract
    - Added quality gates: "API implementation matches OpenAPI specification"
 
-4. **Agent 10 (Backend Development)** - MODIFIED
+4. **Agent 14 (Backend Development)** - MODIFIED
    - Added OpenAPI specification as mandatory input
    - New Phase 2.5: OpenAPI Contract Analysis
    - DTOs generated from OpenAPI schemas
    - Validation rules extracted from OpenAPI (minLength, maxLength, required, enums)
    - Implementation validated against OpenAPI specification
 
-5. **Agent 11 (Frontend Development)** - MODIFIED
+5. **Agent 16 (Frontend Development)** - MODIFIED
    - Added OpenAPI specification as mandatory input
    - New Phase 2.5: OpenAPI Type and Client Generation
    - Automatic TypeScript type generation from OpenAPI
    - Type-safe API client generation
    - Frontend types ALWAYS match backend DTOs (single source of truth)
 
-6. **Agent 15 (Integration Test)** - MODIFIED
+6. **Agent 17 (Integration Test)** - MODIFIED
    - Added OpenAPI contract validation to integration tests
    - Validates API responses against OpenAPI schemas
    - Example: Using openapi-spec-validator + schemathesis for contract testing
@@ -419,15 +419,15 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
 - **Faster development** - No manual type definitions, auto-completion everywhere
 
 **Files Created:**
-- `framework/agents/05c-api-first-specification-agent.md` (384 lines)
+- `framework/agents/10-api-specification.md` (384 lines)
 - `framework/skills/openapi-code-generation.md` (complete patterns and examples)
 
 **Files Modified:**
 - `framework/agents/05b-technical-design-validator-agent.md`
 - `framework/agents/epic-generation.md` (Agent 06)
-- `framework/agents/09b-implementation-contract-generator-agent.md`
-- `framework/agents/backend-fastapi-dev.md` (Agent 10)
-- `framework/agents/frontend-development.md` (Agent 11)
+- `framework/agents/11-implementation-contract.md`
+- `framework/agents/14-backend-development.md` (Agent 10)
+- `framework/agents/16-frontend-development.md` (Agent 11)
 - `framework/agents/integration-test-validator.md` (Agent 15)
 
 **Benefits:**
@@ -451,7 +451,7 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
       ↓
 09 Sprint Orchestrator
       ↓
-05c API-First Specification → 05c_api_specification.yaml (consolidates 07+08+09 details)
+05c API-First Specification → 10_api_specification.yaml (consolidates 07+08+09 details)
       ↓
 09b Implementation Contract (validates against OpenAPI)
       ↓
@@ -475,26 +475,26 @@ All code generation and validation agents now UNDERSTAND and ENFORCE:
 
 **Agents Updated:**
 
-1. **Agent 10 (Backend Development)** - CRITICAL
+1. **Agent 14 (Backend Development)** - CRITICAL
    - Now generates code with private constructors
    - Uses factory methods (.create(), .reconstitute())
    - Implements Result<T> pattern
    - Enforces layer separation
    - 400+ lines of DDD examples added
 
-2. **Agent 09b (Implementation Contract Generator)** - CRITICAL
+2. **Agent 11 (Implementation Contract Generator)** - CRITICAL
    - Contracts now specify DDD patterns
    - Corrected all code examples to use Result<T>
    - Added MANDATORY and FORBIDDEN pattern lists
    - Enforces factory methods in contracts
 
-3. **Agent 14 (Frontend Test)** - HIGH
+3. **Agent 15 (Frontend Test)** - HIGH
    - Understands how to mock Result<T> responses
    - Tests frontend integration with DDD backends
    - Validates domain error handling in UI
    - Separates business logic testing from UI testing
 
-4. **Agent 15 (Integration Test)** - HIGH
+4. **Agent 17 (Integration Test)** - HIGH
    - Validates Result<T> in API responses
    - Tests domain entity persistence
    - Verifies mapper functionality (Domain ↔ ORM)
@@ -520,9 +520,9 @@ All code generation and validation agents now UNDERSTAND and ENFORCE:
 - Tests generation now follows correct mocking patterns
 
 **Files Modified:**
-- backend-fastapi-dev.md (10)
-- 09b-implementation-contract-generator-agent.md
-- frontend-test-auditor.md (14)
+- 14-backend-development.md (10)
+- 11-implementation-contract.md
+- 15-frontend-test.md (14)
 - integration-test-validator.md (15)
 - 02-domain-modeling-agent.md
 - service-design-architect.md (05)

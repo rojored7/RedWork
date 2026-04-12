@@ -1,6 +1,6 @@
 # API DX Design Patterns (Beautiful API)
 
-Reference skill for Agent 05c (API-First Specification). Contains naming conventions, response standards, error patterns, pagination, filtering, rate limiting, and OpenAPI documentation patterns.
+Reference skill for Agent 10 (API-First Specification). Contains naming conventions, response standards, error patterns, pagination, filtering, rate limiting, and OpenAPI documentation patterns.
 
 ---
 

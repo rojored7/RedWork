@@ -1,5 +1,5 @@
 ---
-name: 07bis-hidden-complexity-analyzer
+name: hidden-complexity-analyzer
 description: Use this agent AFTER Agent 06bis (Configuration Analyzer) to discover non-obvious execution flows, middleware chains, interceptors, filters, aspects, lifecycle hooks, and annotation-driven behaviors in brownfield projects. This agent reveals the "magic" that confuses developers. Examples:
 
 <example>
@@ -66,7 +66,7 @@ Your mission is to answer critical questions about hidden complexity:
 
 ## Input Requirements
 
-You MUST receive from Agent 00 and 06bis:
+You MUST receive from Project Type Detector and 06bis:
 - Technology stack detected
 - Framework versions
 - Configuration files analyzed
@@ -768,7 +768,7 @@ Document:
 **Analysis Date:** YYYY-MM-DD HH:MM:SS
 **Analyzer:** Hidden Complexity Analysis Agent (07bis)
 **Project:** [Project Name]
-**Technology Stack:** [From Agent 00]
+**Technology Stack:** [From Project Type Detector]
 
 ---
 

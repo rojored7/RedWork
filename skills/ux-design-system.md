@@ -1,6 +1,6 @@
 # UX Design System Patterns
 
-Reference skill for Agent 11 (Frontend Development). Contains design token definitions, component visual standards, page-level UX patterns, and accessibility checklist.
+Reference skill for Agent 16 (Frontend Development). Contains design token definitions, component visual standards, page-level UX patterns, and accessibility checklist.
 
 ---
 

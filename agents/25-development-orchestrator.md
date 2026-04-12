@@ -4,10 +4,10 @@ description: Use this agent BEFORE any development work (Agents 10/11/13/14) to 
 
 Specifically invoke this agent when:
 - User requests development work ("implement backend", "start sprint 1", "build login feature")
-- Before invoking Agent 10 (Backend Development)
-- Before invoking Agent 11 (Frontend Development)
+- Before invoking Agent 14 (Backend Development)
+- Before invoking Agent 16 (Frontend Development)
 - Before invoking Agent 13 (Backend Testing)
-- Before invoking Agent 14 (Frontend Testing)
+- Before invoking Agent 15 (Frontend Testing)
 
 Examples of when to use:
 
@@ -120,7 +120,7 @@ ask the user to delete `.git/hooks/post-commit` and re-run step 0.1.
 
 Check `outputs/00_project_detection.md`. If missing → STOP and instruct:
 
-> Run Agent 00 first: `lanza el agente 00-project-type-detector`
+> Run Project Type Detector first: `lanza el agente project-type-detector`
 
 If the file exists but its STATUS is `UNSUPPORTED` (non-FastAPI backend
 detected) → STOP. The framework refuses to proceed with a non-FastAPI
@@ -338,7 +338,7 @@ Will create: `.project-state/sprint_01_backend_tasks.json`
 Structure:
 {
   "sprint": "01",
-  "agent": "backend-fastapi-dev",
+  "agent": "14-backend-development",
   "created_at": "2026-04-06T16:00:00Z",
   "tasks": [
     {"id": "S1-BE-001", "status": "pending", ...},
@@ -362,7 +362,7 @@ Enables:
 ## Ready to Proceed?
 
 **If you approve this plan:**
-- Agent 10 (Backend Development) will execute tasks sequentially
+- Agent 14 (Backend Development) will execute tasks sequentially
 - Auto-commits after each task
 - Progress tracked in .project-state/
 - Can resume if disconnected
@@ -403,7 +403,7 @@ mkdir -p .project-state
 ```json
 {
   "sprint": "01",
-  "agent": "backend-fastapi-dev",
+  "agent": "14-backend-development",
   "created_at": "2026-04-06T16:00:00Z",
   "last_updated": "2026-04-06T16:00:00Z",
   "status": "in_progress",
@@ -440,7 +440,7 @@ mkdir -p .project-state
 ```json
 {
   "active_sprint": "01",
-  "active_agent": "backend-fastapi-dev",
+  "active_agent": "14-backend-development",
   "active_task_file": "sprint_01_backend_tasks.json",
   "last_updated": "2026-04-06T16:00:00Z"
 }
@@ -526,7 +526,7 @@ Launch Agent 13 (Backend Test Agent) with:
 
 **Wave 3b — Backend Implementation (makes tests pass):**
 ```
-Launch Agent 10 (Backend Development) with:
+Launch Agent 14 (Backend Development) with:
 - Sprint: 01
 - Task file: .project-state/sprint_01_backend_tasks.json
 - First task: S1-BE-001
@@ -535,7 +535,7 @@ Launch Agent 10 (Backend Development) with:
 
 **Wave 5a — Frontend Tests FIRST:**
 ```
-Launch Agent 14 (Frontend Test Auditor) with:
+Launch Agent 15 (Frontend Test Auditor) with:
 - Sprint: 01
 - Task file: .project-state/sprint_01_frontend_test_tasks.json
 - Input: user stories (07), implementation breakdown (08), service design (05)
@@ -544,7 +544,7 @@ Launch Agent 14 (Frontend Test Auditor) with:
 
 **Wave 5b — Frontend Implementation (makes tests pass):**
 ```
-Launch Agent 11 (Frontend Development) with:
+Launch Agent 16 (Frontend Development) with:
 - Sprint: 01
 - Task file: .project-state/sprint_01_frontend_tasks.json
 - First task: S1-FE-001
@@ -561,7 +561,7 @@ Development Orchestrator Complete
 ✅ Execution plan approved
 ✅ Task tracking initialized
 
-Handing off to Agent 10 (Backend Development)
+Handing off to Agent 14 (Backend Development)
 
 Task file: .project-state/sprint_01_backend_tasks.json
 First task: S1-BE-001 (Setup FastAPI project structure)

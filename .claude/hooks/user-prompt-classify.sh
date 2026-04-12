@@ -24,10 +24,10 @@ if echo "$PROMPT" | grep -qiE 'implement|develop|backend|frontend|code|sprint|wa
     fi
 fi
 
-# --- Check: agent 01 request without agent 00 ---
+# --- Check: agent 01 request without project-type-detector ---
 if echo "$PROMPT" | grep -qiE 'agent.?01|product.?discovery|lanza.*01'; then
     if [ ! -f "outputs/00_project_detection.md" ] && [ ! -f "00_project_detection.md" ]; then
-        WARNINGS="${WARNINGS}RECOMMENDATION: Agent 00 (project-type-detector) should run before Agent 01 to validate project type and FastAPI mandate.\n"
+        WARNINGS="${WARNINGS}RECOMMENDATION: Project Type Detector (project-type-detector) should run before Agent 01 to validate project type and FastAPI mandate.\n"
     fi
 fi
 

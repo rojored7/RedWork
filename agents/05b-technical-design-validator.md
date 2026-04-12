@@ -272,7 +272,7 @@ For each endpoint in design:
 - [ ] Query parameters specified (for list endpoints: pagination, filters, sorting)
 - [ ] Request/response examples provided
 
-**API-First Readiness (for Agent 05c):**
+**API-First Readiness (for Agent 10):**
 - [ ] All endpoints grouped by bounded context
 - [ ] Request/response schemas are unambiguous
 - [ ] Authentication requirements per endpoint are clear
@@ -281,7 +281,7 @@ For each endpoint in design:
 
 **Missing Specifications:** [List any]
 **Verdict:** [COMPLETE / INCOMPLETE]
-**Blocks Agent 05c:** [YES / NO]
+**Blocks Agent 10:** [YES / NO]
 
 ### 4.2 Data Model Completeness
 **Requirements:** All entities, VOs, DTOs fully specified

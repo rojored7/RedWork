@@ -1,10 +1,10 @@
 #!/bin/bash
-# Validation script for Agent 00 - Project Type Detector
+# Validation script for Project Type Detector - Project Type Detector
 
 set -e
 
 echo "======================================"
-echo "Validating Agent 00 - Project Type Detector"
+echo "Validating Project Type Detector - Project Type Detector"
 echo "======================================"
 
 OUTPUT_FILE="00_project_detection.md"
@@ -61,7 +61,7 @@ fi
 echo "✓ File has sufficient content ($LINE_COUNT lines)"
 
 echo "======================================"
-echo "Agent 00 validation PASSED"
+echo "Project Type Detector validation PASSED"
 echo "======================================"
 
 exit 0
