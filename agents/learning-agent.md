@@ -207,7 +207,7 @@ Create concrete skill proposals based on detected patterns.
 For each high-confidence pattern (frequency ≥3, confidence ≥80%):
 
 1. **Determine Skill Number**
-   - Check existing skills in `.framework/agents/workflow-orchestrator/skills/`
+   - Check existing skills in `~/.claude/redwork/agents/workflow-orchestrator/skills/`
    - Assign next available number (09, 10, 11, etc.)
 
 2. **Generate Skill Content**
@@ -303,7 +303,7 @@ Template:
 **Suggested Actions**:
 - [ ] Review this proposal
 - [ ] Test the proposed workflow
-- [ ] If approved, copy to `.framework/agents/workflow-orchestrator/skills/`
+- [ ] If approved, copy to `~/.claude/redwork/agents/workflow-orchestrator/skills/`
 - [ ] Update skill number if needed
 - [ ] Add to workflow orchestrator documentation
 
@@ -405,7 +405,7 @@ Total Error Types Cataloged: {N}
 
 1. Review proposed skills in `.learning/proposed-skills/`
 2. Test high-confidence skills in development environment
-3. Approve skills by copying to `.framework/agents/workflow-orchestrator/skills/`
+3. Approve skills by copying to `~/.claude/redwork/agents/workflow-orchestrator/skills/`
 
 ### Data Collection
 
@@ -430,10 +430,10 @@ cat .learning/proposed-skills/{XX}-{name}.md
 
 # 3. If approved, copy to skills directory
 cp .learning/proposed-skills/{XX}-{name}.md \\
-   .framework/agents/workflow-orchestrator/skills/
+   ~/.claude/redwork/agents/workflow-orchestrator/skills/
 
 # 4. Share to framework (optional)
-cp .framework/agents/workflow-orchestrator/skills/{XX}-{name}.md \\
+cp ~/.claude/redwork/agents/workflow-orchestrator/skills/{XX}-{name}.md \\
    ~/Proyectos/Framework/agents/workflow-orchestrator/skills/
 cd ~/Proyectos/Framework
 git add agents/workflow-orchestrator/skills/{XX}-{name}.md
@@ -506,7 +506,7 @@ NEXT STEPS:
 
 3. Approve Skills:
    cp .learning/proposed-skills/{XX}-name.md \\
-      .framework/agents/workflow-orchestrator/skills/
+      ~/.claude/redwork/agents/workflow-orchestrator/skills/
 
 4. Share to Framework (optional):
    See instructions in summary report
@@ -594,7 +594,7 @@ cat .learning/proposed-skills/09-discovery-sequence.md
 
 # If approved, activate skill
 cp .learning/proposed-skills/09-discovery-sequence.md \\
-   .framework/agents/workflow-orchestrator/skills/
+   ~/.claude/redwork/agents/workflow-orchestrator/skills/
 ```
 
 ---

@@ -50,7 +50,9 @@ if os.path.exists(ctx_file):
 
 # Refresh workflow-status.json if outputs/ or .project-state/ changed recently
 SCRIPTS_PATH=""
-if [ -d ".framework/scripts" ]; then
+if [ -d "$HOME/.claude/redwork/scripts" ]; then
+    SCRIPTS_PATH="$HOME/.claude/redwork/scripts"
+elif [ -d ".framework/scripts" ]; then
     SCRIPTS_PATH=".framework/scripts"
 elif [ -d "scripts" ]; then
     SCRIPTS_PATH="scripts"

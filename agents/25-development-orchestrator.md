@@ -127,7 +127,8 @@ any agent writes code.
 **Step 0.1 — Install workflow hooks:**
 
 ```bash
-bash .framework/scripts/install-workflow-hooks.sh
+bash scripts/install-workflow-hooks.sh
+# Or if global: bash ~/.claude/redwork/scripts/install-workflow-hooks.sh
 ```
 
 This installs `.git/hooks/post-commit` (framework-workflow-hook-v2) and
@@ -156,7 +157,7 @@ stack. No exceptions.
 **Step 0.4 — Verify sprint completeness gate is present:**
 
 ```bash
-test -x .framework/scripts/workflow/validate-sprint-completeness.sh
+test -x scripts/workflow/validate-sprint-completeness.sh
 ```
 
 If missing or not executable → STOP. The framework copy is incomplete or
@@ -165,7 +166,7 @@ the scripts were not made executable by `install-workflow-hooks.sh`.
 **Step 0.5 — Run existing git setup validation:**
 
 ```bash
-bash .framework/scripts/workflow/validate-git-setup.sh
+bash scripts/workflow/validate-git-setup.sh
 ```
 
 This is the old Phase 1 check, now moved into Phase 0.

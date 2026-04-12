@@ -74,16 +74,16 @@ elif [ $# -eq 0 ]; then
 
     # Convert agent full name to short type
     case "$AGENT_FULL" in
-        "backend-fastapi-dev")
+        "14-backend-development")
             AGENT_TYPE="backend"
             ;;
-        "frontend-development")
+        "16-frontend-development")
             AGENT_TYPE="frontend"
             ;;
-        "backend-test-agent")
+        "13-backend-test")
             AGENT_TYPE="backend_test"
             ;;
-        "frontend-test-auditor")
+        "15-frontend-test")
             AGENT_TYPE="frontend_test"
             ;;
         *)
@@ -120,22 +120,22 @@ fi
 # Determine agent full name and task file pattern
 case "$AGENT_TYPE" in
     "backend" | "be")
-        AGENT_FULL="backend-fastapi-dev"
+        AGENT_FULL="14-backend-development"
         TASK_FILE="sprint_${SPRINT}_backend_tasks.json"
         AGENT_NUMBER="10"
         ;;
     "frontend" | "fe")
-        AGENT_FULL="frontend-development"
+        AGENT_FULL="16-frontend-development"
         TASK_FILE="sprint_${SPRINT}_frontend_tasks.json"
         AGENT_NUMBER="11"
         ;;
     "backend_test" | "be_test")
-        AGENT_FULL="backend-test-agent"
+        AGENT_FULL="13-backend-test"
         TASK_FILE="sprint_${SPRINT}_backend_test_tasks.json"
         AGENT_NUMBER="13"
         ;;
     "frontend_test" | "fe_test")
-        AGENT_FULL="frontend-test-auditor"
+        AGENT_FULL="15-frontend-test"
         TASK_FILE="sprint_${SPRINT}_frontend_test_tasks.json"
         AGENT_NUMBER="14"
         ;;
@@ -268,7 +268,7 @@ echo ""
 echo -n "Updating task status to in_progress... "
 python3 -c "
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 with open('$TASK_FILE_PATH', 'r') as f:
     state = json.load(f)
@@ -277,10 +277,10 @@ for task in state['tasks']:
     if task['id'] == '$NEXT_TASK_ID':
         task['status'] = 'in_progress'
         if task.get('started_at') is None:
-            task['started_at'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+            task['started_at'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
         break
 
-state['last_updated'] = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+state['last_updated'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
 with open('$TASK_FILE_PATH', 'w') as f:
     json.dump(state, f, indent=2)

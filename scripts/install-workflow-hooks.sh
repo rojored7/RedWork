@@ -16,10 +16,13 @@ echo "======================================"
 echo "Installing Framework Workflow Hooks v2"
 echo "======================================"
 
-# Detect if we're in Framework or in a project
-if [ -d ".framework/scripts" ]; then
+# Detect scripts location (global > local > framework repo)
+if [ -d "$HOME/.claude/redwork/scripts" ]; then
+    SCRIPTS_PATH="$HOME/.claude/redwork/scripts"
+    MODE="global"
+elif [ -d ".framework/scripts" ]; then
     SCRIPTS_PATH=".framework/scripts"
-    MODE="project"
+    MODE="project-legacy"
 else
     SCRIPTS_PATH="scripts"
     MODE="framework"

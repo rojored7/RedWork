@@ -62,7 +62,7 @@ if [ $VALIDATION_FAILED -eq 0 ]; then
         echo ""
         echo "Solution:"
         echo "  1. Navigate out of framework: cd .."
-        echo "  2. Create new project: bash framework-agents/init-new-project.sh my-project"
+        echo "  2. Create new project: python install.py init my-project"
         echo "  3. Navigate to project: cd my-project"
         echo "  4. Run development from there"
         VALIDATION_FAILED=1

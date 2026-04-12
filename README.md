@@ -47,8 +47,9 @@ a) "lanza el agente project-type-detector"
 b) "lanza el agente 01-product-discovery quiero un [IDEA]"
    -> Then agents 02, 03, 04, 05 (Discovery phase)
 
-c) "lanza el agente 05c-api-first-specification"
-   -> Then agents 06, 07, 08, 09 (Planning phase)
+c) "lanza el agente 06-epic-generation"
+   -> Then agents 07, 08, 09 (Planning phase)
+   -> Then agents 10, 11 (API Contract phase)
 
 d) "lanza el agente 25-development-orchestrator"
    -> Phase 0 installs git hooks v2 AUTOMATICALLY
@@ -195,7 +196,7 @@ Framework/
 Agent 25 Phase 0 failed. Check which step failed:
 - Missing `00_project_detection.md` -> run Project Type Detector first
 - Hook marker missing -> delete `.git/hooks/post-commit` and re-run Agent 25
-- `validate-sprint-completeness.sh` missing -> framework copy incomplete, re-run `init-new-project.sh`
+- `validate-sprint-completeness.sh` missing -> framework incomplete, re-run `python install.py install`
 
 ### Pre-commit rejects my commit
 

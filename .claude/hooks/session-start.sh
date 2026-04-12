@@ -12,7 +12,7 @@ CONTEXT_LINES=()
 # --- Detect Framework mode ---
 if [ -d ".framework" ]; then
     MODE="project"
-elif [ -d "agents" ] && [ -f "init-new-project.sh" ]; then
+elif [ -d "agents" ] && [ -f "install.py" ]; then
     MODE="framework-repo"
 else
     MODE="unknown"

@@ -563,7 +563,7 @@ lanza el agente configuration-analyzer primero para entender el código existent
 
 ### Auto-Commit Command
 ```bash
-bash .framework/scripts/workflow/auto-commit-agent-output.sh outputs/00_project_detection.md
+bash scripts/workflow/auto-commit-agent-output.sh outputs/00_project_detection.md
 ```
 
 ---

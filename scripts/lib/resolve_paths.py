@@ -113,7 +113,7 @@ def is_global_install() -> bool:
 def is_framework_repo() -> bool:
     """Check if we are inside the Framework repository itself."""
     cwd = Path.cwd()
-    return (cwd / "agents").is_dir() and (cwd / "init-new-project.sh").exists()
+    return (cwd / "agents").is_dir() and (cwd / "install.py").exists()
 
 
 def get_version() -> str:

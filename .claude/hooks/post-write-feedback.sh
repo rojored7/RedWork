@@ -36,7 +36,7 @@ fi
 # --- Agent output artifact written ---
 if echo "$FILE_PATH" | grep -qE '^outputs/[0-9]+'; then
     ARTIFACT=$(basename "$FILE_PATH")
-    FEEDBACK="Agent artifact written: $ARTIFACT. Auto-commit with: bash .framework/scripts/workflow/auto-commit-agent-output.sh $FILE_PATH"
+    FEEDBACK="Agent artifact written: $ARTIFACT. Auto-commit with: bash scripts/workflow/auto-commit-agent-output.sh $FILE_PATH"
 fi
 
 if [ -n "$FEEDBACK" ]; then

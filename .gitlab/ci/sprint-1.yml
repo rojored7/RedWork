@@ -23,7 +23,7 @@ stages:
   stage: wave-1-domain
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 1 - Backend Domain Layer (Agent 10)"
+    AGENT_LABEL: "Wave 1 - Backend Domain Layer (Agent 14)"
     DIR_NAME: "backend"
     FILE_PATTERN: "*.py"
     MIN_FILES: "5"
@@ -46,7 +46,7 @@ stages:
   stage: wave-2-application
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 2 - Application Services (Agent 10)"
+    AGENT_LABEL: "Wave 2 - Application Services (Agent 14)"
     DIR_NAME: "backend"
     FILE_PATTERN: "*_service.py"
     MIN_FILES: "1"
@@ -71,7 +71,7 @@ stages:
   stage: wave-3-api
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 3 - FastAPI Routers (Agent 10)"
+    AGENT_LABEL: "Wave 3 - FastAPI Routers (Agent 14)"
     DIR_NAME: "backend"
     FILE_PATTERN: "*_router.py"
     MIN_FILES: "1"
@@ -173,7 +173,7 @@ stages:
   stage: wave-4-frontend
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 4 - Frontend Components (Agent 11)"
+    AGENT_LABEL: "Wave 4 - Frontend Components (Agent 16)"
     DIR_NAME: "frontend"
     FILE_PATTERN: "*.tsx"
     MIN_FILES: "3"
@@ -184,7 +184,7 @@ stages:
   stage: wave-4-frontend
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 4 - Frontend Tests (Agent 14)"
+    AGENT_LABEL: "Wave 4 - Frontend Tests (Agent 15)"
     DIR_NAME: "frontend"
     FILE_PATTERN: "*.test.tsx"
     MIN_FILES: "2"
@@ -198,7 +198,7 @@ stages:
   stage: wave-5-quality
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 5 - Integration Tests (Agent 15)"
+    AGENT_LABEL: "Wave 5 - Integration Tests (Agent 17)"
     DIR_NAME: "backend"
     FILE_PATTERN: "test_integration_*.py"
     MIN_FILES: "1"
@@ -209,7 +209,7 @@ stages:
   stage: wave-5-quality
   extends: .wait-for-directory
   variables:
-    AGENT_LABEL: "Wave 5 - E2E Tests (Agent 16)"
+    AGENT_LABEL: "Wave 5 - E2E Tests (Agent 18)"
     DIR_NAME: "e2e"
     FILE_PATTERN: "*.spec.ts"
     MIN_FILES: "1"
@@ -220,7 +220,7 @@ stages:
   stage: wave-5-quality
   extends: .wait-for-file
   variables:
-    AGENT_LABEL: "Wave 5 - Smoke Tests (Agent 18)"
+    AGENT_LABEL: "Wave 5 - Smoke Tests (Agent 19)"
     FILE_NAME: "outputs/18_smoke_test_report.md"
     REQUIRED_SECTIONS: "Smoke Test|Status"
   needs:

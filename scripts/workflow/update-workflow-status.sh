@@ -64,7 +64,7 @@ state = {
 # Scan outputs/ for agent artifacts
 # ----------------------------------------------------------------------------
 AGENT_FILES = {
-    'agent_00_project_detection':    'outputs/00_project_detection.md',
+    'project_type_detector':         'outputs/00_project_detection.md',
     'agent_01_product_discovery':    'outputs/01_product_discovery.md',
     'agent_02_domain_modeling':      'outputs/02_domain_model.md',
     'agent_03_context_mapping':      'outputs/03_context_map.md',
@@ -74,6 +74,8 @@ AGENT_FILES = {
     'agent_07_user_stories':         'outputs/07_user_stories.md',
     'agent_08_implementation':       'outputs/08_implementation_breakdown.md',
     'agent_09_sprint_plan':          'outputs/09_sprint_plan',
+    'agent_10_api_specification':    'outputs/10_api_specification.yaml',
+    'agent_11_implementation_contract': 'outputs/11_implementation_contract.md',
 }
 
 # Fallback: also check project root (framework repo mode)
