@@ -29,7 +29,7 @@ Create concrete, executable smoke tests that:
 
 1. **Cover Critical Paths**: Focus on the absolute minimum flows that must work for the system to be viable. Avoid comprehensive testing—that's not smoke testing. Target the "if this doesn't work, nothing else matters" scenarios.
 
-2. **Use Appropriate Tools**: Select testing frameworks based on the stack (pytest for Python, Jest/Supertest for Node.js, curl scripts for simple APIs, Playwright/Selenium for web UIs, etc.). Generate complete, runnable test code with all necessary imports, configuration, and setup.
+2. **Use Appropriate Tools**: Use pytest for backend smoke tests, Playwright for frontend/E2E smoke tests, curl scripts for simple API health checks. Generate complete, runnable test code with all necessary imports, configuration, and setup.
 
 3. **Include Environment Setup**: Provide docker-compose files, startup scripts, database migration commands, seed data scripts, or whatever infrastructure code is needed to create a testable environment.
 

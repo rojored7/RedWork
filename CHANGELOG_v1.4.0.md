@@ -75,10 +75,10 @@ Version 1.4.0 introduces a complete API-First workflow that prevents backend-fro
    - Generated types example
    - Type-safe API client pattern
 
-3. **Backend NestJS Patterns**
-   - Manual DTO creation from OpenAPI schemas
-   - class-validator decorators matching OpenAPI constraints
-   - @ApiProperty decorators for Swagger
+3. **Backend FastAPI Patterns**
+   - Pydantic v2 model generation from OpenAPI schemas (datamodel-codegen)
+   - Field validators matching OpenAPI constraints
+   - FastAPI automatic OpenAPI/Swagger generation
 
 4. **Mock Server Setup**
    - Prism CLI: `npx prism mock openapi.yaml`
@@ -536,7 +536,7 @@ export class CreateTaskApiDto {
 
 ## Known Limitations
 
-1. **Manual DTO Creation**: Backend DTOs still created manually (NestJS doesn't support auto-generation from OpenAPI). Validation decorators must match OpenAPI constraints.
+1. **DTO Generation**: Backend Pydantic models can be auto-generated from OpenAPI via datamodel-codegen. Field validators must match OpenAPI constraints.
 
 2. **OpenAPI Spec Maintenance**: OpenAPI spec must be updated when service design (05), user stories (07), or implementation breakdown (08) changes. Agent 05c must be re-run after sprint planning updates.
 
@@ -550,7 +550,7 @@ Potential improvements for v1.5.0:
 
 1. **Automatic OpenAPI Linting**: Add spectral linting to validate OpenAPI quality
 2. **OpenAPI Diff**: Detect breaking changes between versions
-3. **Backend DTO Generation**: Explore automatic NestJS DTO generation from OpenAPI
+3. **Backend DTO Generation**: Use datamodel-codegen for automatic Pydantic v2 model generation from OpenAPI
 4. **Contract-First Testing**: Expand contract testing patterns
 5. **API Mocking**: Enhanced mock server patterns for development
 

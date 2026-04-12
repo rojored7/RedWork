@@ -173,75 +173,61 @@ Document:
 - **Used by:** 15 methods across 8 classes [VERIFIED by scanning @Monitored usage]
 ```
 
-#### For Express.js / Node.js Projects
+#### For FastAPI Projects
 
-**1.4 Express Middleware Chain**
+**1.4 FastAPI Middleware Chain**
 
-Scan for middleware registration:
-```javascript
-// app.js
-const express = require('express');
-const app = express();
+Scan for middleware registration in main.py:
+```python
+# main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.trustedhost import TrustedHostMiddleware
+from app.middleware.auth import AuthMiddleware
+from app.middleware.logging import RequestLoggingMiddleware
+from app.middleware.rate_limit import RateLimitMiddleware
 
-app.use(helmet()); // Security headers
-app.use(cors(corsOptions)); // CORS
-app.use(express.json()); // Body parser
-app.use(morgan('combined')); // Request logging
-app.use(authenticateJWT); // Custom auth middleware
-app.use('/api', apiLimiter); // Rate limiting on /api routes
-app.use('/api/users', userRoutes); // User routes
-app.use(errorHandler); // Error handler (must be last)
+app = FastAPI()
+
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+app.add_middleware(CORSMiddleware, allow_origins=ALLOWED_ORIGINS)
+app.add_middleware(RequestLoggingMiddleware)
+app.add_middleware(AuthMiddleware)
+app.add_middleware(RateLimitMiddleware, calls=100, period=900)
 ```
 
 Document with execution order:
 ```markdown
-### Express Middleware Chain
+### FastAPI Middleware Chain
 
-**Execution Order (top to bottom):**
+**Execution Order (LIFO - last added runs first on request):**
 
-1. **helmet()** [VERIFIED: app.js:5]
-   - **Purpose:** Security headers (X-Frame-Options, CSP, etc.)
-   - **Applies to:** All requests
-   - **Can block:** No
-
-2. **cors(corsOptions)** [VERIFIED: app.js:6]
-   - **Purpose:** CORS handling
-   - **Configuration:** corsOptions from config/cors.js [VERIFIED]
-   - **Applies to:** All requests
-   - **Can block:** Yes (403 if origin not allowed)
-
-3. **express.json()** [VERIFIED: app.js:7]
-   - **Purpose:** Parse JSON request bodies
-   - **Applies to:** All requests with JSON content-type
-   - **Limit:** 10mb [VERIFIED: default]
-
-4. **morgan('combined')** [VERIFIED: app.js:8]
-   - **Purpose:** HTTP request logging
-   - **Format:** Apache combined log format
-   - **Output:** Console (dev), file (prod) [INFERRED from config]
-
-5. **authenticateJWT** [VERIFIED: app.js:9]
-   - **File:** middleware/auth.js [VERIFIED]
-   - **Purpose:** JWT token validation
-   - **Applies to:** All routes after this point
-   - **Can block:** Yes (401 if invalid/missing token)
-   - **Sets:** req.user [VERIFIED: middleware/auth.js:15]
-
-6. **apiLimiter** (on /api routes only) [VERIFIED: app.js:10]
-   - **File:** middleware/rateLimiter.js [VERIFIED]
+1. **RateLimitMiddleware** [VERIFIED: main.py]
    - **Purpose:** Rate limiting
-   - **Limit:** 100 requests/15 minutes [VERIFIED: rateLimiter.js:5]
+   - **Limit:** 100 requests/15 minutes [VERIFIED]
    - **Can block:** Yes (429 if exceeded)
 
-7. **Route Handlers** [VERIFIED: app.js:11]
-   - Business logic execution
+2. **AuthMiddleware** [VERIFIED: main.py]
+   - **File:** app/middleware/auth.py [VERIFIED]
+   - **Purpose:** JWT token validation
+   - **Can block:** Yes (401 if invalid/missing token)
+   - **Sets:** request.state.user [VERIFIED]
 
-8. **errorHandler** [VERIFIED: app.js:12]
-   - **File:** middleware/errorHandler.js [VERIFIED]
-   - **Purpose:** Centralized error handling
-   - **Must be last:** Yes (catches all errors from above)
+3. **RequestLoggingMiddleware** [VERIFIED: main.py]
+   - **Purpose:** HTTP request/response logging
+   - **Can block:** No
 
-⚠️ **CRITICAL:** Middleware order matters - changing order changes behavior
+4. **CORSMiddleware** [VERIFIED: main.py]
+   - **Purpose:** CORS handling
+   - **Configuration:** ALLOWED_ORIGINS from settings [VERIFIED]
+   - **Can block:** Yes (403 if origin not allowed)
+
+5. **TrustedHostMiddleware** [VERIFIED: main.py]
+   - **Purpose:** Host header validation
+   - **Can block:** Yes (400 if untrusted host)
+
+NOTE: FastAPI middleware runs in LIFO order (last added = first to process request).
+Changing add_middleware() order changes execution order.
 ```
 
 #### For Django Projects

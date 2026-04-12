@@ -147,10 +147,10 @@ Analyze `package.json`:
 
 **Test:**
 ```json
-"test": "jest --coverage"
+"test": "pytest --cov=app tests/"
 ```
-[VERIFIED: package.json:15]
-- Runs Jest tests
+[VERIFIED: pyproject.toml]
+- Runs pytest with coverage
 - Generates coverage report
 
 #### Build Configuration Files

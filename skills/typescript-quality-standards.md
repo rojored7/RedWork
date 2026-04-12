@@ -446,15 +446,22 @@ email.vo.ts           → email.vo.spec.ts
 ### Test Organization
 
 ```typescript
+// Using Vitest (NOT Jest) for frontend testing
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+
 describe('UserService', () => {
   let service: UserService;
-  let mockRepository: jest.Mocked<IUserRepository>;
+  let mockRepository: {
+    save: ReturnType<typeof vi.fn>;
+    findById: ReturnType<typeof vi.fn>;
+    findByEmail: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     mockRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findByEmail: jest.fn(),
+      save: vi.fn(),
+      findById: vi.fn(),
+      findByEmail: vi.fn(),
     };
     service = new UserService(mockRepository);
   });
@@ -463,7 +470,7 @@ describe('UserService', () => {
     it('should create user with valid data', async () => {
       // Arrange
       const dto = { email: 'test@example.com', name: 'Test' };
-      mockRepository.save.mockResolvedValue(expect.any(Object));
+      mockRepository.save.mockResolvedValue({} as any);
 
       // Act
       const result = await service.createUser(dto);

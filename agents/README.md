@@ -200,7 +200,7 @@ PHASE 4: Report
 | Pattern | Name | Example |
 |---------|------|---------|
 | FP-001 | Requirement Violation | Agent 04 used NestJS instead of FastAPI |
-| FP-002 | Verification Bypass | Agent 10 claims tests pass, but npm test fails |
+| FP-002 | Verification Bypass | Agent 10 claims tests pass, but pytest fails |
 | FP-003 | Infinite Retry Loop | Agent 13 retries same test fix 5 times |
 | FP-004 | Context Overflow | Agent uses 80% tokens without progress |
 | FP-005 | State Mismatch | Agent expects files that don't exist |
@@ -367,7 +367,7 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
   - Frontend TypeScript type generation (openapi-typescript)
   - Backend FastAPI/Pydantic v2 DTO patterns with Field validation
   - Mock server setup (Prism CLI, MSW)
-  - Contract testing patterns (express-openapi-validator)
+  - Contract testing patterns (openapi-spec-validator for Python)
   - API versioning strategies
 
 **Enhanced Agents (6 modified):**
@@ -407,7 +407,7 @@ Added complete API-First workflow to prevent backend-frontend divergence and ena
 6. **Agent 15 (Integration Test)** - MODIFIED
    - Added OpenAPI contract validation to integration tests
    - Validates API responses against OpenAPI schemas
-   - Example: Using express-openapi-validator for contract testing
+   - Example: Using openapi-spec-validator + schemathesis for contract testing
    - Ensures HTTP status codes match OpenAPI responses
 
 **Impact:**

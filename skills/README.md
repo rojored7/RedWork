@@ -46,7 +46,7 @@ Skills are centralized knowledge documents that contain:
 
 **Contains**:
 - AAA pattern (Arrange, Act, Assert)
-- Mock patterns (Jest, MSW)
+- Mock patterns (pytest/unittest.mock for backend, Vitest/MSW for frontend)
 - Coverage requirements (80%/75%/80%/80%)
 - DDD-specific testing (factory methods, Result<T>)
 - Test isolation strategies

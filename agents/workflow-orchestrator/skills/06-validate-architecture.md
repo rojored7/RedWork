@@ -31,35 +31,37 @@ Buscar archivos de configuración CAS:
 
 ### 2. Validar Layering
 
-**Regla:** Controllers solo pueden importar Services, NO directamente Repositories/Prisma
+**Regla:** Routers solo pueden importar Services, NO directamente repositories/SQLAlchemy session
 
-```typescript
-// ❌ VIOLACIÓN
-// backend/src/controllers/user.controller.ts
-import { prisma } from '../utils/prisma';  // NO PERMITIDO
+```python
+# VIOLATION
+# backend/app/routers/user_router.py
+from app.db.session import get_db  # Direct DB access in router - NOT ALLOWED
 
-// ✅ CORRECTO
-import { userService } from '../services/user.service';
+# CORRECT
+from app.services.user_service import UserService
+from app.dependencies import get_user_service
 ```
 
-**Verificación:**
+**Verificacion:**
 ```bash
-# Buscar imports de prisma en controllers
-grep -r "from.*prisma" backend/src/controllers/
+# Buscar imports de session/db en routers
+grep -r "from.*db\." backend/app/routers/
+grep -r "from.*session" backend/app/routers/
 ```
 
 ### 3. Validar Naming Conventions
 
 **Reglas:**
-- Files: kebab-case (`user-service.ts`)
+- Files: snake_case (`user_service.py`)
 - Classes: PascalCase (`UserService`)
-- Functions: camelCase (`getUserById`)
+- Functions: snake_case (`get_user_by_id`)
 - Constants: UPPER_SNAKE_CASE (`MAX_RETRIES`)
 
-**Verificación:**
+**Verificacion:**
 ```bash
-# Buscar archivos que no sigan kebab-case
-find backend/src -name "*[A-Z]*.ts"
+# Buscar archivos que no sigan snake_case en backend
+find backend/app -name "*[A-Z]*.py"
 ```
 
 ### 4. Detectar Circular Dependencies
@@ -72,10 +74,10 @@ npx madge --circular backend/src/
 ### 5. Validar Import Order
 
 **Orden esperado:**
-1. Node builtins (`fs`, `path`)
-2. External (`express`, `prisma`)
-3. Internal (`@/services`, `@/utils`)
-4. Relative (`./`, `../`)
+1. Standard library (`os`, `json`, `pathlib`)
+2. Third-party (`fastapi`, `sqlalchemy`, `pydantic`)
+3. Local application (`app.services`, `app.repositories`)
+4. Relative (`.`, `..`)
 
 ### 6. Validar Estructura de Archivos
 
@@ -136,32 +138,32 @@ Verificando reglas del proyecto...
 ✅ Layering: Cumple
 
 ⚠️  Naming conventions: 2 violations
-   - notification-Service.ts (debe ser notification-service.ts)
-   - NotificationUtils.ts (debe ser notification-utils.ts)
+   - notification_Service.py (debe ser notification_service.py)
+   - NotificationUtils.py (debe ser notification_utils.py)
 
-✅ Circular dependencies: Ninguna
+Circular dependencies: Ninguna
 
-⚠️  Import order: 3 violations
-   - notification.controller.ts:5 (external after internal)
-   - notification.service.ts:12 (relative before external)
-   - useNotifications.ts:8 (wrong order)
+Import order: 3 violations
+   - notification_router.py:5 (external after internal)
+   - notification_service.py:12 (relative before external)
+   - useNotifications.tsx:8 (wrong order, frontend)
 
-⚠️  File organization: 1 violation
-   - src/notificationHelper.ts (debe estar en utils/)
+File organization: 1 violation
+   - app/notification_helper.py (debe estar en app/utils/)
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+---
 
-📊 CAS Validation: PASSED with warnings
+CAS Validation: PASSED with warnings
 
-⚠️  6 violations detectadas (modo advisory)
+6 violations detectadas (modo advisory)
    - 2 naming
    - 3 import order
    - 1 file organization
 
-💡 Recomendaciones:
-1. Renombrar archivos a kebab-case
-2. Reordenar imports (puedes usar: npm run lint:fix)
-3. Mover notificationHelper.ts a utils/
+Recomendaciones:
+1. Renombrar archivos a snake_case
+2. Reordenar imports (puedes usar: ruff check --fix)
+3. Mover notification_helper.py a app/utils/
 
 ℹ️  Modo Advisory: No bloquea el workflow
    Puedes continuar, pero considera arreglar estos issues
@@ -171,39 +173,38 @@ Verificando reglas del proyecto...
 
 ## 🔧 Reglas Configurables
 
-El proyecto puede definir reglas personalizadas en `.arch-rules.ts`:
+El proyecto puede definir reglas personalizadas en `.arch-rules.py`:
 
-```typescript
-// .arch-rules.ts
-export const rules = {
-  layering: {
-    controllers: {
-      canImport: ['services', 'types', 'middleware'],
-      cannotImport: ['repositories', 'utils/prisma']
+```python
+# .arch-rules.py
+rules = {
+    "layering": {
+        "routers": {
+            "can_import": ["services", "schemas", "dependencies"],
+            "cannot_import": ["repositories", "db.session"]
+        },
+        "services": {
+            "can_import": ["repositories", "schemas", "utils"],
+            "cannot_import": ["routers", "endpoints"]
+        }
     },
-    services: {
-      canImport: ['repositories', 'types', 'utils'],
-      cannotImport: ['controllers', 'routes']
-    }
-  },
-  naming: {
-    files: 'kebab-case',
-    classes: 'PascalCase',
-    functions: 'camelCase'
-  },
-  maxFileSize: 300, // líneas
-  maxComplexity: 10,
-  noDefaultExports: true // excepto pages
-};
+    "naming": {
+        "files": "snake_case",
+        "classes": "PascalCase",
+        "functions": "snake_case"
+    },
+    "max_file_size": 300,  # lines
+    "max_complexity": 10,
+}
 ```
 
 ---
 
-## 🚨 Categorías de Violaciones
+## Categorias de Violaciones
 
 ### Critical (Bloquean - pero NO en modo advisory)
 - Circular dependencies
-- Import de Prisma en Controllers
+- Import de db.session en routers (debe ir via Depends)
 - Archivos en lugares incorrectos
 
 ### Warning (Solo advierten)
@@ -237,34 +238,34 @@ Crear `.checkpoints/06-architecture-validation.md`:
 ## Violations Detail
 
 ### 1. Naming Convention
-**File:** backend/src/services/notification-Service.ts
-**Rule:** File names must be kebab-case
-**Current:** notification-Service.ts
-**Expected:** notification-service.ts
+**File:** backend/app/services/notification_Service.py
+**Rule:** File names must be snake_case
+**Current:** notification_Service.py
+**Expected:** notification_service.py
 **Fix:** Rename file
 
 ### 2. Import Order
-**File:** backend/src/controllers/notification.controller.ts
+**File:** backend/app/routers/notification_router.py
 **Line:** 5
-**Rule:** External imports must come before internal
+**Rule:** Third-party imports must come before local imports
 **Current:**
-```typescript
-import { notificationService } from '@/services';
-import express from 'express';  // ← Wrong order
+```python
+from app.services.notification_service import NotificationService
+from fastapi import APIRouter  # <- Wrong order
 ```
 **Expected:**
-```typescript
-import express from 'express';
-import { notificationService } from '@/services';
+```python
+from fastapi import APIRouter
+from app.services.notification_service import NotificationService
 ```
-**Fix:** Reorder imports (auto-fixable with ESLint)
+**Fix:** Reorder imports (auto-fixable with ruff)
 
-[... más violaciones ...]
+[... more violations ...]
 
 ## Recommendations
-1. Run `npm run lint:fix` to auto-fix import order
-2. Rename files to kebab-case
-3. Consider splitting large files (notification.service.ts: 315 LOC)
+1. Run `ruff check --fix` to auto-fix import order
+2. Rename files to snake_case
+3. Consider splitting large files (notification_service.py: 315 LOC)
 
 ## Next Steps
 ⚠️  Modo Advisory - Workflow NO bloqueado

@@ -45,18 +45,18 @@ Leer `.baselines/latest.json` y extraer:
 
 ### 3. Ejecutar Suite Completa ACTUAL
 
-#### Backend Tests
+#### Backend Tests (pytest)
 ```bash
 cd backend
-npm test -- --json --outputFile=../current-backend-results.json
+python -m pytest tests/ -v --tb=short --json-report --json-report-file=../current-backend-results.json
 BACKEND_EXIT_CODE=$?
 cd ..
 ```
 
-#### Frontend Tests
+#### Frontend Tests (vitest)
 ```bash
 cd frontend
-npm test -- --reporter=json --outputFile=../current-frontend-results.json --run
+npx vitest run --reporter=json --outputFile=../current-frontend-results.json
 FRONTEND_EXIT_CODE=$?
 cd ..
 ```
@@ -143,10 +143,10 @@ if (current.failed > 0) {
 ✅ Safe to merge
 
 ## Tests Nuevos Agregados:
-- notification.service.test.ts (8 tests)
-- notification.controller.test.ts (5 tests)
+- test_notification_service.py (8 tests)
+- test_notification_router.py (5 tests)
 - NotificationBell.test.tsx (6 tests)
-- useNotifications.test.ts (4 tests)
+- useNotifications.test.tsx (4 tests)
 ```
 
 #### Si HAY REGRESSION (❌ Crítico)
@@ -168,35 +168,34 @@ if (current.failed > 0) {
 
 ## Tests que SE ROMPIERON (Regression):
 
-### 1. backend/src/__tests__/auth/login.test.ts
-**Test:** "should login with valid credentials"
-**Status antes:** ✅ PASSED
-**Status ahora:** ❌ FAILED
+### 1. backend/tests/auth/test_login.py
+**Test:** "test_login_with_valid_credentials"
+**Status antes:** PASSED
+**Status ahora:** FAILED
 
 **Error:**
 ```
-Expected: 200 OK
-Received: 500 Internal Server Error
-
-TypeError: Cannot read property 'findUnique' of undefined
-  at AuthService.login (src/services/auth.service.ts:45)
+AssertionError: 500 != 200
+  response = client.post("/api/v1/auth/login", json=payload)
+  assert response.status_code == 200
 ```
 
 **Root Cause Analysis:**
-El nuevo `notification.service.ts` importa `authService` causando
-inicialización circular. AuthService se inicializa antes de Prisma.
+El nuevo `notification_service.py` importa `auth_service` causando
+inicializacion circular. auth_service se inicializa antes de que la
+sesion de SQLAlchemy este disponible.
 
-**Solución sugerida:**
-1. Mover import de authService a método en vez de top-level
-2. O usar lazy loading para notification.service
+**Solucion sugerida:**
+1. Mover import de auth_service a nivel de funcion, no top-level
+2. O usar Depends() con lazy injection
 
-**Checkpoint:** .checkpoints/02-backend.md (línea 125)
+**Checkpoint:** .checkpoints/02-backend.md (linea 125)
 
 ---
 
-### 2. backend/src/__tests__/courses/enrollment.test.ts
-**Test:** "should enroll user in course"
-**Status antes:** ✅ PASSED
+### 2. backend/tests/courses/test_enrollment.py
+**Test:** "test_enroll_user_in_course"
+**Status antes:** PASSED
 **Status ahora:** ❌ FAILED
 
 **Error:**
@@ -241,7 +240,7 @@ cat current-backend-results.json | jq '.testResults[] | select(.status == "faile
 git diff .checkpoints/02-backend.md
 
 # Re-ejecutar solo tests rotos
-cd backend && npm test -- auth/login.test.ts
+cd backend && python -m pytest tests/auth/test_login.py -v
 ```
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

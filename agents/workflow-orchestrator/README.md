@@ -302,7 +302,7 @@ Acciones Requeridas:
 
 ✅ Layering: Cumple
 ⚠️  Naming: 2 violations
-   - notification-Service.ts (debe ser notification-service.ts)
+   - notification_Service.py (debe ser notification_service.py)
 ✅ Circular dependencies: Ninguna
 ⚠️  Import order: 3 violations
 
@@ -368,19 +368,19 @@ Acciones Requeridas:
 🎬 Inicializando proyecto con Workflow System...
 
 📍 Proyecto detectado:
-   Tipo: Node.js
-   Backend: Express (Jest)
+   Tipo: Python + React
+   Backend: FastAPI (pytest)
    Frontend: React (Vitest)
 
-📁 Creando estructura...
-   ✅ .baselines/
-   ✅ .checkpoints/
-   ✅ reports/
+Creando estructura...
+   .baselines/
+   .checkpoints/
+   reports/
 
-📄 Copiando templates...
-   ✅ smoke-tests.test.ts
-   ✅ .arch-rules.ts
-   ✅ .workflow-config.json
+Copiando templates...
+   smoke_tests.py
+   .arch-rules.py
+   .workflow-config.json
 
 📸 Capturando baseline inicial...
    ✅ 156/156 tests passed
@@ -808,15 +808,15 @@ Agente:
 Verificando reglas...
 
 ✅ Layering: Cumple
-   Controllers → Services → Repositories
+   Routers -> Services -> Repositories
    245 archivos verificados
 
-⚠️  Naming conventions: 3 violations
-   1. backend/src/services/notification-Service.ts
-      Expected: notification-service.ts (kebab-case)
+Naming conventions: 3 violations
+   1. backend/app/services/notification_Service.py
+      Expected: notification_service.py (snake_case)
 
-   2. backend/src/utils/NotificationHelper.ts
-      Expected: notification-helper.ts (kebab-case)
+   2. backend/app/utils/NotificationHelper.py
+      Expected: notification_helper.py (snake_case)
 
    3. frontend/src/components/BadgeList/BadgeListComponent.tsx
       Expected: BadgeList.tsx (sin "Component" suffix)

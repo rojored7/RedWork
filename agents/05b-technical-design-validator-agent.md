@@ -98,16 +98,16 @@ Example FAIL:
 ```
 Status: MISSING
 Evidence: Service design does not specify ownership guards on Task endpoints.
-          No mention of @UseGuards(OwnershipGuard) in API layer.
+          No mention of Depends(verify_task_ownership) in API layer.
 Verdict: FAIL - BLOCKING ISSUE
-Required Fix: Add OwnershipGuard specification to all Task CRUD endpoints
+Required Fix: Add ownership dependency to all Task CRUD endpoints
 ```
 
 Example PASS:
 ```
 Status: IMPLEMENTED
 Evidence: Section 3.4.1 specifies: "All Task endpoints protected with
-          @UseGuards(JwtAuthGuard, TaskOwnershipGuard)"
+          Depends(get_current_user) and Depends(verify_task_ownership)"
 Verdict: PASS
 ```
 

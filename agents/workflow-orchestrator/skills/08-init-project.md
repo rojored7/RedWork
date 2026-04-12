@@ -23,26 +23,25 @@ Preparar un proyecto para usar el sistema de workflows completo:
 ### 1. Detectar Proyecto
 
 ```bash
-# Verificar que estamos en un proyecto válido
-if [ ! -f "package.json" ] && [ ! -f "requirements.txt" ]; then
-  echo "❌ No es un proyecto Node.js ni Python"
+# Verificar que estamos en un proyecto valido
+if [ ! -f "backend/pyproject.toml" ] && [ ! -f "backend/requirements.txt" ]; then
+  echo "ERROR: No FastAPI backend detected"
   exit 1
 fi
 ```
 
 **Detectar frameworks:**
-```json
-// Leer package.json
-{
-  "dependencies": {
-    "express": "^4.18.0",    // → Backend: Express
-    "react": "^18.2.0"        // → Frontend: React
-  },
-  "devDependencies": {
-    "jest": "^29.7.0",        // → Test runner: Jest
-    "@playwright/test": "^1.40.0"  // → E2E: Playwright
-  }
-}
+```bash
+# Backend: FastAPI (MANDATORY)
+grep -q "fastapi" backend/pyproject.toml 2>/dev/null || \
+grep -q "fastapi" backend/requirements.txt 2>/dev/null
+
+# Frontend: React (check package.json in frontend/)
+grep -q '"react"' frontend/package.json 2>/dev/null
+
+# Tests: pytest (backend), vitest (frontend)
+grep -q "pytest" backend/pyproject.toml 2>/dev/null
+grep -q '"vitest"' frontend/package.json 2>/dev/null
 ```
 
 ### 2. Crear Estructura de Directorios
@@ -64,23 +63,23 @@ Del agente workflow-orchestrator copiar templates al proyecto:
 
 #### 3.1: Smoke Tests Template
 
-Si es Node.js con Jest:
+For FastAPI backend with pytest:
 ```bash
-# Copiar template de smoke tests
-cp ~/.claude/agents/workflow-orchestrator/templates/smoke-tests.test.ts \
-   backend/src/__tests__/regression/smoke-tests.test.ts
+# Copy smoke test template
+cp ~/.claude/agents/workflow-orchestrator/templates/smoke_tests.py \
+   backend/tests/regression/smoke_tests.py
 ```
 
 #### 3.2: Architecture Rules
 
 ```bash
-# Copiar reglas de arquitectura
-cp ~/.claude/agents/workflow-orchestrator/templates/.arch-rules.ts \
-   ./.arch-rules.ts
+# Copy architecture rules
+cp ~/.claude/agents/workflow-orchestrator/templates/.arch-rules.py \
+   ./.arch-rules.py
 
-# Si tiene backend separado
-cp ~/.claude/agents/workflow-orchestrator/templates/.arch-rules.ts \
-   backend/.arch-rules.ts
+# If backend is separate
+cp ~/.claude/agents/workflow-orchestrator/templates/.arch-rules.py \
+   backend/.arch-rules.py
 ```
 
 #### 3.3: Workflow Config

@@ -105,8 +105,8 @@ Create a comprehensive security requirements document that will be used by:
 
 **Validation Criteria:**
 - No raw SQL with string interpolation
-- All inputs validated with DTOs
-- TypeORM/Sequelize used correctly
+- All inputs validated with Pydantic v2 models
+- SQLAlchemy ORM used correctly (no raw queries with user input)
 
 ### A04:2021 - Insecure Design
 **Requirements:**
