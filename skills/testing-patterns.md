@@ -1,15 +1,39 @@
 # Testing Patterns
 
-**Skill Version**: 1.0
+**Skill Version**: 2.0
 **Created**: 2026-04-07
+**Updated**: 2026-04-11
 **Used By**: Agents 13, 14, 15, 16, 18
 **Purpose**: Comprehensive testing strategies
+**Stack**: Backend = pytest (Python), Frontend = Vitest + Testing Library, E2E = Playwright
 
 ---
 
 ## AAA Pattern (Arrange, Act, Assert)
 
+### Backend (pytest)
+
+```python
+def test_create_user_with_valid_data():
+    # Arrange
+    email = "test@example.com"
+    name = "Test User"
+
+    # Act
+    result = User.create(email=email, name=name)
+
+    # Assert
+    assert result.is_success is True
+    user = result.value
+    assert user.email.value == email
+    assert user.name == name
+```
+
+### Frontend (Vitest)
+
 ```typescript
+import { describe, it, expect } from 'vitest';
+
 describe('User', () => {
   it('should create user with valid data', () => {
     // Arrange
@@ -17,81 +41,86 @@ describe('User', () => {
     const name = 'Test User';
 
     // Act
-    const result = User.create({ email, name });
+    const result = createUser({ email, name });
 
     // Assert
     expect(result.isSuccess).toBe(true);
-    const user = result.getValue();
-    expect(user.email.value).toBe(email);
-    expect(user.name).toBe(name);
   });
 });
 ```
 
 ---
 
-## Mock Patterns (Jest)
+## Mock Patterns
 
-### mockResolvedValue vs mockReturnValue
+### Backend (unittest.mock)
 
-```typescript
-// ASYNC function - use mockResolvedValue
-const mockRepository = {
-  findById: jest.fn().mockResolvedValue(user),  // Returns Promise<User>
-  save: jest.fn().mockResolvedValue(undefined), // Returns Promise<void>
-};
+```python
+from unittest.mock import AsyncMock, MagicMock, patch
 
-// SYNC function - use mockReturnValue
-const mockValidator = {
-  validate: jest.fn().mockReturnValue(true), // Returns boolean
-};
+# ASYNC function - use AsyncMock
+mock_repository = MagicMock()
+mock_repository.find_by_id = AsyncMock(return_value=user)   # Returns awaitable
+mock_repository.save = AsyncMock(return_value=None)          # Returns awaitable
 
-// WRONG - async/sync mismatch
-mockRepository.findById.mockReturnValue(user); // BAD - returns User, not Promise<User>
+# SYNC function - use MagicMock
+mock_validator = MagicMock()
+mock_validator.validate = MagicMock(return_value=True)       # Returns bool
+
+# WRONG - async/sync mismatch
+mock_repository.find_by_id = MagicMock(return_value=user)    # BAD - not awaitable
+
+# Mock with side_effect (conditional behavior)
+async def conditional_send(to: str, subject: str):
+    if "@" not in to:
+        raise ValueError("Invalid email")
+    return {"success": True}
+
+mock_email_service = MagicMock()
+mock_email_service.send = AsyncMock(side_effect=conditional_send)
 ```
 
-### Mock Implementation
+### Frontend (Vitest)
 
 ```typescript
-const mockEmailService = {
-  send: jest.fn().mockImplementation(async (to: string, subject: string) => {
-    if (!to.includes('@')) {
-      throw new Error('Invalid email');
-    }
-    return { success: true };
-  }),
-};
+import { vi } from 'vitest';
+
+// ASYNC function
+const mockFetch = vi.fn().mockResolvedValue({ data: user });
+
+// SYNC function
+const mockValidate = vi.fn().mockReturnValue(true);
+
+// Conditional mock
+const mockSend = vi.fn().mockImplementation(async (to: string) => {
+  if (!to.includes('@')) throw new Error('Invalid email');
+  return { success: true };
+});
 ```
 
 ---
 
-## MSW (Mock Service Worker)
+## MSW (Mock Service Worker) — Frontend Only
 
 ```typescript
 // mocks/handlers.ts
-import { rest } from 'msw';
+import { http, HttpResponse } from 'msw';
 
 export const handlers = [
-  rest.get('/api/users', (req, res, ctx) => {
-    return res(
-      ctx.status(200),
-      ctx.json([
-        { id: '1', name: 'User 1', email: 'user1@example.com' },
-        { id: '2', name: 'User 2', email: 'user2@example.com' },
-      ])
-    );
+  http.get('/api/users', () => {
+    return HttpResponse.json([
+      { id: '1', name: 'User 1', email: 'user1@example.com' },
+      { id: '2', name: 'User 2', email: 'user2@example.com' },
+    ]);
   }),
 
-  rest.post('/api/users', async (req, res, ctx) => {
-    const body = await req.json();
-    return res(
-      ctx.status(201),
-      ctx.json({ id: '3', ...body })
-    );
+  http.post('/api/users', async ({ request }) => {
+    const body = await request.json();
+    return HttpResponse.json({ id: '3', ...body }, { status: 201 });
   }),
 
-  rest.delete('/api/users/:id', (req, res, ctx) => {
-    return res(ctx.status(204));
+  http.delete('/api/users/:id', () => {
+    return new HttpResponse(null, { status: 204 });
   }),
 ];
 
@@ -101,7 +130,8 @@ import { handlers } from './handlers';
 
 export const server = setupServer(...handlers);
 
-// test/setup.ts
+// test/setup.ts (vitest)
+import { beforeAll, afterEach, afterAll } from 'vitest';
 import { server } from '../mocks/server';
 
 beforeAll(() => server.listen());
@@ -109,6 +139,8 @@ afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
 // Usage in test
+import { renderHook, waitFor } from '@testing-library/react';
+
 test('should fetch users', async () => {
   const { result } = renderHook(() => useUsers());
 
@@ -122,214 +154,244 @@ test('should fetch users', async () => {
 
 ## Coverage Requirements
 
-```json
-// jest.config.js or vitest.config.ts
-{
-  "coverageThreshold": {
-    "global": {
-      "statements": 80,
-      "branches": 75,
-      "functions": 80,
-      "lines": 80
-    },
-    "src/modules/**/domain/**/*.ts": {
-      "statements": 100,
-      "branches": 100,
-      "functions": 100,
-      "lines": 100
-    }
-  }
-}
+### Backend (pyproject.toml)
+
+```toml
+[tool.pytest.ini_options]
+addopts = "--cov=app --cov-report=term-missing --cov-fail-under=80"
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/tests/*", "app/migrations/*"]
+
+[tool.coverage.report]
+fail_under = 80
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
 ```
+
+### Frontend (vitest.config.ts)
+
+```typescript
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    coverage: {
+      provider: 'v8',
+      thresholds: {
+        statements: 80,
+        branches: 75,
+        functions: 80,
+        lines: 80,
+      },
+    },
+  },
+});
+```
+
+Target: 80% global, 100% for domain layer.
 
 ---
 
 ## DDD-Specific Testing
 
-### Testing Factory Methods
+### Testing Factory Methods (Backend — pytest)
 
-```typescript
-describe('User.create', () => {
-  it('should create user with valid data', () => {
-    const result = User.create({
-      email: 'test@example.com',
-      name: 'Test',
-    });
+```python
+class TestUserCreate:
+    def test_create_with_valid_data(self):
+        result = User.create(
+            email="test@example.com",
+            name="Test",
+        )
 
-    expect(result.isSuccess).toBe(true);
-    const user = result.getValue();
-    expect(user).toBeInstanceOf(User);
-  });
+        assert result.is_success is True
+        user = result.value
+        assert isinstance(user, User)
 
-  it('should fail with invalid email', () => {
-    const result = User.create({
-      email: 'invalid',
-      name: 'Test',
-    });
+    def test_fail_with_invalid_email(self):
+        result = User.create(
+            email="invalid",
+            name="Test",
+        )
 
-    expect(result.isFailure).toBe(true);
-    expect(result.error).toContain('email');
-  });
-});
+        assert result.is_failure is True
+        assert "email" in result.error.lower()
 ```
 
-### Testing Result<T> Pattern
+### Testing Result Pattern (Backend — pytest)
 
-```typescript
-describe('ChangeEmailUseCase', () => {
-  it('should change email successfully', async () => {
-    const user = User.create({ email: 'old@example.com', name: 'Test' }).getValue();
-    mockRepository.findById.mockResolvedValue(user);
-    mockRepository.save.mockResolvedValue(undefined);
+```python
+import pytest
+from unittest.mock import AsyncMock, MagicMock
 
-    const result = await useCase.execute({
-      userId: user.id,
-      newEmail: 'new@example.com',
-    });
+@pytest.fixture
+def mock_repository():
+    repo = MagicMock()
+    repo.find_by_id = AsyncMock()
+    repo.save = AsyncMock()
+    return repo
 
-    expect(result.isSuccess).toBe(true);
-    expect(mockRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({
-        _email: expect.objectContaining({ _value: 'new@example.com' })
-      })
-    );
-  });
+@pytest.fixture
+def use_case(mock_repository):
+    return ChangeEmailUseCase(repository=mock_repository)
 
-  it('should fail with invalid email', async () => {
-    const user = User.create({ email: 'old@example.com', name: 'Test' }).getValue();
-    mockRepository.findById.mockResolvedValue(user);
+class TestChangeEmailUseCase:
+    async def test_change_email_successfully(self, use_case, mock_repository):
+        user = User.create(email="old@example.com", name="Test").value
+        mock_repository.find_by_id.return_value = user
+        mock_repository.save.return_value = None
 
-    const result = await useCase.execute({
-      userId: user.id,
-      newEmail: 'invalid',
-    });
+        result = await use_case.execute(
+            user_id=user.id,
+            new_email="new@example.com",
+        )
 
-    expect(result.isFailure).toBe(true);
-    expect(mockRepository.save).not.toHaveBeenCalled();
-  });
-});
+        assert result.is_success is True
+        mock_repository.save.assert_called_once()
+        saved_user = mock_repository.save.call_args[0][0]
+        assert saved_user.email.value == "new@example.com"
+
+    async def test_fail_with_invalid_email(self, use_case, mock_repository):
+        user = User.create(email="old@example.com", name="Test").value
+        mock_repository.find_by_id.return_value = user
+
+        result = await use_case.execute(
+            user_id=user.id,
+            new_email="invalid",
+        )
+
+        assert result.is_failure is True
+        mock_repository.save.assert_not_called()
 ```
 
-### Testing Value Objects
+### Testing Value Objects (Backend — pytest)
 
-```typescript
-describe('Email', () => {
-  it('should create valid email', () => {
-    const result = Email.create('test@example.com');
+```python
+class TestEmail:
+    def test_create_valid_email(self):
+        result = Email.create("test@example.com")
 
-    expect(result.isSuccess).toBe(true);
-    expect(result.getValue().value).toBe('test@example.com');
-  });
+        assert result.is_success is True
+        assert result.value.value == "test@example.com"
 
-  it('should normalize email', () => {
-    const result = Email.create('  TEST@EXAMPLE.COM  ');
+    def test_normalize_email(self):
+        result = Email.create("  TEST@EXAMPLE.COM  ")
 
-    expect(result.isSuccess).toBe(true);
-    expect(result.getValue().value).toBe('test@example.com');
-  });
+        assert result.is_success is True
+        assert result.value.value == "test@example.com"
 
-  it('should validate format', () => {
-    const invalid = Email.create('invalid');
-    expect(invalid.isFailure).toBe(true);
-  });
+    def test_validate_format(self):
+        result = Email.create("invalid")
+        assert result.is_failure is True
 
-  it('should compare emails', () => {
-    const email1 = Email.create('test@example.com').getValue();
-    const email2 = Email.create('test@example.com').getValue();
-    const email3 = Email.create('other@example.com').getValue();
+    def test_compare_emails(self):
+        email1 = Email.create("test@example.com").value
+        email2 = Email.create("test@example.com").value
+        email3 = Email.create("other@example.com").value
 
-    expect(email1.equals(email2)).toBe(true);
-    expect(email1.equals(email3)).toBe(false);
-  });
-});
-```
-
----
-
-## Test Isolation
-
-```typescript
-describe('ProjectService', () => {
-  let service: ProjectService;
-  let mockRepository: jest.Mocked<IProjectRepository>;
-
-  beforeEach(() => {
-    // Fresh mocks for each test
-    mockRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      findAll: jest.fn(),
-      delete: jest.fn(),
-    };
-
-    service = new ProjectService(mockRepository);
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
-  });
-
-  it('test 1', async () => {
-    // This test won't affect test 2
-  });
-
-  it('test 2', async () => {
-    // Clean mocks from test 1
-  });
-});
+        assert email1 == email2
+        assert email1 != email3
 ```
 
 ---
 
-## Integration Testing
+## Test Isolation (Backend — pytest fixtures)
 
-```typescript
-// test/integration/project.integration.spec.ts
-describe('Project Integration Tests', () => {
-  let app: INestApplication;
-  let projectRepository: Repository<ProjectEntity>;
+```python
+import pytest
+from unittest.mock import AsyncMock, MagicMock
 
-  beforeAll(async () => {
-    const moduleFixture = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+@pytest.fixture(autouse=True)
+def mock_repository():
+    """Fresh mocks for each test — autouse ensures isolation."""
+    return MagicMock(
+        save=AsyncMock(),
+        find_by_id=AsyncMock(),
+        find_all=AsyncMock(),
+        delete=AsyncMock(),
+    )
 
-    app = moduleFixture.createNestApplication();
-    await app.init();
+@pytest.fixture
+def service(mock_repository):
+    return ProjectService(repository=mock_repository)
 
-    projectRepository = moduleFixture.get('ProjectEntityRepository');
-  });
+class TestProjectService:
+    async def test_1(self, service, mock_repository):
+        # This test won't affect test_2 — fresh mocks each time
+        pass
 
-  afterAll(async () => {
-    await app.close();
-  });
-
-  beforeEach(async () => {
-    await projectRepository.clear();
-  });
-
-  it('should create project via API', async () => {
-    const response = await request(app.getHttpServer())
-      .post('/api/projects')
-      .send({ name: 'Test Project', description: 'Test' })
-      .expect(201);
-
-    const project = response.body;
-    expect(project).toMatchObject({
-      name: 'Test Project',
-      description: 'Test',
-    });
-
-    // Verify persistence
-    const saved = await projectRepository.findOne({ where: { id: project.id } });
-    expect(saved).toBeDefined();
-  });
-});
+    async def test_2(self, service, mock_repository):
+        # Clean mocks from test_1 via autouse fixture
+        pass
 ```
 
 ---
 
-## E2E Testing (Playwright)
+## Integration Testing (Backend — FastAPI TestClient + SQLAlchemy)
+
+```python
+import pytest
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.main import app
+from app.db.session import get_db
+from app.db.base import Base
+
+SQLALCHEMY_TEST_URL = "sqlite:///./test.db"
+engine = create_engine(SQLALCHEMY_TEST_URL, connect_args={"check_same_thread": False})
+TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+@pytest.fixture(autouse=True)
+def setup_db():
+    Base.metadata.create_all(bind=engine)
+    yield
+    Base.metadata.drop_all(bind=engine)
+
+@pytest.fixture
+def db_session():
+    session = TestingSessionLocal()
+    try:
+        yield session
+    finally:
+        session.close()
+
+@pytest.fixture
+def client(db_session):
+    def override_get_db():
+        yield db_session
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as c:
+        yield c
+    app.dependency_overrides.clear()
+
+class TestProjectIntegration:
+    def test_create_project_via_api(self, client, db_session):
+        response = client.post(
+            "/api/v1/projects",
+            json={"name": "Test Project", "description": "Test"},
+        )
+
+        assert response.status_code == 201
+        project = response.json()["data"]
+        assert project["name"] == "Test Project"
+        assert project["description"] == "Test"
+
+        # Verify persistence
+        from app.models.project import ProjectModel
+        saved = db_session.query(ProjectModel).filter_by(id=project["id"]).first()
+        assert saved is not None
+```
+
+---
+
+## E2E Testing (Playwright) — Frontend
 
 ```typescript
 // e2e/auth.spec.ts
@@ -363,6 +425,21 @@ test.describe('Authentication', () => {
 
 ## Test Naming Conventions
 
+### Backend (pytest)
+
+```python
+# Good - describes behavior
+def test_should_return_error_when_email_is_invalid(): ...
+def test_should_create_user_with_valid_data(): ...
+def test_should_prevent_duplicate_emails(): ...
+
+# Bad - describes implementation
+def test_should_call_validator_validate(): ...
+def test_should_set_email_property(): ...
+```
+
+### Frontend (Vitest)
+
 ```typescript
 // Good - describes behavior
 it('should return error when email is invalid');
@@ -376,5 +453,5 @@ it('should set email property');
 
 ---
 
-**Version**: 1.0
-**Last Updated**: 2026-04-07
+**Version**: 2.0
+**Last Updated**: 2026-04-11

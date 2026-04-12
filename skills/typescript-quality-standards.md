@@ -226,10 +226,10 @@ src/
 │   │   │       ├── entities/
 │   │   │       │   └── user.entity.ts
 │   │   │       └── repositories/
-│   │   │           └── typeorm-user.repository.ts
+│   │   │           └── sqlalchemy-user.repository.ts
 │   │   ├── api/
-│   │   │   ├── controllers/
-│   │   │   │   └── user.controller.ts
+│   │   │   ├── routers/
+│   │   │   │   └── user.router.ts
 │   │   │   ├── dto/
 │   │   │   │   └── create-user-api.dto.ts
 │   │   │   └── guards/

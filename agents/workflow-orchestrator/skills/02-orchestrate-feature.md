@@ -157,7 +157,7 @@ Invocar agente: backend-implementor
 
 Prompt:
 "Proyecto: {PROJECT_PATH}/backend
-Framework: {BACKEND_FRAMEWORK} (ej: Express, FastAPI)
+Framework: {BACKEND_FRAMEWORK} (ej: FastAPI)
 Tarea: {FEATURE_DESCRIPTION}
 
 Contexto previo:
@@ -194,9 +194,9 @@ Guarda resumen en: .checkpoints/02-backend.md"
 📦 Fase Backend completada
 
 Implementado:
-- notification.service.ts (250 líneas)
-- notification.controller.ts (120 líneas)
-- notification.routes.ts (45 líneas)
+- notification_service.py (250 lineas)
+- notification_router.py (120 lineas)
+- notification_routes.py (45 lineas)
 
 Tests creados:
 - notification.service.test.ts (8 tests)
@@ -284,10 +284,10 @@ Tests creados:
 Ejecutar tests de la feature nueva:
 
 Backend:
-cd backend && npm test -- features/notifications/
+cd backend && python -m pytest tests/features/notifications/
 
 Frontend:
-cd frontend && npm test -- notifications
+cd frontend && npx vitest run notifications
 ```
 
 #### 4.2: Regression Completo

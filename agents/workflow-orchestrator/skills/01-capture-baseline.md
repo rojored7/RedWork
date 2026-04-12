@@ -29,7 +29,7 @@ Este baseline se usará después para comparar y detectar si algo se rompió.
 Determinar:
 - ¿Tiene backend? (backend/package.json)
 - ¿Tiene frontend? (frontend/package.json)
-- ¿Qué test runner? (Jest, Vitest, Pytest, etc.)
+- ¿Que test runner? (pytest para backend, Vitest para frontend)
 - ¿Tiene E2E? (Playwright, Cypress)
 
 ### 2. Crear Estructura de Directorios
@@ -51,17 +51,17 @@ reports/
 
 ```bash
 cd backend
-npm test -- --json --outputFile=../temp-backend-results.json --passWithNoTests
+python -m pytest --tb=short -q --no-header -o junit_family=xunit2 --junitxml=../temp-backend-results.xml || true
 cd ..
 ```
 
-**Importante:** Usar `--passWithNoTests` para no fallar si no hay tests aún.
+**Importante:** Usar `|| true` para no fallar si no hay tests aun.
 
 ### 4. Ejecutar Tests Frontend (si existe)
 
 ```bash
 cd frontend
-npm test -- --reporter=json --outputFile=../temp-frontend-results.json --run
+npx vitest run --reporter=json --outputFile=../temp-frontend-results.json
 cd ..
 ```
 
@@ -90,8 +90,8 @@ Crear archivo `.baselines/baseline-TIMESTAMP.json` con estructura:
   "timestamp": "2026-03-08T10:30:00Z",
   "project": {
     "path": "/full/path/to/project",
-    "type": "nodejs",
-    "backend": "express",
+    "type": "python",
+    "backend": "fastapi",
     "frontend": "react"
   },
   "tests": {

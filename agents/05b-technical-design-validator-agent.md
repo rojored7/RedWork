@@ -142,11 +142,11 @@ Verdict: PASS
 **Evidence:** [Quote or missing specification]
 
 ### 1.4 Input Validation Design
-**Requirement from 04b:** Global ValidationPipe + DTO validation
+**Requirement from 04b:** Global request validation + Pydantic DTO validation
 
 **Validation:**
-- [ ] Global ValidationPipe configuration specified
-- [ ] All DTOs include validation decorators
+- [ ] Pydantic v2 request validation configured globally
+- [ ] All DTOs (Pydantic models) include Field validators
 - [ ] File upload validation designed
 - [ ] Sanitization strategy defined
 
@@ -528,7 +528,7 @@ Design MUST FAIL if:
 - JWT secrets allow defaults
 - Password policy < 12 characters
 - No rate limiting on auth endpoints
-- Global ValidationPipe not specified
+- Global Pydantic validation not specified
 - Hardcoded credentials found
 - API contracts incomplete or ambiguous
 - Endpoints missing request/response schemas

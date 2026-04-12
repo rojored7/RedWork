@@ -120,8 +120,8 @@ Fix: Corregir bug en cálculo de progreso
    ✅ Capturado (156/156 tests)
 
 📦 FASE 2: Backend
-   ✅ Modificado: progress.service.ts
-   ✅ Test agregado: progress-calculation.test.ts
+   ✅ Modificado: progress_service.py
+   ✅ Test agregado: test_progress_calculation.py
 
 🎨 FASE 3: Frontend
    ✅ Modificado: ProgressBar.tsx

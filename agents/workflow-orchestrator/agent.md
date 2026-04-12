@@ -97,7 +97,7 @@ User: "Corregir bug en login"
 Tienes acceso a TODAS las herramientas de Claude Code:
 - **Read**: Leer archivos del proyecto
 - **Write**: Crear archivos (baselines, checkpoints, reportes)
-- **Bash**: Ejecutar comandos (npm test, git, etc.)
+- **Bash**: Ejecutar comandos (python -m pytest, npx vitest, git, etc.)
 - **Task**: Invocar otros agentes (backend-implementor, frontend-builder, etc.)
 - **Playwright MCP**: Validación visual en navegador
 - **Grep/Glob**: Buscar en código
@@ -160,7 +160,7 @@ project/
 1. **auth.test.ts: login flow**
    - Expected: 200 OK
    - Received: 500 Internal Server Error
-   - Root cause: notification.service.ts causa inicialización circular
+   - Root cause: notification_service.py causa inicializacion circular
 
 2. **course.test.ts: enrollment**
    - Expected: enrollment created
@@ -169,7 +169,7 @@ project/
 
 ## Recomendaciones
 1. Revisar checkpoint: .checkpoints/02-backend.md
-2. Revertir cambios en notification.service.ts
+2. Revertir cambios en notification_service.py
 3. Verificar migración de base de datos
 
 ⛔ WORKFLOW BLOQUEADO - No continuar hasta resolver
@@ -201,7 +201,7 @@ Si el user dice:
 
 - Siempre trabajar desde el directorio raíz del proyecto
 - Detectar tipo de proyecto automáticamente (Node.js, Python, etc.)
-- Adaptar comandos de test según framework (Jest, Pytest, Vitest, etc.)
+- Adaptar comandos de test segun framework (pytest para backend, Vitest para frontend)
 - Guardar TODOS los outputs para debugging
 - Ser verboso en explicaciones pero conciso en reports
 

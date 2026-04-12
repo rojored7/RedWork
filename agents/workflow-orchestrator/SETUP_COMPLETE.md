@@ -160,9 +160,9 @@ Usuario: y
 
 📦 FASE 2: Backend Implementation
    Invocando: backend-implementor
-   ✅ badge.service.ts creado
-   ✅ badge.controller.ts creado
-   ✅ badge.routes.ts creado
+   ✅ badge_service.py creado
+   ✅ badge_router.py creado
+   ✅ badge_routes.py creado
    ✅ 12 tests agregados (12/12 passed)
    ✅ Checkpoint: .checkpoints/02-backend.md
 
@@ -269,7 +269,7 @@ Archivos:
 - **Automático (orchestrate-fix):** Sin pausas, para fixes rápidos
 
 ### 4. Validación Múltiple
-- Tests (Jest/Vitest)
+- Tests (pytest/Vitest)
 - Coverage (no debe bajar)
 - Arquitectura (CAS en modo advisory)
 - Visual (Playwright MCP)
@@ -355,8 +355,8 @@ Observa el workflow automático (sin pausas).
 El workflow-orchestrator agent está **completamente funcional** y listo para ser usado en:
 - Curso_ciber (proyecto actual)
 - Cualquier proyecto Node.js/TypeScript
-- Proyectos con Express, React, Prisma
-- Proyectos con Jest, Vitest, Playwright
+- Proyectos con FastAPI, React, Prisma
+- Proyectos con pytest, Vitest, Playwright
 
 **Garantía de calidad:** NINGÚN cambio romperá funcionalidad existente.
 

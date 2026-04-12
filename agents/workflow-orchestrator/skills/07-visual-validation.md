@@ -230,7 +230,7 @@ Issues encontrados:
 3. ⚠️  UI issue: Dropdown no permite scroll
 
 Recomendaciones:
-1. Verificar backend: notification.controller.ts
+1. Verificar backend: notification_router.py
 2. Agregar null check en NotificationDropdown.tsx:45
 3. Agregar overflow-y:auto al dropdown
 

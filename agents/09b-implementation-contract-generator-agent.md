@@ -126,64 +126,60 @@ This document is a **binding contract** between planning and implementation. Eve
 From `05_service_design.md` and `08_implementation_breakdown/`, implement:
 
 #### Entities
-```typescript
-// MANDATORY: Implement EXACTLY as designed with DDD patterns
+```python
+# MANDATORY: Implement EXACTLY as designed with DDD patterns
 
-// Task Entity (backend/src/modules/task/domain/entities/task.entity.ts)
-class Task {
-  private readonly _id: string;
-  private _title: string;
-  private _status: TaskStatus;
-  private _priority: TaskPriority;
-  // ... all properties from design
+# Task Entity (backend/app/domain/entities/task.py)
+from __future__ import annotations
+from dataclasses import dataclass, field
+from uuid import uuid4
+from app.domain.result import Result
+from app.domain.enums import TaskStatus, TaskPriority
 
-  private constructor(props: TaskProps) {
-    this._id = props.id || uuidv4();
-    this._title = props.title;
-    this._status = props.status || TaskStatus.TODO;
-    this._priority = props.priority || TaskPriority.MEDIUM;
-  }
+@dataclass
+class Task:
+    _id: str = field(default_factory=lambda: str(uuid4()))
+    _title: str = ""
+    _status: TaskStatus = TaskStatus.TODO
+    _priority: TaskPriority = TaskPriority.MEDIUM
 
-  // MANDATORY: static create() returns Result<Task>
-  static create(props: Omit<TaskProps, 'id'>): Result<Task> {
-    if (!props.title || props.title.length < 3) {
-      return Result.fail<Task>('Title must be at least 3 characters');
-    }
-    if (props.title.length > 200) {
-      return Result.fail<Task>('Title must be less than 200 characters');
-    }
-    // All validations from design
-    return Result.ok<Task>(new Task(props));
-  }
+    # MANDATORY: factory create() returns Result[Task]
+    @staticmethod
+    def create(title: str, priority: TaskPriority = TaskPriority.MEDIUM) -> Result["Task"]:
+        if not title or len(title) < 3:
+            return Result.fail("Title must be at least 3 characters")
+        if len(title) > 200:
+            return Result.fail("Title must be less than 200 characters")
+        return Result.ok(Task(_title=title, _priority=priority))
 
-  // MANDATORY: reconstitute() for loading from database
-  static reconstitute(props: TaskProps): Task {
-    return new Task(props);
-  }
+    # MANDATORY: reconstitute() for loading from database
+    @staticmethod
+    def reconstitute(id: str, title: str, status: TaskStatus, priority: TaskPriority) -> "Task":
+        return Task(_id=id, _title=title, _status=status, _priority=priority)
 
-  // Getters for private properties
-  get id(): string { return this._id; }
-  get title(): string { return this._title; }
-  get status(): TaskStatus { return this._status; }
+    @property
+    def id(self) -> str:
+        return self._id
 
-  // MANDATORY: All business methods from design
-  changeStatus(newStatus: TaskStatus): Result<void> {
-    // Business logic validation
-    if (this._status === TaskStatus.DONE && newStatus === TaskStatus.TODO) {
-      return Result.fail<void>('Cannot revert completed task to TODO');
-    }
-    this._status = newStatus;
-    return Result.ok<void>();
-  }
+    @property
+    def title(self) -> str:
+        return self._title
 
-  assignTo(userId: string): Result<void> {
-    if (!userId) {
-      return Result.fail<void>('User ID is required');
-    }
-    // Business logic
-    return Result.ok<void>();
-  }
-}
+    @property
+    def status(self) -> TaskStatus:
+        return self._status
+
+    # MANDATORY: All business methods from design
+    def change_status(self, new_status: TaskStatus) -> Result[None]:
+        if self._status == TaskStatus.DONE and new_status == TaskStatus.TODO:
+            return Result.fail("Cannot revert completed task to TODO")
+        self._status = new_status
+        return Result.ok(None)
+
+    def assign_to(self, user_id: str) -> Result[None]:
+        if not user_id:
+            return Result.fail("User ID is required")
+        return Result.ok(None)
 ```
 
 **Implementation Checklist:**
@@ -198,44 +194,44 @@ class Task {
 - [ ] NO throwing exceptions in domain layer (use Result<T>)
 
 #### Value Objects
-```typescript
-// MANDATORY: Implement ALL value objects from design with DDD patterns
+```python
+# MANDATORY: Implement ALL value objects from design with DDD patterns
 
-// Password VO (backend/src/modules/user/domain/value-objects/password.vo.ts)
-class Password {
-  private readonly _value: string;
+# Password VO (backend/app/domain/value_objects/password.py)
+from __future__ import annotations
+import re
+import bcrypt
+from app.domain.result import Result
 
-  private constructor(value: string) {
-    this._value = value;
-  }
+class Password:
+    def __init__(self, hashed_value: str):
+        self._value = hashed_value
 
-  get value(): string {
-    return this._value;
-  }
+    @property
+    def value(self) -> str:
+        return self._value
 
-  // MANDATORY: static create() returns Result<Password>
-  static create(password: string): Result<Password> {
-    // MANDATORY: Minimum 12 characters (from security requirements)
-    if (password.length < 12) {
-      return Result.fail<Password>('Password must be at least 12 characters');
-    }
-    // MANDATORY: Complexity validation
-    if (!this.hasComplexity(password)) {
-      return Result.fail<Password>('Password must include uppercase, lowercase, number, special char');
-    }
-    // Hash with bcrypt rounds >= 12
-    const hashed = bcrypt.hashSync(password, 12);
-    return Result.ok<Password>(new Password(hashed));
-  }
+    # MANDATORY: static create() returns Result[Password]
+    @staticmethod
+    def create(password: str) -> Result["Password"]:
+        # MANDATORY: Minimum 12 characters (from security requirements)
+        if len(password) < 12:
+            return Result.fail("Password must be at least 12 characters")
+        # MANDATORY: Complexity validation
+        if not Password._has_complexity(password):
+            return Result.fail("Password must include uppercase, lowercase, number, special char")
+        # Hash with bcrypt rounds >= 12
+        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt(rounds=12)).decode()
+        return Result.ok(Password(hashed))
 
-  private static hasComplexity(password: string): boolean {
-    const hasUppercase = /[A-Z]/.test(password);
-    const hasLowercase = /[a-z]/.test(password);
-    const hasNumber = /[0-9]/.test(password);
-    const hasSpecial = /[!@#$%^&*]/.test(password);
-    return hasUppercase && hasLowercase && hasNumber && hasSpecial;
-  }
-}
+    @staticmethod
+    def _has_complexity(password: str) -> bool:
+        return bool(
+            re.search(r"[A-Z]", password)
+            and re.search(r"[a-z]", password)
+            and re.search(r"[0-9]", password)
+            and re.search(r"[!@#$%^&*]", password)
+        )
 ```
 
 **Implementation Checklist:**
@@ -246,17 +242,26 @@ class Password {
 - [ ] All VOs are immutable
 
 #### Repository Interfaces
-```typescript
-// MANDATORY: Repository interfaces in domain layer
+```python
+# MANDATORY: Repository interfaces in domain layer (ABC)
 
-// backend/src/modules/task/domain/repositories/task.repository.interface.ts
-interface ITaskRepository {
-  findById(id: string): Promise<Task | null>;
-  save(task: Task): Promise<Task>;
-  delete(id: string): Promise<void>;
-  findByUserId(userId: string): Promise<Task[]>;
-  // All methods from design
-}
+# backend/app/domain/repositories/task_repository.py
+from abc import ABC, abstractmethod
+from typing import Optional
+from app.domain.entities.task import Task
+
+class ITaskRepository(ABC):
+    @abstractmethod
+    async def find_by_id(self, id: str) -> Optional[Task]: ...
+
+    @abstractmethod
+    async def save(self, task: Task) -> Task: ...
+
+    @abstractmethod
+    async def delete(self, id: str) -> None: ...
+
+    @abstractmethod
+    async def find_by_user_id(self, user_id: str) -> list[Task]: ...
 ```
 
 **Implementation Checklist:**
@@ -269,47 +274,45 @@ interface ITaskRepository {
 
 **MANDATORY: Write tests BEFORE implementing (TDD)**
 
-```typescript
-// MANDATORY: Test file for EVERY entity/VO
+```python
+# MANDATORY: Test file for EVERY entity/VO
 
-// backend/src/modules/task/domain/entities/task.entity.spec.ts
-describe('Task Entity', () => {
-  describe('create', () => {
-    it('should create valid task with required fields', () => {
-      const task = Task.create({
-        title: 'Test Task',
-        userId: 'user-1'
-      });
-      expect(task.title).toBe('Test Task');
-    });
+# backend/tests/domain/test_task_entity.py
+import pytest
+from app.domain.entities.task import Task
+from app.domain.enums import TaskStatus
 
-    it('should throw error if title < 3 characters', () => {
-      expect(() => Task.create({ title: 'AB', userId: 'user-1' }))
-        .toThrow('Title must be at least 3 characters');
-    });
-  });
+class TestTaskCreate:
+    def test_create_valid_task_with_required_fields(self):
+        result = Task.create(title="Test Task")
+        assert result.is_success is True
+        assert result.value.title == "Test Task"
 
-  describe('changeStatus', () => {
-    it('should allow TODO -> IN_PROGRESS transition', () => {
-      const task = Task.create({ title: 'Test', userId: 'user-1' });
-      task.changeStatus(TaskStatus.IN_PROGRESS);
-      expect(task.status).toBe(TaskStatus.IN_PROGRESS);
-    });
+    def test_fail_if_title_less_than_3_characters(self):
+        result = Task.create(title="AB")
+        assert result.is_failure is True
+        assert "3 characters" in result.error
 
-    it('should throw error on invalid transition', () => {
-      const task = Task.create({ title: 'Test', userId: 'user-1' });
-      expect(() => task.changeStatus(TaskStatus.DONE))
-        .toThrow('Cannot transition');
-    });
-  });
-});
+class TestTaskChangeStatus:
+    def test_allow_todo_to_in_progress(self):
+        task = Task.create(title="Test").value
+        result = task.change_status(TaskStatus.IN_PROGRESS)
+        assert result.is_success is True
+        assert task.status == TaskStatus.IN_PROGRESS
+
+    def test_fail_on_invalid_transition(self):
+        task = Task.create(title="Test").value
+        # Force to DONE state for test
+        task._status = TaskStatus.DONE
+        result = task.change_status(TaskStatus.TODO)
+        assert result.is_failure is True
 ```
 
 **Test Coverage Requirements:**
-- [ ] Task.entity.spec.ts with 100% coverage
-- [ ] User.entity.spec.ts with 100% coverage
-- [ ] Project.entity.spec.ts with 100% coverage
-- [ ] Password.vo.spec.ts with 100% coverage
+- [ ] test_task_entity.py with 100% coverage
+- [ ] test_user_entity.py with 100% coverage
+- [ ] test_project_entity.py with 100% coverage
+- [ ] test_password_vo.py with 100% coverage
 - [ ] Email.vo.spec.ts with 100% coverage
 - [ ] TaskStatus.vo.spec.ts with 100% coverage
 
@@ -463,45 +466,49 @@ class CreateTaskDTO(BaseModel):
 
 ### 2.2 What to Test
 
-```typescript
-// MANDATORY: Test EVERY service method
+```python
+# MANDATORY: Test EVERY service method
 
-// backend/src/modules/task/application/services/task.service.spec.ts
-describe('TaskService', () => {
-  let service: TaskService;
-  let mockRepository: jest.Mocked<ITaskRepository>;
+# backend/tests/application/test_task_service.py
+import pytest
+from unittest.mock import AsyncMock, MagicMock
+from app.application.services.task_service import TaskService
+from app.domain.enums import TaskPriority
+from fastapi import HTTPException
 
-  beforeEach(() => {
-    mockRepository = {
-      save: jest.fn(),
-      findById: jest.fn(),
-      delete: jest.fn(),
-      findByUserId: jest.fn(),
-    };
-    service = new TaskService(mockRepository);
-  });
+@pytest.fixture
+def mock_repository():
+    repo = MagicMock()
+    repo.save = AsyncMock()
+    repo.find_by_id = AsyncMock()
+    repo.delete = AsyncMock()
+    repo.find_by_user_id = AsyncMock()
+    return repo
 
-  describe('createTask', () => {
-    it('should create and save task', async () => {
-      const dto = { title: 'Test Task', priority: TaskPriority.MEDIUM };
-      mockRepository.save.mockResolvedValue(/* mock task */);
+@pytest.fixture
+def service(mock_repository):
+    return TaskService(repository=mock_repository)
 
-      const result = await service.createTask(dto, 'user-1');
+class TestCreateTask:
+    async def test_create_and_save_task(self, service, mock_repository):
+        mock_repository.save.return_value = None
 
-      expect(mockRepository.save).toHaveBeenCalled();
-      expect(result.title).toBe('Test Task');
-    });
-  });
+        result = await service.create_task(
+            title="Test Task",
+            priority=TaskPriority.MEDIUM,
+            user_id="user-1",
+        )
 
-  describe('updateTask', () => {
-    it('should throw ForbiddenException if not owner', async () => {
-      mockRepository.findById.mockResolvedValue(/* task with different userId */);
+        mock_repository.save.assert_called_once()
+        assert result.title == "Test Task"
 
-      await expect(service.updateTask('task-1', {}, 'user-2'))
-        .rejects.toThrow(ForbiddenException);
-    });
-  });
-});
+class TestUpdateTask:
+    async def test_raise_forbidden_if_not_owner(self, service, mock_repository):
+        mock_repository.find_by_id.return_value = MagicMock(user_id="user-1")
+
+        with pytest.raises(HTTPException) as exc:
+            await service.update_task("task-1", {}, "user-2")
+        assert exc.value.status_code == 403
 ```
 
 **Test Coverage Requirements:**
@@ -839,7 +846,7 @@ Must verify:
   - [ ] HTTP methods match OpenAPI definitions
   - [ ] Request/response schemas match OpenAPI components
   - [ ] Status codes match OpenAPI responses
-  - [ ] OpenAPI validator passes (express-openapi-validator or similar)
+  - [ ] OpenAPI validator passes (openapi-spec-validator / schemathesis)
 
 **If post-hook FAILS: Wave 3 is INCOMPLETE**
 
@@ -884,14 +891,14 @@ fi
 # .gitlab-ci.yml
 test:
   script:
-    - npm test -- --coverage
-    - if coverage < 100%; then exit 1; fi
+    - python -m pytest --cov=app --cov-fail-under=100
+    - if [ $? -ne 0 ]; then exit 1; fi
   allow_failure: false
 
 security:
   script:
-    - npm audit --audit-level=high
-    - if vulnerabilities found; then exit 1; fi
+    - pip-audit --strict
+    - if [ $? -ne 0 ]; then exit 1; fi
   allow_failure: false
 ```
 
@@ -932,28 +939,28 @@ After each wave, Security Review Agent (19) MUST validate:
 ### Run Tests
 ```bash
 # Unit tests
-npm test
+cd backend && python -m pytest tests/ -v
 
 # Unit tests with coverage
-npm test -- --coverage
+cd backend && python -m pytest --cov=app tests/
 
 # E2E tests
-npm run test:e2e
+cd frontend && npx playwright test
 
 # Integration tests
-npm run test:integration
+cd backend && python -m pytest tests/integration/ -v
 ```
 
 ### Run Quality Checks
 ```bash
-# Linting
-npm run lint
+# Linting (backend)
+cd backend && ruff check .
 
-# Type checking
-npm run type-check
+# Type checking (backend)
+cd backend && mypy app/
 
-# Build
-npm run build
+# Frontend linting + type check
+cd frontend && npx eslint src/ && npx tsc --noEmit
 
 # All checks
 ./scripts/enforce-100.sh
