@@ -1,0 +1,21 @@
+framework: FastAPI
+language: python
+test_runner: pytest
+linter: ruff
+type_checker: mypy
+package_manager: pip
+build_command: "uvicorn app.main:app --host 0.0.0.0 --port 8000"
+test_command: "python -m pytest tests/ -v"
+lint_command: "ruff check ."
+type_check_command: "mypy app/"
+ci_image: "python:3.12-slim"
+project_file: "pyproject.toml"
+src_dir: "app"
+test_dir: "tests"
+forbidden_patterns:
+  - "@nestjs"
+  - "express"
+  - "nest-cli.json"
+  - "pom.xml"
+  - "build.gradle"
+  - ".ts files in backend/"

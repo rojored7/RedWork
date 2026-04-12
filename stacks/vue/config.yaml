@@ -1,0 +1,15 @@
+framework: Vue
+language: typescript
+test_runner: vitest
+linter: eslint
+type_checker: vue-tsc
+package_manager: npm
+build_command: "npm run build"
+test_command: "npx vitest run"
+lint_command: "npx eslint src/"
+type_check_command: "npx vue-tsc --noEmit"
+ci_image: "node:20-slim"
+project_file: "package.json"
+src_dir: "src"
+test_dir: "src/__tests__"
+forbidden_patterns: []

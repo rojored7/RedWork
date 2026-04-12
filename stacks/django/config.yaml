@@ -1,0 +1,18 @@
+framework: Django
+language: python
+test_runner: pytest
+linter: ruff
+type_checker: mypy
+package_manager: pip
+build_command: "python manage.py runserver 0.0.0.0:8000"
+test_command: "python -m pytest tests/ -v"
+lint_command: "ruff check ."
+type_check_command: "mypy ."
+ci_image: "python:3.12-slim"
+project_file: "pyproject.toml"
+src_dir: "."
+test_dir: "tests"
+forbidden_patterns:
+  - "@nestjs"
+  - "express"
+  - "nest-cli.json"
