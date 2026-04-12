@@ -41,8 +41,38 @@ else
     CONTEXT_LINES+=("Git hooks v2: NOT installed")
 fi
 
-# --- Workflow status ---
-if [ -f "workflow-status.json" ]; then
+# --- State.json (v2.0 unified state) ---
+if [ -f ".project-state/state.json" ]; then
+    STATE_INFO=$(python3 -c "
+import json
+try:
+    with open('.project-state/state.json') as f:
+        s = json.load(f)
+    phase = s.get('current_phase', '?')
+    stack_b = s.get('stack', {}).get('backend', '?')
+    stack_f = s.get('stack', {}).get('frontend', '?')
+    agents_done = sum(1 for a in s.get('agents', {}).values() if a.get('status') == 'completed')
+    agents_total = len(s.get('agents', {}))
+    sprints = s.get('sprints', {})
+    active_sprint = None
+    for sn, sv in sorted(sprints.items()):
+        if sv.get('status') != 'completed':
+            active_sprint = sn
+            break
+    parts = []
+    parts.append(f'Phase: {phase}')
+    parts.append(f'Stack: {stack_b}/{stack_f}')
+    parts.append(f'Agents: {agents_done}/{agents_total} completed')
+    if active_sprint:
+        waves = sprints[active_sprint].get('waves', {})
+        wave_info = ', '.join(f'{k}={v.get(\"status\",\"?\")}' for k,v in waves.items())
+        parts.append(f'Sprint {active_sprint}: {wave_info or \"starting\"}')
+    print(' | '.join(parts))
+except Exception as e:
+    print(f'state error: {e}')
+" 2>/dev/null)
+    CONTEXT_LINES+=("State: $STATE_INFO")
+elif [ -f "workflow-status.json" ]; then
     AGENTS_DONE=$(python3 -c "
 import json
 try:
@@ -53,10 +83,10 @@ try:
     print(f'{done}/{total} agents completed')
 except: print('unreadable')
 " 2>/dev/null)
-    CONTEXT_LINES+=("Workflow: $AGENTS_DONE")
+    CONTEXT_LINES+=("Workflow (legacy): $AGENTS_DONE")
 fi
 
-# --- Sprint state ---
+# --- Sprint state (from state.json or legacy task files) ---
 if [ -d ".project-state" ]; then
     SPRINT_INFO=$(python3 -c "
 import json, glob, os

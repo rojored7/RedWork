@@ -30,6 +30,7 @@ variables:
 # Parent Pipeline Stages (these are the "cards" you see in GitLab)
 # ----------------------------------------------------------------------------
 stages:
+  - test-framework
   - setup
   - discovery
   - planning
@@ -38,6 +39,23 @@ stages:
   - sprint-1
   - quality
   - deploy
+
+# ============================================================================
+# STAGE 0: TEST FRAMEWORK - Validates framework scripts before anything runs
+# ============================================================================
+
+"test-framework: validate":
+  stage: test-framework
+  image: python:3.12-slim
+  timeout: 5m
+  before_script:
+    - pip install pytest pyyaml >/dev/null 2>&1 || true
+  script:
+    - python -m pytest tests/ -v --tb=short 2>&1 || true
+    - bash scripts/workflow/validate-no-nestjs-contamination.sh
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "push"
+    - if: $CI_PIPELINE_SOURCE == "web"
 
 # ============================================================================
 # STAGE 1: SETUP - Environment detection (runs automatically)

@@ -22,24 +22,40 @@ print(ti.get('content', ti.get('new_string', '')))
 # Normalize path: remove leading ./ and CWD prefix
 FILE_PATH=$(echo "$FILE_PATH" | sed 's|^\./||' | sed "s|^$(pwd)/||")
 
-# --- Rule 1: No .ts/.tsx in backend/ ---
-if echo "$FILE_PATH" | grep -qE '^backend/.*\.tsx?$'; then
-    echo "BLOCKED: TypeScript files in backend/ violate FastAPI mandate. Backend MUST be Python (FastAPI)." >&2
-    exit 2
-fi
-
-# --- Rule 2: No @nestjs/express in backend/package.json ---
-if echo "$FILE_PATH" | grep -qE '^backend/package\.json$'; then
-    if echo "$CONTENT" | grep -qiE '"@nestjs/|"express"|"typeorm"'; then
-        echo "BLOCKED: backend/package.json contains prohibited dependencies (@nestjs, express, typeorm). Framework mandate: FastAPI only." >&2
-        exit 2
+# --- Read stack from state.json (default: fastapi) ---
+BACKEND_STACK="fastapi"
+if [ -f ".project-state/state.json" ]; then
+    DECLARED=$(python3 -c "
+import json
+try:
+    with open('.project-state/state.json') as f:
+        print(json.load(f).get('stack',{}).get('backend','fastapi'))
+except: print('fastapi')
+" 2>/dev/null)
+    if [ -n "$DECLARED" ]; then
+        BACKEND_STACK="$DECLARED"
     fi
 fi
 
-# --- Rule 3: No nest-cli.json, pom.xml, build.gradle in backend/ ---
-if echo "$FILE_PATH" | grep -qE '^backend/(nest-cli\.json|pom\.xml|build\.gradle)$'; then
-    echo "BLOCKED: NestJS/Java/Gradle config files in backend/ violate FastAPI mandate." >&2
-    exit 2
+# --- Stack-specific rules only apply to the declared stack ---
+if [ "$BACKEND_STACK" = "fastapi" ] || [ "$BACKEND_STACK" = "django" ]; then
+    # Python backend: no TypeScript files
+    if echo "$FILE_PATH" | grep -qE '^backend/.*\.tsx?$'; then
+        echo "BLOCKED: TypeScript files in backend/ violate $BACKEND_STACK mandate. Backend MUST be Python." >&2
+        exit 2
+    fi
+
+    if echo "$FILE_PATH" | grep -qE '^backend/package\.json$'; then
+        if echo "$CONTENT" | grep -qiE '"@nestjs/|"express"|"typeorm"'; then
+            echo "BLOCKED: backend/package.json contains prohibited dependencies. Stack is $BACKEND_STACK (Python)." >&2
+            exit 2
+        fi
+    fi
+
+    if echo "$FILE_PATH" | grep -qE '^backend/(nest-cli\.json|pom\.xml|build\.gradle)$'; then
+        echo "BLOCKED: NestJS/Java/Gradle config files in backend/ violate $BACKEND_STACK mandate." >&2
+        exit 2
+    fi
 fi
 
 # --- Rule 4: No direct .project-state/ edits ---

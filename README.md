@@ -8,25 +8,25 @@ Backend: FastAPI (Python) exclusively. Frontend: Full UX design system. API: Bea
 
 ## Setup on a New Machine
 
-### 1. Clone
+### 1. Clone and Install Globally
 
 ```bash
 git clone https://gitlab.com/rojored7-group/redwork.git Framework
 cd Framework
+python install.py install --profile full
 ```
+
+This installs RedWork to `~/.claude/redwork/` (global, shared across all projects).
 
 ### 2. Create a Project
 
 ```bash
-bash init-new-project.sh my-project
+python install.py init my-project
 cd ../my-project
 ```
 
-This copies ALL framework files:
-- `.framework/` — agents, scripts, skills, hooks, templates
-- `scripts/` — workflow scripts and hooks (for CI access, since .framework/ is gitignored)
-- `.gitlab-ci.yml` + `.gitlab/ci/` — pipeline v3.0 (parent-child, 8 stages)
-- `.project-state-templates/` — task state templates for Agent 25
+This creates ONLY local structure (outputs/, .project-state/, CI). No .framework/ copy.
+Agents, skills, and scripts live globally in ~/.claude/redwork/.
 
 ### 3. Push to GitLab
 
@@ -163,7 +163,7 @@ Once hooks are installed, every `git commit` triggers:
 
 ```
 Framework/
-  init-new-project.sh              # Creates new projects with all v2 scripts
+  install.py                       # Global installer (install/update/uninstall/init/status)
   .gitlab-ci.yml                   # Pipeline v3.0 (FastAPI mandate, no LEGACY-TOLERANT)
   .gitlab/ci/*.yml                 # Child pipeline definitions (8 stages)
   workflow-status.json             # Status template (regenerated dynamically)

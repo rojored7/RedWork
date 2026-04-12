@@ -14,17 +14,33 @@ if [ ! -d ".project-state" ]; then
     exit 0
 fi
 
-# Update last_activity timestamp
+# Update last_activity in state.json and current_context.json
 python3 -c "
 import json, os
 from datetime import datetime, timezone
 
+now = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+
+# Update state.json
+state_file = '.project-state/state.json'
+if os.path.exists(state_file):
+    try:
+        with open(state_file, 'r') as f:
+            state = json.load(f)
+        state['last_activity'] = now
+        tmp = state_file + '.tmp'
+        with open(tmp, 'w') as f:
+            json.dump(state, f, indent=2)
+        os.replace(tmp, state_file)
+    except: pass
+
+# Update current_context.json (legacy compat)
 ctx_file = '.project-state/current_context.json'
 if os.path.exists(ctx_file):
     try:
         with open(ctx_file, 'r') as f:
             ctx = json.load(f)
-        ctx['last_activity'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+        ctx['last_activity'] = now
         tmp = ctx_file + '.tmp'
         with open(tmp, 'w') as f:
             json.dump(ctx, f, indent=2)
