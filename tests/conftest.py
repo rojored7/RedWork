@@ -8,6 +8,7 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from pathlib import Path
 
@@ -15,6 +16,12 @@ import pytest
 
 FRAMEWORK_ROOT = Path(__file__).parent.parent.resolve()
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
+
+
+def to_posix(path) -> str:
+    """Convert Windows backslashes to forward slashes for bash.
+    C:\\Users\\X -> C:/Users/X (works in both Git Bash and subprocess)."""
+    return str(path).replace("\\", "/")
 
 
 @pytest.fixture
@@ -26,8 +33,7 @@ def tmp_project(tmp_path):
     (project / ".project-state").mkdir()
     (project / "backend").mkdir()
     (project / "frontend").mkdir()
-    # Init git so hooks can work
-    subprocess.run(["git", "init"], cwd=str(project), capture_output=True)
+    subprocess.run(["git", "init"], cwd=to_posix(project), capture_output=True)
     return project
 
 
@@ -56,8 +62,8 @@ def run_script(script_path: str, cwd: str = None, env: dict = None) -> tuple:
         full_env.update(env)
 
     result = subprocess.run(
-        ["bash", str(script_path)],
-        cwd=cwd or str(FRAMEWORK_ROOT),
+        ["bash", to_posix(script_path)],
+        cwd=str(cwd) if cwd else str(FRAMEWORK_ROOT),
         capture_output=True,
         text=True,
         env=full_env,

@@ -49,9 +49,9 @@ stages:
   image: python:3.12-slim
   timeout: 5m
   before_script:
-    - pip install pytest pyyaml >/dev/null 2>&1 || true
+    - pip install pytest pyyaml >/dev/null 2>&1
   script:
-    - python -m pytest tests/ -v --tb=short 2>&1 || true
+    - python -m pytest tests/ -v --tb=short
     - bash scripts/workflow/validate-no-nestjs-contamination.sh
   rules:
     - if: $CI_PIPELINE_SOURCE == "push"

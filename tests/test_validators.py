@@ -12,6 +12,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
+from tests.conftest import to_posix
 
 import pytest
 
@@ -28,7 +29,8 @@ class TestValidateAgent01:
         if not fixture.exists():
             pytest.skip("Fixture not created yet")
         shutil.copy(str(fixture), str(tmp_project / "outputs" / "01_product_discovery.md"))
-        # Validator expects file at outputs/ or root
+        # Validator expects file at CWD root (not outputs/)
+        shutil.copy(str(fixture), str(tmp_project / "01_product_discovery.md"))
         code, out, err = run_script(str(self.VALIDATOR), cwd=str(tmp_project))
         assert code == 0, f"Expected pass but got exit {code}: {out}{err}"
 
@@ -57,7 +59,7 @@ class TestValidateSprintCompleteness:
         )
         # Pass sprint number as argument
         result = subprocess.run(
-            ["bash", str(self.VALIDATOR), "99"],
+            ["bash", to_posix(self.VALIDATOR), "99"],
             cwd=str(FRAMEWORK_ROOT),
             capture_output=True, text=True, timeout=30,
         )
@@ -65,7 +67,7 @@ class TestValidateSprintCompleteness:
 
     def test_no_args_exits_3(self):
         result = subprocess.run(
-            ["bash", str(self.VALIDATOR)],
+            ["bash", to_posix(self.VALIDATOR)],
             cwd=str(FRAMEWORK_ROOT),
             capture_output=True, text=True, timeout=30,
         )
