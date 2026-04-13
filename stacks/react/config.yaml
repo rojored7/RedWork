@@ -18,3 +18,11 @@ rules:
   - common/tdd-rules.md
   - common/agent-sequence-rules.md
   - react/stack-rules.md
+applicable_skills:
+  - react/component-patterns.md
+  - react/state-management.md
+  - react/performance.md
+  - react/accessibility.md
+  - react/api-client.md
+  - react/typescript-quality.md
+  - react/ux-design-system.md

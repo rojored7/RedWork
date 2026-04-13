@@ -21,3 +21,13 @@ rules:
   - common/tdd-rules.md
   - common/agent-sequence-rules.md
   - django/stack-rules.md
+applicable_skills:
+  - ddd-clean-architecture.md
+  - security-best-practices.md
+  - testing-patterns.md
+  - configuration-management.md
+  - openapi-code-generation.md
+  - api-dx-design.md
+  - django/patterns.md
+  - django/testing.md
+  - django/orm-ddd.md

@@ -24,3 +24,13 @@ rules:
   - common/tdd-rules.md
   - common/agent-sequence-rules.md
   - fastapi/stack-rules.md
+applicable_skills:
+  - ddd-clean-architecture.md
+  - security-best-practices.md
+  - testing-patterns.md
+  - configuration-management.md
+  - openapi-code-generation.md
+  - api-dx-design.md
+  - fastapi/patterns.md
+  - fastapi/testing.md
+  - fastapi/security.md

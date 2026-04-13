@@ -18,3 +18,9 @@ rules:
   - common/tdd-rules.md
   - common/agent-sequence-rules.md
   - vue/stack-rules.md
+applicable_skills:
+  - vue/component-patterns.md
+  - vue/state-management.md
+  - react/accessibility.md
+  - react/api-client.md
+  - react/typescript-quality.md
