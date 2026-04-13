@@ -12,11 +12,10 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from tests.conftest import to_posix
 
 import pytest
 
-from tests.conftest import FRAMEWORK_ROOT, FIXTURES_DIR, run_script
+from tests.conftest import FRAMEWORK_ROOT, FIXTURES_DIR, run_script, to_posix, GIT_BASH
 
 
 class TestValidateAgent01:
@@ -59,7 +58,7 @@ class TestValidateSprintCompleteness:
         )
         # Pass sprint number as argument
         result = subprocess.run(
-            ["bash", to_posix(self.VALIDATOR), "99"],
+            [GIT_BASH, to_posix(self.VALIDATOR), "99"],
             cwd=str(FRAMEWORK_ROOT),
             capture_output=True, text=True, timeout=30,
         )
@@ -67,7 +66,7 @@ class TestValidateSprintCompleteness:
 
     def test_no_args_exits_3(self):
         result = subprocess.run(
-            ["bash", to_posix(self.VALIDATOR)],
+            [GIT_BASH, to_posix(self.VALIDATOR)],
             cwd=str(FRAMEWORK_ROOT),
             capture_output=True, text=True, timeout=30,
         )

@@ -9,7 +9,7 @@ import subprocess
 import json
 import pytest
 from pathlib import Path
-from tests.conftest import to_posix
+from tests.conftest import to_posix, GIT_BASH
 
 FRAMEWORK_ROOT = Path(__file__).parent.parent.resolve()
 
@@ -18,7 +18,7 @@ def run_hook(hook_name: str, input_json: str) -> tuple:
     """Run a hook script with JSON input via stdin. Returns (exit_code, stdout, stderr)."""
     hook_path = FRAMEWORK_ROOT / ".claude" / "hooks" / hook_name
     result = subprocess.run(
-        ["bash", to_posix(hook_path)],
+        [GIT_BASH, to_posix(hook_path)],
         input=input_json,
         capture_output=True,
         text=True,

@@ -345,10 +345,10 @@ Paths only, no descriptions:
   - src/test/java/** (unit + integration)
   - e2e/** (Playwright E2E)
 * Scripts:
-  - scripts/dev.sh (start local dev)
-  - scripts/test.sh (run all tests)
-  - scripts/build.sh (production build)
-  - scripts/docker-up.sh (start dependencies)
+  - scripts/dev.sh (start local dev) [GENERATED per project by this agent]
+  - scripts/test.sh (run all tests) [GENERATED per project by this agent]
+  - scripts/build.sh (production build) [GENERATED per project by this agent]
+  - scripts/docker-up.sh (start dependencies) [GENERATED per project by this agent]
 * Logs: logs/application.log (dev), /var/log/app/application.log (prod)
 * Database migrations: src/main/resources/db/migration/
 * API docs: http://localhost:8080/swagger-ui.html (dev only)

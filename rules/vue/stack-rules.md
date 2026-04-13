@@ -28,6 +28,27 @@ TypeScript in `frontend/`.
 - State management: Pinia
 - No Options API in new code
 
+## Composition API Required
+
+All new components must use `<script setup lang="ts">`.
+Options API is forbidden in new code.
+
+## Pinia Store Naming
+
+- Store files: `use{Entity}Store.ts` (e.g., `useUserStore.ts`)
+- Store IDs match filename: `defineStore('user', ...)`
+- Actions handle async operations, getters for derived state
+
+## Emit Type Declarations
+
+All component emits must be typed:
+```vue
+const emit = defineEmits<{
+  update: [value: string]
+  delete: [id: number]
+}>()
+```
+
 ## CI Configuration
 
 - Image: `node:20-slim`

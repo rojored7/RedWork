@@ -97,13 +97,13 @@ Analyze `pom.xml`:
 ```bash
 mvn clean install -Pdev
 ```
-[VERIFIED: scripts/build-dev.sh:3]
+[GENERATED: scripts/build-dev.sh created per project]
 
 **Production:**
 ```bash
 mvn clean package -Pprod -DskipTests
 ```
-[VERIFIED: scripts/build-prod.sh:3]
+[GENERATED: scripts/build-prod.sh created per project]
 
 **Artifact:** target/application-${version}.jar [VERIFIED: pom.xml:15]
 ```

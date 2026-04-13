@@ -32,6 +32,30 @@ These patterns are blocked by pre-write-validate.sh:
 - `build.gradle` - Gradle/Java build files
 - `.ts` files in `backend/` - TypeScript in Python backend
 
+## Pydantic v2 Conventions
+
+- All request/response models use Pydantic v2 `BaseModel`
+- Use `model_config = ConfigDict(frozen=True)` for immutable DTOs
+- Use `Field(...)` with descriptions for API documentation
+- Prefer `Annotated[str, Field(...)]` over `name: str = Field(...)`
+
+## Async Patterns
+
+- All endpoint functions must be `async def`
+- Use `asyncio.gather()` for parallel I/O operations
+- Never use `time.sleep()` in async code (use `asyncio.sleep()`)
+
+## Dependency Injection
+
+- Use `Depends()` for all service dependencies
+- Define dependencies as functions, not classes
+- Repository and service instances via DI, never direct instantiation in endpoints
+
+## Health Check
+
+Every project must expose `GET /health` returning `{"status": "ok"}`.
+This is used by smoke-test.sh and CI pipeline health validation.
+
 ## CI Configuration
 
 - Image: `python:3.12-slim`

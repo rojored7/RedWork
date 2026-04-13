@@ -18,6 +18,21 @@ FRAMEWORK_ROOT = Path(__file__).parent.parent.resolve()
 FIXTURES_DIR = Path(__file__).parent / "fixtures"
 
 
+def _find_git_bash() -> str:
+    """Locate Git Bash binary that handles C:/ style paths on Windows."""
+    candidates = [
+        r"C:\Program Files\Git\usr\bin\bash.exe",
+        r"C:\Program Files\Git\bin\bash.exe",
+    ]
+    for c in candidates:
+        if Path(c).exists():
+            return c
+    return "bash"
+
+
+GIT_BASH = _find_git_bash()
+
+
 def to_posix(path) -> str:
     """Convert Windows backslashes to forward slashes for bash.
     C:\\Users\\X -> C:/Users/X (works in both Git Bash and subprocess)."""
@@ -62,7 +77,7 @@ def run_script(script_path: str, cwd: str = None, env: dict = None) -> tuple:
         full_env.update(env)
 
     result = subprocess.run(
-        ["bash", to_posix(script_path)],
+        [GIT_BASH, to_posix(script_path)],
         cwd=str(cwd) if cwd else str(FRAMEWORK_ROOT),
         capture_output=True,
         text=True,

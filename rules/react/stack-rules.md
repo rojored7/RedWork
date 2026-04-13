@@ -28,6 +28,27 @@ TypeScript in `frontend/`.
 - State management: prefer React Query for server state, Zustand/Jotai for client state
 - No class components
 
+## Hook Rules
+
+- Never call hooks conditionally (no hooks inside `if` statements)
+- Custom hooks must start with `use` prefix
+- Extract complex logic into custom hooks (keep components thin)
+
+## Component File Structure
+
+```
+ComponentName/
+  ComponentName.tsx    # Component implementation
+  ComponentName.test.tsx  # Tests
+  index.ts             # Re-export
+```
+
+## React Query Cache Keys
+
+Use array-based keys with entity type and identifier:
+`['users', userId]`, `['tasks', { status: 'active' }]`.
+Define key factories per entity.
+
 ## CI Configuration
 
 - Image: `node:20-slim`
