@@ -2,7 +2,7 @@
 
 **Skill Version**: 1.0
 **Created**: 2026-04-07
-**Used By**: Agent 20 (Linting), Agent 11 (Frontend), Agent 10 (Backend)
+**Used By**: Agent 20 (Linting), Agent 16 (Frontend), Agent 14 (Backend)
 **Purpose**: TypeScript strict mode, linting rules, and code organization standards
 
 ---

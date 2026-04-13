@@ -31,8 +31,8 @@ Before ANY development, orchestrator must validate setup and generate plan.
 
 <example>
 Context: User tries to jump directly to coding
-user: "Run Agent 10 to build the backend"
-assistant: "Before we run Agent 10, I need to use the development-orchestrator agent to validate git setup and generate the execution plan. This ensures we have proper tracking and can resume if disconnected."
+user: "Run Agent 14 to build the backend"
+assistant: "Before we run Agent 14, I need to use the development-orchestrator agent to validate git setup and generate the execution plan. This ensures we have proper tracking and can resume if disconnected."
 <commentary>
 Proactively prevent skipping orchestrator. Enforce plan-first workflow.
 </commentary>
@@ -516,8 +516,8 @@ Wave 5b: Frontend IMPLEMENTATION (Agent 11) — makes the tests pass
 **Mandatory invocation rules:**
 
 1. **Tests are written by a DIFFERENT agent than the implementation.**
-   Agent 13 writes backend tests. Agent 10 writes backend code.
-   Agent 14 writes frontend tests. Agent 11 writes frontend code.
+   Agent 13 writes backend tests. Agent 14 writes backend code.
+   Agent 15 writes frontend tests. Agent 16 writes frontend code.
    The test agent reads the sprint plan, user stories, and implementation
    breakdown to write tests BEFORE any production code exists. The
    implementation agent then writes code to make those tests pass.

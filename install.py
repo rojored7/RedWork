@@ -139,7 +139,12 @@ def cmd_install(args):
             for event, hook_list in redwork_settings["hooks"].items():
                 if event not in existing["hooks"]:
                     existing["hooks"][event] = hook_list
-                # If event exists, don't overwrite (user may have custom hooks)
+                else:
+                    # Append RedWork hooks that don't already exist
+                    existing_commands = {h.get("command") for h in existing["hooks"][event] if isinstance(h, dict)}
+                    for hook in hook_list:
+                        if isinstance(hook, dict) and hook.get("command") not in existing_commands:
+                            existing["hooks"][event].append(hook)
 
         with open(settings_dst, "w") as f:
             json.dump(existing, f, indent=2)

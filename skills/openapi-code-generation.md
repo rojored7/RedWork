@@ -2,7 +2,7 @@
 
 **Skill Version**: 1.0
 **Created**: 2026-04-07
-**Used By**: Agent 10 (API-First), Agent 10 (Backend), Agent 11 (Frontend), Agent 17 (Integration Test)
+**Used By**: Agent 10 (API Specification), Agent 14 (Backend), Agent 16 (Frontend), Agent 17 (Integration Test)
 **Purpose**: OpenAPI specification patterns and code generation strategies for backend DTOs and frontend API clients
 
 ---

@@ -735,10 +735,10 @@ This agent executes as a **mandatory quality gate** between development and test
 
 ```
 PHASE 4: DEVELOPMENT
-  ├─ Agent 10: Backend Development
-  ├─ Agent 11: Frontend Development
+  ├─ Agent 14: Backend Development
+  ├─ Agent 16: Frontend Development
   ├─ Agent 13: Backend Tests (unit)
-  ├─ Agent 14: Frontend Tests (unit)
+  ├─ Agent 15: Frontend Tests (unit)
   └─ Agent 20: Linting Validator
         ↓
   ┌────────────────────────────────────────┐

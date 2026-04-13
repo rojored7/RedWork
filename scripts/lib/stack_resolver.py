@@ -8,7 +8,10 @@ Default: FastAPI (backend) + React (frontend).
 Override: explicit --backend/--frontend flags during init.
 """
 
-import yaml
+try:
+    import yaml
+except ImportError:
+    yaml = None
 from pathlib import Path
 from typing import Optional
 
@@ -95,7 +98,7 @@ def _load_project_stack() -> dict:
 def _load_config(stack_name: str) -> dict:
     """Load stack config from YAML file, falling back to builtins."""
     config_path = resolve_stack_config(stack_name)
-    if config_path and config_path.exists():
+    if config_path and config_path.exists() and yaml is not None:
         with open(config_path, "r", encoding="utf-8") as f:
             return yaml.safe_load(f)
     return BUILTIN_CONFIGS.get(stack_name, {})

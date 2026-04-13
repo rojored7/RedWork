@@ -2,7 +2,7 @@
 
 **Skill Version**: 1.0
 **Created**: 2026-04-07
-**Used By**: Agent 10 (Backend), Agent 11 (Frontend), Agent 12 (Infrastructure)
+**Used By**: Agent 14 (Backend), Agent 16 (Frontend), Agent 12 (Infrastructure)
 **Purpose**: Centralized configuration patterns, environment management, no hardcoded values
 
 ---
