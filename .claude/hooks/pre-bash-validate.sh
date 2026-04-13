@@ -42,4 +42,14 @@ if echo "$COMMAND" | grep -qE 'git\s+reset\s+--hard'; then
     exit 2
 fi
 
+# --- Rule 6: No hardcoded secrets in commands ---
+if echo "$COMMAND" | grep -qE 'AKIA[0-9A-Z]{16}'; then
+    echo "BLOCKED: AWS Access Key detected in command. Use environment variables." >&2
+    exit 2
+fi
+if echo "$COMMAND" | grep -qE 'sk_live_[A-Za-z0-9]{24,}'; then
+    echo "BLOCKED: Stripe live key detected in command. Use environment variables." >&2
+    exit 2
+fi
+
 exit 0

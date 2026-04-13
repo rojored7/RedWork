@@ -63,11 +63,15 @@ State is tracked in `.project-state/state.json`.
 
 ## Rules
 
-1. **No emojis** in responses or code.
-2. **Never put personal names** in git credentials or commits.
-3. **FastAPI is default backend** (overridable with explicit `--backend django`).
-4. **TDD mandatory**: tests (13/15) before implementation (14/16).
-5. **Agent 25 Phase 0** installs hooks and validates prerequisites automatically.
+See `rules/` directory for modular, distributable rules:
+
+- `rules/common/` - Framework-wide rules (no emojis, TDD, agent sequence)
+- `rules/fastapi/` - FastAPI stack constraints
+- `rules/django/` - Django stack constraints
+- `rules/react/` - React stack constraints
+- `rules/vue/` - Vue stack constraints
+
+Rules are copied to projects on `install.py init` (common + stack-specific).
 
 ---
 
@@ -91,6 +95,7 @@ Framework/
   install.py                    # Global installer
   AGENT_SEQUENCE.md             # Dependency graph
   agents/                       # 25 numbered + 5 auxiliary agents
+  rules/                        # Modular rules (common + stack-specific)
   skills/                       # 14 skill documents
   scripts/
     lib/                        # Python libraries (state, metrics, stack, paths)

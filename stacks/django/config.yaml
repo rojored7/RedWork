@@ -16,3 +16,8 @@ forbidden_patterns:
   - "@nestjs"
   - "express"
   - "nest-cli.json"
+rules:
+  - common/framework-rules.md
+  - common/tdd-rules.md
+  - common/agent-sequence-rules.md
+  - django/stack-rules.md

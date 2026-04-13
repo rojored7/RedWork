@@ -13,3 +13,8 @@ project_file: "package.json"
 src_dir: "src"
 test_dir: "src/__tests__"
 forbidden_patterns: []
+rules:
+  - common/framework-rules.md
+  - common/tdd-rules.md
+  - common/agent-sequence-rules.md
+  - react/stack-rules.md

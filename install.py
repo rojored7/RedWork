@@ -88,6 +88,12 @@ def cmd_install(args):
         print("  Copying stacks...")
         _copy_dir(stacks_dir, GLOBAL_ROOT / "stacks")
 
+    # Copy rules
+    rules_dir = FRAMEWORK_DIR / "rules"
+    if rules_dir.exists():
+        print("  Copying rules...")
+        _copy_dir(rules_dir, GLOBAL_ROOT / "rules")
+
     # Copy .project-state-templates
     templates_dir = FRAMEWORK_DIR / ".project-state-templates"
     if templates_dir.exists():
@@ -241,6 +247,20 @@ def cmd_init(args):
         for yml in ci_dir_src.glob("*.yml"):
             shutil.copy2(str(yml), str(project_path / ".gitlab" / "ci" / yml.name))
 
+    # Copy rules (common + stack-specific)
+    rules_src = FRAMEWORK_DIR / "rules"
+    if rules_src.exists():
+        rules_dst = project_path / ".claude" / "rules"
+        # Always copy common rules
+        common_rules = rules_src / "common"
+        if common_rules.exists():
+            _copy_dir(common_rules, rules_dst / "common")
+        # Copy stack-specific rules
+        for stack_name in [backend, frontend]:
+            stack_rules = rules_src / stack_name
+            if stack_rules.exists():
+                _copy_dir(stack_rules, rules_dst / stack_name)
+
     # Generate CLAUDE.md that references global install
     claude_md = f"""# CLAUDE.md - {project_name}
 
@@ -266,6 +286,11 @@ QUALITY:    22 -> 23 -> 24
 
 - Backend: {backend}
 - Frontend: {frontend}
+
+## Rules
+
+See `.claude/rules/` for modular rules (common + stack-specific).
+Rules are auto-distributed on `install.py init` based on declared stack.
 
 ## TDD Mandate
 

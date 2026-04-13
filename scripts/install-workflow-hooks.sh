@@ -141,6 +141,23 @@ if [ -f "scripts/workflow/validate-no-nestjs-contamination.sh" ] && [ -d "agents
     fi
 fi
 
+# ----------------------------------------------------------------------------
+# Rule 5: Secret scanning on staged files
+# ----------------------------------------------------------------------------
+SCANNER=""
+if [ -f "scripts/security/scan-secrets.sh" ]; then
+    SCANNER="scripts/security/scan-secrets.sh"
+elif [ -f "$HOME/.claude/redwork/scripts/security/scan-secrets.sh" ]; then
+    SCANNER="$HOME/.claude/redwork/scripts/security/scan-secrets.sh"
+fi
+
+if [ -n "$SCANNER" ]; then
+    if ! bash "$SCANNER" --staged 2>/dev/null; then
+        echo "PRE-COMMIT BLOCKED: Secrets detected in staged files"
+        ERRORS=$((ERRORS + 1))
+    fi
+fi
+
 if [ $ERRORS -gt 0 ]; then
     echo ""
     echo "Commit rejected. Fix the issues above and try again."

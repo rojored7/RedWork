@@ -19,3 +19,8 @@ forbidden_patterns:
   - "pom.xml"
   - "build.gradle"
   - ".ts files in backend/"
+rules:
+  - common/framework-rules.md
+  - common/tdd-rules.md
+  - common/agent-sequence-rules.md
+  - fastapi/stack-rules.md

@@ -70,4 +70,42 @@ if echo "$FILE_PATH" | grep -qE '^\.git/hooks/'; then
     exit 2
 fi
 
+# --- Rule 6: No secrets in file content ---
+# Skip secret scanning for test fixtures, security test files, and pattern definitions
+if echo "$FILE_PATH" | grep -qiE '(tests/fixtures/security|test_security|secret-patterns)'; then
+    exit 0
+fi
+# Also check the original (non-normalized) path
+ORIG_PATH=$(echo "$INPUT" | python3 -c "
+import sys, json
+d = json.load(sys.stdin)
+ti = d.get('tool_input', {})
+print(ti.get('file_path', ti.get('filePath', '')))
+" 2>/dev/null)
+if echo "$ORIG_PATH" | grep -qiE '(tests/fixtures/security|test_security|secret-patterns)'; then
+    exit 0
+fi
+if [ -n "$CONTENT" ]; then
+    if echo "$CONTENT" | grep -qE 'AKIA[0-9A-Z]{16}'; then
+        echo "BLOCKED: AWS Access Key detected in file content. Use environment variables or a secrets manager." >&2
+        exit 2
+    fi
+    if echo "$CONTENT" | grep -qE '\-\-\-\-\-BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY\-\-\-\-\-'; then
+        echo "BLOCKED: Private key detected in file content. Never commit private keys to source control." >&2
+        exit 2
+    fi
+    if echo "$CONTENT" | grep -qE 'sk_live_[A-Za-z0-9]{24,}'; then
+        echo "BLOCKED: Stripe live secret key detected. Use environment variables." >&2
+        exit 2
+    fi
+    if echo "$CONTENT" | grep -qE 'ghp_[A-Za-z0-9]{36,}'; then
+        echo "BLOCKED: GitHub personal access token detected. Use environment variables." >&2
+        exit 2
+    fi
+    if echo "$CONTENT" | grep -qE 'glpat-[A-Za-z0-9_-]{20,}'; then
+        echo "BLOCKED: GitLab personal access token detected. Use environment variables." >&2
+        exit 2
+    fi
+fi
+
 exit 0
