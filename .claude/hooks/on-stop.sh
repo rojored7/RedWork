@@ -68,4 +68,13 @@ if [ -n "$SCRIPTS_PATH" ] && [ -x "$SCRIPTS_PATH/workflow/update-workflow-status
     fi
 fi
 
+# --- Learning observation count ---
+if [ -d ".learning" ] && [ -f ".learning/observations.jsonl" ]; then
+    OBS_COUNT=$(wc -l < ".learning/observations.jsonl" 2>/dev/null || echo 0)
+    OBS_COUNT=$(echo "$OBS_COUNT" | tr -d ' ')
+    if [ "$OBS_COUNT" -gt 0 ] 2>/dev/null; then
+        echo "Learning: $OBS_COUNT observations recorded." >&2
+    fi
+fi
+
 exit 0

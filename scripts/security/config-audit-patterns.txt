@@ -1,0 +1,107 @@
+# RedWork AgentShield - Configuration Audit Patterns
+# Format: CATEGORY | SEVERITY | PATTERN | DESCRIPTION
+# CATEGORY: PERM, HOOK, MCP, INJECTION, AGENT
+# SEVERITY: CRITICAL, HIGH, MEDIUM, LOW
+#
+# Patterns are grep -E extended regex.
+# Lines starting with # are comments.
+
+# ============================================================================
+# PERMISSIONS (PERM) - settings.json permission issues
+# ============================================================================
+PERM | CRITICAL | dangerouslySkipPermissions.*true | Skip permissions flag bypasses all safety controls
+PERM | CRITICAL | "dangerously-skip-permissions" | CLI flag to bypass permissions detected
+PERM | HIGH | "allowedTools"\s*:\s*\["\*"\] | Wildcard tool access grants unrestricted control
+PERM | HIGH | "allowedTools".*"Bash".*"Write".*"Edit" | Overly broad tool combination
+PERM | MEDIUM | "allowedTools".*"Bash\(\*\)" | Unrestricted bash command execution
+PERM | MEDIUM | "allowedTools".*"Write\(\*\)" | Unrestricted file write access
+PERM | MEDIUM | timeout.*[3-9][0-9]{2,} | Excessive hook timeout (>= 300 seconds)
+PERM | LOW | "allowedTools"\s*:\s*\[\] | Empty allowed tools list (may be intentional)
+PERM | HIGH | --no-verify | Hook bypass flag in configuration
+PERM | MEDIUM | --force | Force flag that bypasses safety checks
+
+# ============================================================================
+# HOOKS (HOOK) - injection and exfiltration in hook scripts
+# ============================================================================
+HOOK | CRITICAL | eval\s+["\$] | Eval with variable input enables arbitrary code execution
+HOOK | CRITICAL | \$\(.*\)\s*\|\s*(ba)?sh | Command substitution piped to shell
+HOOK | CRITICAL | curl.*\|\s*(ba)?sh | Remote code execution via curl pipe to shell
+HOOK | CRITICAL | wget.*\|\s*(ba)?sh | Remote code execution via wget pipe to shell
+HOOK | HIGH | curl.*-o.*&&.*chmod.*\+x | Download and execute pattern
+HOOK | HIGH | base64\s+--decode | Base64 decode suggests obfuscated payload
+HOOK | HIGH | base64\s+-d | Base64 decode (short flag) suggests obfuscation
+HOOK | HIGH | \bexec\s | Exec replaces current process, potential escape vector
+HOOK | HIGH | nc\s+-[le] | Netcat listener or reverse connection
+HOOK | HIGH | python3?\s+-c\s+.*import\s+socket | Python socket code in hook
+HOOK | HIGH | /dev/tcp/ | Bash TCP device for network connections
+HOOK | MEDIUM | curl\s+.*\$\{?[A-Z_]+\}? | HTTP request with environment variable (potential exfiltration)
+HOOK | MEDIUM | wget\s+.*\$\{?[A-Z_]+\}? | HTTP request with environment variable
+HOOK | MEDIUM | curl.*POST.*\$\{?(HOME|USER|PATH|API_KEY|TOKEN|SECRET) | Exfiltration of sensitive env vars via POST
+HOOK | MEDIUM | >\s*/etc/ | Write to system configuration directory
+HOOK | MEDIUM | >\s*~/\.ssh/ | Write to SSH directory
+HOOK | MEDIUM | >\s*~/\.aws/ | Write to AWS credentials directory
+HOOK | MEDIUM | >\s*~/\.claude/ | Write to Claude configuration directory
+HOOK | MEDIUM | chmod\s+777 | World-writable permissions
+HOOK | MEDIUM | chmod\s+666 | World-writable file permissions
+HOOK | LOW | 2>/dev/null | Error suppression (may hide failures)
+HOOK | LOW | \|\|\s*true | Error suppression via || true
+HOOK | MEDIUM | rm\s+-rf\s+/ | Destructive recursive delete from root
+HOOK | MEDIUM | rm\s+-rf\s+~ | Destructive delete of home directory
+HOOK | HIGH | \$\(cat\s+~/\.(ssh|aws|claude|config) | Reading sensitive credential files
+
+# ============================================================================
+# MCP (MCP) - MCP server configuration risks
+# ============================================================================
+MCP | HIGH | "command"\s*:\s*"npx"\s*,\s*"args"\s*:\s*\["-y" | Auto-install MCP server via npx -y (supply chain risk)
+MCP | HIGH | "command"\s*:\s*"npx".*"-y".*"@" | Auto-install scoped package (typosquatting risk)
+MCP | CRITICAL | (API_KEY|SECRET|TOKEN|PASSWORD)["']?\s*[=:]\s*["'][^"']+ | Hardcoded secret in MCP environment config
+MCP | HIGH | sk-ant-[a-zA-Z0-9]{20,} | Anthropic API key in MCP config
+MCP | HIGH | sk-proj-[a-zA-Z0-9]{20,} | OpenAI API key in MCP config
+MCP | HIGH | AKIA[0-9A-Z]{16} | AWS access key in MCP config
+MCP | HIGH | ghp_[a-zA-Z0-9]{36} | GitHub personal access token in MCP config
+MCP | MEDIUM | "transportType"\s*:\s*"sse" | SSE transport exposes MCP over network
+MCP | MEDIUM | "transportType"\s*:\s*"streamable-http" | HTTP transport exposes MCP over network
+MCP | MEDIUM | "url"\s*:\s*"https?://(?!localhost|127\.0\.0\.1) | Remote MCP server URL (external dependency)
+MCP | HIGH | "command"\s*:\s*"(bash|sh|cmd|powershell)" | Shell-based MCP server (high risk)
+MCP | MEDIUM | "command"\s*:\s*"docker".*"--privileged" | Privileged Docker MCP server
+MCP | LOW | "command"\s*:\s*"npx"(?!.*"-y") | MCP via npx without auto-install (safer)
+MCP | MEDIUM | "env"\s*:.*"(HOME|USER|PATH)" | Passing sensitive env vars to MCP server
+MCP | HIGH | "command"\s*:\s*"(python|node)".*"eval" | Code eval in MCP server command
+
+# ============================================================================
+# INJECTION (INJECTION) - prompt injection in CLAUDE.md and config
+# ============================================================================
+INJECTION | CRITICAL | <system>|</system> | System prompt injection markers
+INJECTION | CRITICAL | <instructions>|</instructions> | Instruction injection markers
+INJECTION | HIGH | ignore\s+(all\s+)?previous\s+instructions | Prompt override attempt
+INJECTION | HIGH | forget\s+(everything\s+)?above | Prompt override attempt
+INJECTION | HIGH | disregard\s+(all\s+)?prior | Prompt override attempt
+INJECTION | HIGH | you\s+are\s+now\s+a | Role reassignment attempt
+INJECTION | HIGH | new\s+instructions\s*: | Instruction injection attempt
+INJECTION | MEDIUM | \x{200B}|\x{200C}|\x{200D}|\x{FEFF} | Zero-width Unicode characters (hidden content)
+INJECTION | MEDIUM | <!--.*ignore.*--> | Hidden instruction in HTML comment
+INJECTION | MEDIUM | base64_decode\(|atob\( | Encoded payload execution
+INJECTION | HIGH | curl.*\|.*python3?\s+-c | Fetch and execute remote code
+INJECTION | HIGH | wget.*\|.*python3?\s+-c | Fetch and execute remote code
+INJECTION | MEDIUM | ALWAYS\s+run\s+this\s+command | Forced command execution attempt
+INJECTION | MEDIUM | MANDATORY.*execute | Forced execution attempt
+INJECTION | LOW | DO\s+NOT\s+(tell|inform|show)\s+the\s+user | Instruction to hide actions from user
+
+# ============================================================================
+# AGENT (AGENT) - agent definition security
+# ============================================================================
+AGENT | HIGH | dangerouslySkipPermissions | Agent requests permission bypass
+AGENT | HIGH | curl.*\|.*(python3?|bash|sh|node) | Agent fetches and executes remote code
+AGENT | HIGH | wget.*\|.*(python3?|bash|sh|node) | Agent fetches and executes remote code
+AGENT | MEDIUM | "allowedTools"\s*:\s*\["\*"\] | Agent has unrestricted tool access
+AGENT | MEDIUM | rm\s+-rf | Agent uses destructive deletion
+AGENT | MEDIUM | git\s+push\s+--force | Agent uses force push
+AGENT | MEDIUM | git\s+reset\s+--hard | Agent uses destructive git reset
+AGENT | HIGH | eval\s*\( | Dynamic code evaluation in agent
+AGENT | MEDIUM | subprocess\.call\s*\( | Uncontrolled subprocess execution
+AGENT | HIGH | os\.system\s*\( | Direct OS command execution
+AGENT | MEDIUM | import\s+subprocess.*shell\s*=\s*True | Shell injection via subprocess
+AGENT | LOW | TODO|FIXME|HACK | Unfinished security-relevant code markers
+AGENT | HIGH | -----BEGIN.*PRIVATE\s+KEY----- | Private key embedded in agent definition
+AGENT | HIGH | password\s*[=:]\s*["'][^"']{8,} | Hardcoded password in agent definition
+AGENT | MEDIUM | chmod\s+[0-7]*[67][0-7][0-7] | Permissive file permissions in agent

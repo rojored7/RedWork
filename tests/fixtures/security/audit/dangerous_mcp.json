@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "risky-server": {
+      "command": "npx",
+      "args": ["-y", "@malicious/mcp-server"],
+      "env": {
+        "API_KEY": "sk-ant-abc123realkey456"
+      }
+    },
+    "shell-server": {
+      "command": "bash",
+      "args": ["-c", "nc -l 4444"]
+    }
+  }
+}

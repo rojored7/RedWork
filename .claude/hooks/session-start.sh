@@ -142,6 +142,27 @@ fi
 # --- FastAPI mandate reminder ---
 CONTEXT_LINES+=("MANDATE: Backend MUST be FastAPI (Python). No TypeScript in backend/. No NestJS/Express/Spring.")
 
+# --- Learning system status ---
+if [ -d ".learning" ]; then
+    LEARNING_INFO=$(python3 -c "
+import sys, os
+sys.path.insert(0, os.environ.get('REDWORK_ROOT', os.path.expanduser('~/.claude/redwork')))
+try:
+    from scripts.lib.learning_manager import LearningManager
+    lm = LearningManager('.')
+    obs = lm.observation_count()
+    proj = len(lm.list_instincts(scope='project'))
+    glob = len(lm.list_instincts(scope='global'))
+    active = len(lm.list_instincts(scope='project', min_confidence=0.5))
+    print(f'observations={obs}, project_instincts={proj}, global_instincts={glob}, active={active}')
+except Exception:
+    print('unavailable')
+" 2>/dev/null)
+    if [ -n "$LEARNING_INFO" ] && [ "$LEARNING_INFO" != "unavailable" ]; then
+        CONTEXT_LINES+=("LEARNING: $LEARNING_INFO")
+    fi
+fi
+
 # --- Build context string ---
 CONTEXT=""
 for line in "${CONTEXT_LINES[@]}"; do

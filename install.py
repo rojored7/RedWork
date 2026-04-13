@@ -82,6 +82,15 @@ def cmd_install(args):
     print("  Copying scripts...")
     _copy_dir(FRAMEWORK_DIR / "scripts", GLOBAL_ROOT / "scripts", manifest or None)
 
+    # Create global learning directories
+    learning_dirs = [
+        GLOBAL_ROOT / "learning",
+        GLOBAL_ROOT / "learning" / "instincts",
+    ]
+    for d in learning_dirs:
+        d.mkdir(parents=True, exist_ok=True)
+    print("  Created learning directories...")
+
     # Copy stacks
     stacks_dir = FRAMEWORK_DIR / "stacks"
     if stacks_dir.exists():
@@ -230,6 +239,8 @@ def cmd_init(args):
     dirs = [
         "outputs", "outputs/compliance",
         ".project-state",
+        ".learning", ".learning/instincts",
+        ".learning/analysis", ".learning/proposed-skills", ".learning/errors-kb",
         "backend", "frontend", "docs",
         ".claude/hooks",
         ".gitlab/ci",
