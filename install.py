@@ -20,7 +20,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "2.0.0"
+VERSION = "2.1.0"
 GLOBAL_ROOT = Path.home() / ".claude" / "redwork"
 FRAMEWORK_DIR = Path(__file__).parent.resolve()
 
@@ -117,6 +117,15 @@ def cmd_install(args):
         hooks_dst.mkdir(parents=True, exist_ok=True)
         for hook_file in hooks_src.glob("*.sh"):
             shutil.copy2(str(hook_file), str(hooks_dst / hook_file.name))
+
+    # Copy slash commands (flows) to ~/.claude/commands/
+    commands_src = FRAMEWORK_DIR / "commands"
+    if commands_src.exists():
+        print("  Copying slash commands (flows)...")
+        commands_dst = Path.home() / ".claude" / "commands"
+        commands_dst.mkdir(parents=True, exist_ok=True)
+        for cmd_file in commands_src.glob("*.md"):
+            shutil.copy2(str(cmd_file), str(commands_dst / cmd_file.name))
 
     # Update global settings.json to reference hooks
     settings_src = FRAMEWORK_DIR / ".claude" / "settings.json"
