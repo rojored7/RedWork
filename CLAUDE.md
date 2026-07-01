@@ -1,4 +1,4 @@
-# CLAUDE.md - RedWork Framework v2.0
+# CLAUDE.md - RedWork Framework v2.1
 
 Instructions for Claude Code when working with this framework repository.
 
@@ -75,6 +75,52 @@ Rules are copied to projects on `install.py init` (common + stack-specific).
 
 ---
 
+## Slash Commands (Flows)
+
+`commands/` ships three orchestration flows, installed to `~/.claude/commands/`:
+
+| Command | Purpose |
+|---|---|
+| `/flow-new-project` | Full DDD pipeline from idea to deployment (agents 01-25) |
+| `/flow-update` | Add a feature / update an existing project (Docker-aware, TDD slices) |
+| `/flow-bugfix` | Diagnose and fix a bug with a reproducing test first |
+
+The flows orchestrate the numbered RedWork agents (01-25) plus ambient Claude Code
+agents (`code-explorer`, `code-architect`, `planner`, `tdd-guide`, `code-reviewer`,
+`security-reviewer`, `build-error-resolver`) and the `plan-critic` agent. They assume
+those ambient agents exist in the host Claude Code install.
+
+### plan-critic (adversarial plan gate)
+
+`agents/plan-critic.md` critiques a plan BEFORE implementation, trying to refute it
+against the real codebase (missing dependencies, wrong ordering, unverified
+assumptions, forgotten migrations/rebuild/rollback). Returns
+APROBADO / APROBADO CON OBSERVACIONES / RECHAZADO with concrete evidence. It runs at
+the single human gate of `/flow-update` (step 4.5).
+
+---
+
+## Execution Doctrine (approved plan = execute 100%)
+
+An approved plan is **full authorization** to execute it end to end.
+
+- Run every step of the approved plan without asking for intermediate confirmation.
+  Do NOT ask "continue?" / "proceed?" for steps already in the approved plan.
+- Stop ONLY if: (a) an automatic gate fails and fixing it requires leaving the plan;
+  (b) a destructive/irreversible action not covered by the plan appears; (c) you
+  discover something that changes the real scope. In those cases stop with context and
+  concrete options — not a vague question.
+- If a step fails: try to resolve it within the plan's scope (retries,
+  build-error-resolver) BEFORE escalating.
+- On finish: ONE consolidated report — what was done, verification evidence,
+  deviations from the plan.
+
+The flows implement this as **a single human gate** (plan + plan-critic critique),
+then continuous execution with automatic gates (tests green, linting, smoke) as the
+only advance condition.
+
+---
+
 ## Key Commands
 
 | Command | Purpose |
@@ -94,7 +140,8 @@ Rules are copied to projects on `install.py init` (common + stack-specific).
 Framework/
   install.py                    # Global installer
   AGENT_SEQUENCE.md             # Dependency graph
-  agents/                       # 25 numbered + 5 auxiliary agents
+  agents/                       # 25 numbered + auxiliary agents (incl. plan-critic)
+  commands/                     # Slash-command flows (flow-new-project, flow-update, flow-bugfix)
   rules/                        # Modular rules (common + stack-specific)
   skills/                       # 14 skill documents
   scripts/
@@ -123,4 +170,4 @@ State.json tracks multiple sprints and wave progress.
 
 ---
 
-Version: 2.0.0
+Version: 2.1.0
