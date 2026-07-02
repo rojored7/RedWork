@@ -14,9 +14,20 @@ Pipeline de agentes para diagnosticar, corregir y validar la solucion de un bug.
 
 ## Fases
 
+### Fase 0: Pre-validacion de Impacto (SIEMPRE PRIMERO — gate duro)
+
+0. **impact-prevalidator** - Mapear el terreno del bug ANTES de diagnosticar
+   - Scope: `[SCOPE: bugfix-<id-o-descripcion-corta>]`
+   - Blast radius del area sospechosa, baseline de tests (¿el rojo ya existia?),
+     estado de servicios Docker y migraciones pendientes
+   - Salida: `outputs/00b_impact_analysis.md` (VERDE/AMARILLO/ROJO)
+   - Gate: `bash scripts/workflow/validate-impact-analysis.sh --allow-amber`
+     exit 0 como precondicion de la Fase 2 (el baseline distingue el rojo
+     pre-existente del rojo que introduce el fix)
+
 ### Fase 1: Diagnostico
 
-1. **code-explorer** - Trazar el bug
+1. **code-explorer** - Trazar el bug (puede correr en paralelo con Fase 0)
    - Analizar el path de ejecucion donde ocurre el error
    - Mapear dependencias involucradas
    - Identificar la causa raiz
@@ -64,14 +75,16 @@ Lanzar en PARALELO:
 
 ## Gates: UN solo gate humano
 
-**GATE HUMANO UNICO — tras Fase 1:** causa raiz identificada, el usuario confirma el
+**GATE HUMANO UNICO — tras Fase 1:** el usuario recibe EN UN SOLO MENSAJE el
+veredicto de impacto (Fase 0) + la causa raiz identificada, y confirma el
 diagnostico (es donde el humano aporta criterio).
 
 **Despues de la confirmacion: EJECUCION CONTINUA (Fases 2 a 6) SIN PAUSAS** — test que
 reproduce, fix, review, validacion y smoke de corrido (Doctrina de Ejecucion de
-CLAUDE.md global). Detenerse solo si algo falla de forma no resoluble dentro del
-alcance del fix. Al final: reporte unico (causa, fix, test incluido en el commit,
-evidencia del smoke).
+CLAUDE.md global). Cada gate fallido se corrige dentro del alcance y se re-ejecuta
+hasta FRAMEWORK_MAX_RETRIES (default 3) intentos; al agotarlos, PARAR con reporte
+consolidado (intentos, evidencia, opciones concretas). Al final: reporte unico
+(causa, fix, test incluido en el commit, evidencia del smoke).
 
 ## Ejemplo de Invocacion
 

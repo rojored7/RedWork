@@ -14,9 +14,27 @@ Pipeline de agentes para implementar una nueva funcionalidad en un proyecto que 
 
 ## Fases
 
+### Fase 0: Pre-validacion de Impacto (SIEMPRE PRIMERO — gate duro)
+
+0. **impact-prevalidator** - Mapear TODO lo que se veria afectado ANTES de explorar o planificar
+   - Blast radius (dependientes inversos por grep), capa de datos/migraciones,
+     servicios Docker (COPY vs volume), contratos API, baseline de tests
+   - Salida: `outputs/00b_impact_analysis.md` anclado al HEAD actual con
+     veredicto VERDE / AMARILLO / ROJO
+   - **Gate duro (precondicion de Fase 2):**
+     ```bash
+     bash scripts/workflow/validate-impact-analysis.sh --allow-amber
+     ```
+     - exit 0: continuar (si AMARILLO, el planner DEBE incorporar las
+       "Condiciones para VERDE" del reporte)
+     - exit 1 (ROJO): PARAR — resolver las condiciones antes de planificar
+     - exit 2/4: falta el reporte o quedo obsoleto — re-ejecutar el agente
+   - El reporte alimenta a code-explorer (donde mirar), planner (que mitigar)
+     y plan-critic (que supuestos atacar)
+
 ### Fase 1: Analisis del Codigo Existente + Entorno de Ejecucion
 
-Lanzar en PARALELO:
+Lanzar en PARALELO (el impact-prevalidator de Fase 0 puede correr en paralelo con estos):
 
 1. **code-explorer** - Trazar paths de ejecucion, mapear arquitectura, documentar dependencias
    - Analiza el codigo relevante al cambio solicitado
@@ -44,7 +62,10 @@ Lanzar en PARALELO:
 
 4. **planner** - Crear plan de implementacion
    - Entrada: hallazgos de code-explorer + code-architect + mapeo de entorno
+     + `outputs/00b_impact_analysis.md` (Fase 0)
    - Requerimientos, riesgos, fases
+   - **OBLIGATORIO si el veredicto de impacto fue AMARILLO**: incorporar TODAS
+     las "Condiciones para VERDE" del reporte de impacto como pasos del plan
    - **OBLIGATORIO en el plan**: incluir pasos de rebuild/restart de containers si aplica
    - **OBLIGATORIO en el plan**: incluir pasos de migracion de DB si hay cambios de schema
    - **OBLIGATORIO en el plan**: descomponer la implementacion en slices TDD (3-9 slices;
@@ -195,10 +216,10 @@ docker compose exec db psql -U <user> -d <db> -c "SELECT email FROM users WHERE 
 
 ## Gates: UN solo gate humano, el resto automaticos
 
-**GATE HUMANO UNICO — tras Fase 2, paso 4.5 (plan + critica de plan-critic):**
-El usuario recibe EN UN SOLO MENSAJE: hallazgos del analisis (Fase 1 NO se detiene;
-sus hallazgos se presentan junto al plan) + plan con slices + critica de plan-critic.
-Una sola aprobacion.
+**GATE HUMANO UNICO — tras Fase 2, paso 4.5 (impacto + plan + critica):**
+El usuario recibe EN UN SOLO MENSAJE: veredicto de impacto (Fase 0) + hallazgos
+del analisis (Fase 1 NO se detiene; sus hallazgos se presentan junto al plan) +
+plan con slices + critica de plan-critic. Una sola aprobacion.
 
 **Despues de la aprobacion: EJECUCION CONTINUA (Fases 2.5 a 7) SIN PAUSAS.**
 Plan aprobado = autorizacion completa (ver Doctrina de Ejecucion en CLAUDE.md global).
@@ -208,10 +229,18 @@ correccion exige salirse del plan:
 
 | Gate automatico | Condicion para continuar | Si falla |
 |---|---|---|
+| Fase 0 impacto | validate-impact-analysis.sh exit 0 | ROJO: resolver condiciones; stale: re-ejecutar impact-prevalidator |
 | Fase 2.5 entorno | servicios Up + smoke OK | corregir config (estaba en el plan) y seguir; escalar solo si no es resoluble |
 | Fase 3.5 rebuild+migracion | containers levantan + schema verificado + smoke endpoint OK | diagnosticar y corregir dentro del plan; escalar solo si no es resoluble |
 | Fase 4 review | sin issues CRITICAL/HIGH pendientes | corregirlos automaticamente y continuar; MEDIUM/LOW van al reporte final |
 | Fase 6 tests | suites en verde | arreglar (test o producto segun corresponda) y re-ejecutar |
+
+**Reintentos acotados (motor de fabrica):** cada gate fallido se corrige dentro del
+alcance del plan y se re-ejecuta, hasta `FRAMEWORK_MAX_RETRIES` (default 3) intentos
+por gate. En proyectos con waves (`run-gates.sh <wave>`), el contador vive en
+`.project-state/retry_state.json`; al agotar los intentos se crea
+`needs_human.flag` y se PARA con reporte consolidado (que se intento N veces,
+evidencia por intento, opciones concretas) — nunca con una pregunta vaga.
 
 **REPORTE FINAL CONSOLIDADO** al terminar Fase 7: que se implemento, slices/commits,
 resultados de tests y smoke, issues MEDIUM/LOW anotados, desviaciones del plan.

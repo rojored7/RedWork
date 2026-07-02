@@ -14,6 +14,15 @@ Pipeline completo de agentes para construir un proyecto desde cero siguiendo Dom
 
 ## Fases (ejecutar en orden estricto)
 
+### Fase 0: Pre-validacion de Impacto (SIEMPRE PRIMERO — gate duro)
+
+0. **impact-prevalidator** - Mapear el terreno ANTES del pipeline
+   - En greenfield: inventaria convenciones instaladas (rules/, stacks/),
+     estado del repo destino y baseline; scope `full-project`
+   - Salida: `outputs/00b_impact_analysis.md` con veredicto VERDE/AMARILLO/ROJO
+   - Gate: `bash scripts/workflow/validate-impact-analysis.sh --allow-amber`
+     debe salir 0 antes de la Fase 1 (Agent 25 lo re-verifica en su check 0.6)
+
 ### Fase 1: Descubrimiento y Modelado de Dominio
 
 Ejecutar secuencialmente, cada agente depende del anterior:
@@ -21,7 +30,7 @@ Ejecutar secuencialmente, cada agente depende del anterior:
 1. **01-product-discovery** - Transformar la idea en documento estructurado
    - Entrada: vision del producto proporcionada por el usuario
    - Salida: `01_product_discovery.md`
-   - Preguntar al usuario para validar antes de continuar
+   - NO pausar aqui: las preguntas abiertas se acumulan para el gate unico
 
 2. **02-domain-modeling** - Construir modelo de dominio
    - Entrada: `01_product_discovery.md`
@@ -39,7 +48,7 @@ Ejecutar secuencialmente, cada agente depende del anterior:
    - Entrada: `01_product_discovery.md`, `02_domain_model.md`, `03_context_map.md`
    - Salida: `04_architecture_decision.md`
    - Decide monolito modular vs microservicios, patrones de comunicacion
-   - ESPERAR confirmacion del usuario
+   - NO pausar aqui: la decision se presenta en el paquete del gate unico
 
 5. **05-service-design** - Disenar estructura interna de servicios
    - Entrada: `02_domain_model.md`, `03_context_map.md`, `04_architecture_decision.md`
@@ -101,19 +110,29 @@ Luego secuencial:
 19. **21-security-review** - Auditoria de seguridad completa
 20. **20-linting-validator** - Validacion final de linting
 
-## Gates: decisiones de producto si, pausas de ejecucion no
+## Gates: UN solo gate humano, el resto automaticos
 
-**GATES HUMANOS (decisiones de diseno — el dueño del producto decide):**
-- Despues de Fase 1 (dominio validado)
-- Despues de Fase 2 (arquitectura aprobada)
-- Despues de Fase 3 (sprint plan aprobado)
+**GATE HUMANO UNICO — tras Fase 3 (paquete de decisiones completo):**
+El usuario recibe EN UN SOLO MENSAJE el paquete de decisiones de producto:
+- Veredicto de impacto (Fase 0: `00b_impact_analysis.md`)
+- Dominio (Fase 1: `02_domain_model.md` — entidades y reglas clave resumidas)
+- Arquitectura (Fase 2: `04_architecture_decision.md` — decision y trade-offs)
+- Sprint plan (Fase 3: `09_sprint_plan/`)
+- Critica de **plan-critic** sobre el sprint plan (dependencias, orden, supuestos)
+- Las preguntas abiertas acumuladas en Fases 1-3 (si las hay)
 
-**Tras aprobar el sprint plan: cada sprint (Fases 4-6) corre DE PUNTA A PUNTA sin
+Una sola aprobacion autoriza TODO. Si el usuario quiere cambiar dominio o
+arquitectura, se regeneran los artefactos afectados y se re-presenta el paquete
+(max 2 iteraciones antes de escalar con opciones concretas).
+
+**Tras aprobar el paquete: cada sprint (Fases 4-6) corre DE PUNTA A PUNTA sin
 confirmaciones intermedias** (Doctrina de Ejecucion de CLAUDE.md global): infra +
 backend + frontend + validacion + seguridad de corrido, con los gates automaticos
-(tests verdes, linting, smoke) como unica condicion de avance. Al final de CADA
-sprint: reporte consolidado y se continua con el siguiente sprint del plan aprobado;
-escalar al usuario solo ante fallo no resoluble o cambio de alcance.
+(tests verdes, linting, smoke, run-gates.sh con reintentos acotados por
+FRAMEWORK_MAX_RETRIES) como unica condicion de avance. Al final de CADA sprint:
+reporte consolidado y se continua con el siguiente sprint del plan aprobado;
+escalar al usuario solo ante gate agotado (needs_human.flag), fallo no resoluble
+o cambio de alcance.
 
 ## Artefactos Generados
 
