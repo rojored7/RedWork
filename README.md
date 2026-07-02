@@ -40,6 +40,11 @@ git push -u origin main
 In Claude Code:
 
 ```
+0) "lanza el agente impact-prevalidator"
+   -> Maps total blast-radius BEFORE anything else (hard gate)
+   -> Output: outputs/00b_impact_analysis.md (VERDE/AMARILLO/ROJO, HEAD-anchored)
+   -> Gate: bash scripts/workflow/validate-impact-analysis.sh --allow-amber
+
 a) "lanza el agente project-type-detector"
    -> Detects project type, validates FastAPI mandate
    -> Output: outputs/00_project_detection.md
@@ -115,7 +120,8 @@ Once hooks are installed, every `git commit` triggers:
 ## Agent Sequence
 
 ```
-00  Project Type Detector      (MANDATORY first, validates FastAPI)
+00b Impact Prevalidator        (ALWAYS FIRST — hard gate validate-impact-analysis.sh)
+00  Project Type Detector      (MANDATORY, validates FastAPI)
 01  Product Discovery
 02  Domain Modeling
 03  Context Mapping
@@ -151,6 +157,8 @@ Once hooks are installed, every `git commit` triggers:
 
 | Rule | Enforcement |
 |---|---|
+| Impact analysis before everything | `validate-impact-analysis.sh` blocks flows and Agent 25 (check 0.6) without a fresh HEAD-anchored `00b_impact_analysis.md`. |
+| Bounded automatic retries | `run-gates.sh` + `retry_controller.py`: gate pass auto-clears `wave_N_blocked.flag`; `FRAMEWORK_MAX_RETRIES` (3) exhausted -> `needs_human.flag` + consolidated report. |
 | Backend = FastAPI (Python) | Pre-commit hook blocks NestJS/TS. Pipeline setup exits 1. Project Type Detector marks UNSUPPORTED. |
 | Frontend = Full UX design | Agent 11 requires Design System Phase 0 before any screen. No blank pages. |
 | API = Beautiful DX | Agent 10 enforces 7 DX principles: naming, envelopes, suggestions in errors, etc. |
@@ -205,12 +213,25 @@ The pre-commit hook detected non-FastAPI code in `backend/`:
 - `@nestjs` in `backend/package.json` -> this project requires FastAPI
 - To bypass (NOT recommended): `git commit --no-verify`
 
+### Impact gate fails (exit 2/4/1)
+
+- exit 2: no report -> run `lanza el agente impact-prevalidator`
+- exit 4: report stale (HEAD moved) -> re-run the impact-prevalidator
+- exit 1: verdict ROJO (or AMARILLO without --allow-amber) -> resolve the
+  report's "Condiciones para VERDE" before planning
+
 ### Wave blocked
 
-A `.project-state/wave_N_blocked.flag` file appeared. Check:
+A `.project-state/wave_N_blocked.flag` file appeared. Fix within plan scope, then:
+```bash
+bash scripts/workflow/run-gates.sh <wave>
+```
+Exit 0 clears the flag and resets the retry counter automatically. Check:
 - `outputs/compliance/sprint_NN_completeness.json` for missing tasks
 - Post-wave report in `.project-orchestration/post-wave-N-report-*.md`
-- Fix the missing tasks, then re-run the completeness validator
+- `.project-state/retry_state.json` for attempts used
+- If `needs_human.flag` exists: retries exhausted — a human decision is
+  required; clear the flag only after deciding
 
 ### Sprint at < 100%
 
@@ -219,5 +240,5 @@ The JSON report lists every task with status (implemented/missing/unverifiable).
 
 ---
 
-Version: 2.0.0
-Updated: 2026-04-09
+Version: 2.2.0
+Updated: 2026-07-02

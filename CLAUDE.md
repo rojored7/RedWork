@@ -35,6 +35,7 @@ Projects get ONLY: outputs/, .project-state/, .gitlab-ci.yml, CLAUDE.md. No fram
 ## Agent Sequence (01-25)
 
 ```
+PREVAL:     00b impact-prevalidator (hard gate: validate-impact-analysis.sh)
 DISCOVERY:  01 -> 02 -> 03 -> 04 [04b] -> 05 [05b]
 PLANNING:   06 -> 07 -> 08 -> 09
 API:        10 -> 11
@@ -90,13 +91,25 @@ agents (`code-explorer`, `code-architect`, `planner`, `tdd-guide`, `code-reviewe
 `security-reviewer`, `build-error-resolver`) and the `plan-critic` agent. They assume
 those ambient agents exist in the host Claude Code install.
 
+### impact-prevalidator (total-impact pre-validation, hard gate)
+
+`agents/impact-prevalidator.md` runs FIRST in every flow (Fase 0), BEFORE exploring
+or planning. It maps everything the change would affect against the real repo:
+blast radius (inverse deps), data layer/migrations, Docker COPY-vs-volume, API
+contracts, test baseline. Emits `outputs/00b_impact_analysis.md` anchored to HEAD
+with a VERDE/AMARILLO/ROJO verdict, enforced by
+`scripts/workflow/validate-impact-analysis.sh` (exit 0 fresh VERDE / AMARILLO with
+--allow-amber; 1 blocked; 2 missing; 3 malformed; 4 stale). Agent 25 Phase 0
+check 0.6 re-verifies it: no fresh report, no development.
+
 ### plan-critic (adversarial plan gate)
 
 `agents/plan-critic.md` critiques a plan BEFORE implementation, trying to refute it
 against the real codebase (missing dependencies, wrong ordering, unverified
 assumptions, forgotten migrations/rebuild/rollback). Returns
 APROBADO / APROBADO CON OBSERVACIONES / RECHAZADO with concrete evidence. It runs at
-the single human gate of `/flow-update` (step 4.5).
+the single human gate of `/flow-update` (step 4.5), which presents impact verdict +
+plan + critique together.
 
 ---
 
@@ -115,9 +128,18 @@ An approved plan is **full authorization** to execute it end to end.
 - On finish: ONE consolidated report — what was done, verification evidence,
   deviations from the plan.
 
-The flows implement this as **a single human gate** (plan + plan-critic critique),
-then continuous execution with automatic gates (tests green, linting, smoke) as the
-only advance condition.
+The flows implement this as **a single human gate** (impact verdict + plan +
+plan-critic critique), then continuous execution with automatic gates (tests green,
+linting, smoke) as the only advance condition.
+
+**Bounded retries (factory loop):** wave gates run through
+`scripts/workflow/run-gates.sh <wave>`, which shares a persistent retry counter
+(`.project-state/retry_state.json`, cap `FRAMEWORK_MAX_RETRIES`, default 3) with the
+post-commit hook. Gate pass clears `wave_N_blocked.flag` automatically; exhausting
+the retries creates `needs_human.flag` and the loop STOPS with a consolidated report
+(attempts, evidence per attempt, concrete options). Ask
+`"$PYTHON_BIN" scripts/lib/retry_controller.py next` for the machine-readable next
+action (`run_agent | retry_gate | escalate_human | done`).
 
 ---
 
@@ -129,7 +151,10 @@ only advance condition.
 | `python install.py init <name>` | Create new project |
 | `python install.py update` | Update to latest version |
 | `python install.py status` | Show installation info |
-| `python scripts/workflow/new_sprint.py N` | Generate sprint N pipeline |
+| `python scripts/workflow/new_sprint.py N [--force]` | Generate sprint N pipeline |
+| `bash scripts/workflow/validate-impact-analysis.sh --allow-amber` | Impact hard gate (00b) |
+| `bash scripts/workflow/run-gates.sh <wave>` | Re-run a wave gate (bounded retries) |
+| `python scripts/lib/retry_controller.py next` | Next factory-loop action |
 | `python -m pytest tests/ -v` | Run framework tests |
 
 ---
@@ -140,13 +165,13 @@ only advance condition.
 Framework/
   install.py                    # Global installer
   AGENT_SEQUENCE.md             # Dependency graph
-  agents/                       # 25 numbered + auxiliary agents (incl. plan-critic)
+  agents/                       # 25 numbered + auxiliary agents (incl. impact-prevalidator, plan-critic)
   commands/                     # Slash-command flows (flow-new-project, flow-update, flow-bugfix)
   rules/                        # Modular rules (common + stack-specific)
   skills/                       # 14 skill documents
   scripts/
-    lib/                        # Python libraries (state, metrics, stack, paths)
-    workflow/                   # Validators, auto-commit, sprint generation
+    lib/                        # Python libs (state, metrics, stack, paths, retry_controller) + python-detect.sh
+    workflow/                   # Validators, gates (validate-impact-analysis, run-gates), auto-commit, sprints
     hooks/                      # Git hooks (post-commit v2, post-wave-*)
   stacks/                       # Stack configs (fastapi, django, react, vue)
   .claude/
@@ -170,4 +195,4 @@ State.json tracks multiple sprints and wave progress.
 
 ---
 
-Version: 2.1.0
+Version: 2.2.0

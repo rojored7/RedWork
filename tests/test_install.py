@@ -124,3 +124,33 @@ def test_init_fails_if_dir_exists(init_env):
     with pytest.raises(SystemExit) as exc_info:
         _run_init("existing-proj")
     assert exc_info.value.code == 1
+
+
+class TestCopyDirManifestFilter:
+    """_copy_dir must match manifest entries, which are repo-relative with
+    forward slashes (e.g. 'agents/impact-prevalidator.md'). Regression: the
+    old comparison used the src-relative path, matched nothing, and profile
+    installs silently copied zero files."""
+
+    def test_manifest_entries_are_copied(self, tmp_path):
+        manifest = json.loads(
+            (FRAMEWORK_ROOT / "manifests" / "backend-only.json").read_text()
+        )
+        dst = tmp_path / "agents-out"
+        install._copy_dir(FRAMEWORK_ROOT / "agents", dst, manifest)
+
+        copied = sorted(p.name for p in dst.glob("*.md"))
+        expected = sorted(
+            Path(e).name for e in manifest if e.startswith("agents/")
+        )
+        assert copied == expected, (
+            f"Profile filter copied {len(copied)} agents, expected {len(expected)}"
+        )
+        assert "impact-prevalidator.md" in copied
+
+    def test_unlisted_files_are_skipped(self, tmp_path):
+        manifest = ["agents/impact-prevalidator.md"]
+        dst = tmp_path / "agents-out"
+        install._copy_dir(FRAMEWORK_ROOT / "agents", dst, manifest)
+        copied = [p.name for p in dst.glob("*.md")]
+        assert copied == ["impact-prevalidator.md"]

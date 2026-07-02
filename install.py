@@ -20,7 +20,7 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "2.1.0"
+VERSION = "2.2.0"
 GLOBAL_ROOT = Path.home() / ".claude" / "redwork"
 FRAMEWORK_DIR = Path(__file__).parent.resolve()
 
@@ -34,7 +34,11 @@ def _file_hash(path: Path) -> str:
 
 
 def _copy_dir(src: Path, dst: Path, manifest_filter: list = None):
-    """Copy directory tree, optionally filtering by manifest."""
+    """Copy directory tree, optionally filtering by manifest.
+
+    Manifest entries are repo-relative with forward slashes (e.g.
+    "agents/impact-prevalidator.md"), so matching must prefix the source
+    dir name and normalize separators."""
     for root, dirs, files in os.walk(src):
         # Skip hidden dirs and __pycache__
         dirs[:] = [d for d in dirs if not d.startswith(".") and d != "__pycache__"]
@@ -42,8 +46,10 @@ def _copy_dir(src: Path, dst: Path, manifest_filter: list = None):
             src_file = Path(root) / f
             rel = src_file.relative_to(src)
 
-            if manifest_filter and str(rel) not in manifest_filter:
-                continue
+            if manifest_filter:
+                rel_key = f"{src.name}/{rel.as_posix()}"
+                if rel_key not in manifest_filter and rel.as_posix() not in manifest_filter:
+                    continue
 
             dst_file = dst / rel
             dst_file.parent.mkdir(parents=True, exist_ok=True)

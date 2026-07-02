@@ -65,7 +65,9 @@ class TestFullWorkflowInitToValidate:
             f"validate-agent-01.sh failed:\nstdout: {result.stdout}\nstderr: {result.stderr}"
         )
 
-        # Mark agent 01 as complete in state
+        # Mark prevalidation + agent 01 as complete in state
+        sm.agent_start("00b")
+        sm.agent_complete("00b", "outputs/00b_impact_analysis.md")
         sm.agent_start("01")
         sm.agent_complete("01", "outputs/01_product_discovery.md")
 
@@ -88,6 +90,10 @@ class TestStateResumeAfterFailure:
         sm = StateManager(project_path=str(project))
         sm.initialize("resume-project")
 
+        # Mark prevalidation completed
+        sm.agent_start("00b")
+        sm.agent_complete("00b", "outputs/00b_impact_analysis.md")
+
         # Mark agent 01 completed
         sm.agent_start("01")
         sm.agent_complete("01", "outputs/01_product_discovery.md")
@@ -104,8 +110,8 @@ class TestStateResumeAfterFailure:
         info = sm.resume_info()
 
         # Assert
-        assert info["completed_count"] == 2, (
-            f"Expected 2 completed, got {info['completed_count']}"
+        assert info["completed_count"] == 3, (
+            f"Expected 3 completed (00b + 01 + 02), got {info['completed_count']}"
         )
         assert len(info["failed"]) == 1, (
             f"Expected 1 failed, got {len(info['failed'])}"
