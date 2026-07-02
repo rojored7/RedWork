@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Agent 04 - Architecture Decision"
 echo "======================================"
 
-OUTPUT_FILE="04_architecture_decision.md"
+OUTPUT_FILE="outputs/04_architecture_decision.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="04_architecture_decision.md"
 
 if [ ! -f "$OUTPUT_FILE" ]; then
     echo "ERROR: File $OUTPUT_FILE does not exist"

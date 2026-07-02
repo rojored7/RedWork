@@ -148,7 +148,7 @@ stages:
       printf "${C_BOLD}${C_CYAN}  --------------------------------------------------------------${C_RESET}\n"
       printf "${C_RED}  [1] discovery       ${C_WHITE}-> Agents 01, 02, 03, 04, 04b, 05, 05b${C_RESET}\n"
       printf "${C_YELLOW}  [2] planning        ${C_WHITE}-> Agents 06, 07, 08, 09${C_RESET}\n"
-      printf "${C_GREEN}  [3] api-contract    ${C_WHITE}-> Agents 05c, 09b${C_RESET}\n"
+      printf "${C_GREEN}  [3] api-contract    ${C_WHITE}-> Agents 10, 11${C_RESET}\n"
       printf "${C_CYAN}  [4] infrastructure  ${C_WHITE}-> Agent 12${C_RESET}\n"
       printf "${C_BLUE}  [5] sprint-1        ${C_WHITE}-> Waves 1-5 (Agents 10, 11, 13-20)${C_RESET}\n"
       printf "${C_MAGENTA}  [6] quality         ${C_WHITE}-> Agents 19, 20 + Framework checks${C_RESET}\n"
@@ -209,7 +209,7 @@ stages:
       allow_failure: true
 
 # ============================================================================
-# STAGE 4: API-CONTRACT - Child Pipeline (Agents 05c, 09b)
+# STAGE 4: API-CONTRACT - Child Pipeline (Agents 10, 11)
 # ============================================================================
 
 "api-contract: pipeline":

@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Agent 03 - Context Mapping"
 echo "======================================"
 
-OUTPUT_FILE="03_context_map.md"
+OUTPUT_FILE="outputs/03_context_map.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="03_context_map.md"
 
 if [ ! -f "$OUTPUT_FILE" ]; then
     echo "ERROR: File $OUTPUT_FILE does not exist"

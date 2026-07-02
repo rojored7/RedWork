@@ -27,9 +27,8 @@ class TestValidateAgent01:
         fixture = valid_fixtures / "01_product_discovery.md"
         if not fixture.exists():
             pytest.skip("Fixture not created yet")
+        # Validator prefers outputs/ (root only kept as legacy fallback)
         shutil.copy(str(fixture), str(tmp_project / "outputs" / "01_product_discovery.md"))
-        # Validator expects file at CWD root (not outputs/)
-        shutil.copy(str(fixture), str(tmp_project / "01_product_discovery.md"))
         code, out, err = run_script(str(self.VALIDATOR), cwd=str(tmp_project))
         assert code == 0, f"Expected pass but got exit {code}: {out}{err}"
 

@@ -1,7 +1,7 @@
 # ============================================================================
 # Child Pipeline: API CONTRACT
 # ============================================================================
-# Agents 05c (OpenAPI Spec) + 09b (Implementation Contract)
+# Agents 10 (API Specification) + 11 (Implementation Contract)
 # ============================================================================
 
 include:
@@ -11,7 +11,7 @@ stages:
   - openapi
   - contract
 
-"05c: api-specification":
+"10: api-specification":
   stage: openapi
   extends: .wait-for-file
   variables:
@@ -19,7 +19,7 @@ stages:
     FILE_NAME: "outputs/10_api_specification.yaml"
     REQUIRED_SECTIONS: "openapi|paths|components"
   environment:
-    name: agents/api-contract/05c-openapi
+    name: agents/api-contract/10-openapi
     action: prepare
   after_script:
     - |
@@ -33,7 +33,7 @@ stages:
         fi
       fi
 
-"09b: implementation-contract":
+"11: implementation-contract":
   stage: contract
   extends: .wait-for-file
   variables:
@@ -42,7 +42,7 @@ stages:
     # Case-insensitive match: matches "WAVE 1", "Wave 1", "wave 1"
     REQUIRED_SECTIONS: "WAVE 1|WAVE 2|Quality Gates"
   environment:
-    name: agents/api-contract/09b-implementation
+    name: agents/api-contract/11-implementation
     action: prepare
   needs:
-    - "05c: api-specification"
+    - "10: api-specification"

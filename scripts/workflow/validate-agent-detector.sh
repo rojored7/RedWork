@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Project Type Detector - Project Type Detector"
 echo "======================================"
 
-OUTPUT_FILE="00_project_detection.md"
+OUTPUT_FILE="outputs/00_project_detection.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="00_project_detection.md"
 
 # Check if file exists
 if [ ! -f "$OUTPUT_FILE" ]; then

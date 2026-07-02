@@ -132,12 +132,12 @@ case "$AGENT_TYPE" in
     "backend" | "be")
         AGENT_FULL="14-backend-development"
         TASK_FILE="sprint_${SPRINT}_backend_tasks.json"
-        AGENT_NUMBER="10"
+        AGENT_NUMBER="14"
         ;;
     "frontend" | "fe")
         AGENT_FULL="16-frontend-development"
         TASK_FILE="sprint_${SPRINT}_frontend_tasks.json"
-        AGENT_NUMBER="11"
+        AGENT_NUMBER="16"
         ;;
     "backend_test" | "be_test")
         AGENT_FULL="13-backend-test"
@@ -147,7 +147,7 @@ case "$AGENT_TYPE" in
     "frontend_test" | "fe_test")
         AGENT_FULL="15-frontend-test"
         TASK_FILE="sprint_${SPRINT}_frontend_test_tasks.json"
-        AGENT_NUMBER="14"
+        AGENT_NUMBER="15"
         ;;
     *)
         echo -e "${RED}ERROR: Unknown agent type: $AGENT_TYPE${NC}"

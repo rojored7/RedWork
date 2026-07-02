@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Agent 06bis - Configuration Analyzer"
 echo "======================================"
 
-OUTPUT_FILE="06bis_configuration_analysis.md"
+OUTPUT_FILE="outputs/06bis_configuration_analysis.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="06bis_configuration_analysis.md"
 
 # Check if file exists
 if [ ! -f "$OUTPUT_FILE" ]; then

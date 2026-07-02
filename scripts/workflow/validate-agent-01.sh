@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Agent 01 - Product Discovery"
 echo "======================================"
 
-OUTPUT_FILE="01_product_discovery.md"
+OUTPUT_FILE="outputs/01_product_discovery.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="01_product_discovery.md"
 
 # Check if file exists
 if [ ! -f "$OUTPUT_FILE" ]; then

@@ -3,12 +3,14 @@
 Generate a new sprint CI pipeline and update project state.
 
 Usage:
-    python new_sprint.py <sprint-number>
+    python new_sprint.py <sprint-number> [--force]
 
 Example:
     python new_sprint.py 2
+    python new_sprint.py 2 --force   # skip previous-sprint confirmation
 """
 
+import argparse
 import json
 import os
 import re
@@ -17,11 +19,16 @@ from pathlib import Path
 
 
 def main():
-    if len(sys.argv) < 2:
-        print("Usage: python new_sprint.py <sprint-number>")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(description="Generate a new sprint CI pipeline")
+    parser.add_argument("sprint", type=int, help="Sprint number")
+    parser.add_argument(
+        "--force",
+        action="store_true",
+        help="Continue even if the previous sprint is not completed (no prompt)",
+    )
+    args = parser.parse_args()
 
-    sprint_num = int(sys.argv[1])
+    sprint_num = args.sprint
     sprint_str = f"{sprint_num:02d}"
 
     project_root = Path.cwd()
@@ -45,9 +52,15 @@ def main():
         if prev_sprint.get("status") != "completed":
             print(f"WARNING: Sprint {sprint_num - 1} is not marked as completed.")
             print(f"  Status: {prev_sprint.get('status', 'not started')}")
-            response = input("Continue anyway? [y/N]: ").strip().lower()
-            if response != "y":
-                sys.exit(0)
+            if args.force:
+                print("  --force given: continuing anyway.")
+            elif not sys.stdin.isatty():
+                print("ERROR: Non-interactive environment. Re-run with --force to continue.")
+                sys.exit(1)
+            else:
+                response = input("Continue anyway? [y/N]: ").strip().lower()
+                if response != "y":
+                    sys.exit(0)
 
     # Find sprint template
     template_path = None

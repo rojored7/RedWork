@@ -7,7 +7,8 @@ echo "======================================"
 echo "Validating Agent 07bis - Hidden Complexity Analyzer"
 echo "======================================"
 
-OUTPUT_FILE="07bis_hidden_complexity.md"
+OUTPUT_FILE="outputs/07bis_hidden_complexity.md"
+[ -f "$OUTPUT_FILE" ] || OUTPUT_FILE="07bis_hidden_complexity.md"
 
 # Check if file exists
 if [ ! -f "$OUTPUT_FILE" ]; then

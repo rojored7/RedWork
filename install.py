@@ -332,7 +332,7 @@ Tests FIRST (agents 13/15), implementation AFTER (agents 14/16).
                     "hooks": [
                         {
                             "type": "command",
-                            "command": "bash ~/.claude/redwork/scripts/hooks/session-start-project.sh",
+                            "command": "bash ~/.claude/hooks/session-start.sh",
                             "timeout": 10
                         }
                     ]
