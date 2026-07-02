@@ -129,34 +129,32 @@ except Exception:
         echo ""
         echo "======================================"
         echo "WAVE ${WAVE_NUM} (${WAVE_NAME}) COMPLETE"
-        echo "Invoking $POST_WAVE_SCRIPT..."
+        echo "Delegating to run-gates.sh (shared gate + retry counter)..."
         echo "======================================"
 
-        WAVE_HOOK="$SCRIPTS/hooks/$POST_WAVE_SCRIPT"
-        if [ -x "$WAVE_HOOK" ]; then
-            if bash "$WAVE_HOOK"; then
+        # run-gates.sh is the single gate: it runs the post-wave hook and
+        # the completeness gate, tracks retry attempts, and is the only
+        # piece that creates/clears wave_N_blocked.flag.
+        RUN_GATES="$SCRIPTS/workflow/run-gates.sh"
+        if [ -f "$RUN_GATES" ]; then
+            bash "$RUN_GATES" "$WAVE_NUM" "$SPRINT_NUM"
+            GATE_EXIT=$?
+            case $GATE_EXIT in
+                0) echo "Wave ${WAVE_NUM} gate CLEARED" ;;
+                1) echo "WARNING: Wave ${WAVE_NUM} gate FAILED (retry available)" ;;
+                2) echo "ERROR: Wave ${WAVE_NUM} gate FAILED (retries exhausted, needs human)" ;;
+                *) echo "ERROR: run-gates.sh infrastructure error (exit $GATE_EXIT)" ;;
+            esac
+        else
+            echo "WARNING: $RUN_GATES not found — falling back to legacy inline gate"
+            WAVE_HOOK="$SCRIPTS/hooks/$POST_WAVE_SCRIPT"
+            if [ -x "$WAVE_HOOK" ] && bash "$WAVE_HOOK"; then
                 echo "Wave ${WAVE_NUM} post-hook PASSED"
-
-                # Run completeness gate for this wave
-                if [ -x "$SCRIPTS/workflow/validate-sprint-completeness.sh" ]; then
-                    bash "$SCRIPTS/workflow/validate-sprint-completeness.sh" \
-                         "$SPRINT_NUM" --wave "$WAVE_NAME"
-                    GATE_EXIT=$?
-                    if [ $GATE_EXIT -eq 0 ]; then
-                        echo "Wave ${WAVE_NUM} completeness gate CLEARED"
-                    else
-                        echo "WARNING: Wave ${WAVE_NUM} completeness gate FAILED"
-                        mkdir -p .project-state
-                        touch ".project-state/wave_${WAVE_NUM}_blocked.flag"
-                    fi
-                fi
             else
                 echo "ERROR: Wave ${WAVE_NUM} post-hook FAILED"
                 mkdir -p .project-state
                 touch ".project-state/wave_${WAVE_NUM}_blocked.flag"
             fi
-        else
-            echo "WARNING: $WAVE_HOOK not found or not executable"
         fi
     else
         if [ "$WAVE_COMPLETE" = "no" ]; then

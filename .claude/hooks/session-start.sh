@@ -130,7 +130,28 @@ fi
 # --- Wave blocked flags ---
 BLOCKED=$(ls .project-state/wave_*_blocked.flag 2>/dev/null | sed 's/.*wave_/wave /' | sed 's/_blocked.flag//' | tr '\n' ', ')
 if [ -n "$BLOCKED" ]; then
-    CONTEXT_LINES+=("BLOCKED WAVES: $BLOCKED")
+    CONTEXT_LINES+=("BLOCKED WAVES: $BLOCKED(fix within plan scope, then re-run: bash scripts/workflow/run-gates.sh <wave>)")
+fi
+
+# --- Factory loop: escalation flag and retry state ---
+if [ -f ".project-state/needs_human.flag" ]; then
+    CONTEXT_LINES+=("NEEDS HUMAN: a gate exhausted its retries. Present a consolidated report (attempts, evidence, options). Clear .project-state/needs_human.flag only after the human decides.")
+fi
+if [ -f ".project-state/retry_state.json" ]; then
+    RETRY_INFO=$("$PYTHON_BIN" -c "
+import json
+try:
+    with open('.project-state/retry_state.json') as f:
+        d = json.load(f)
+    active = {g: i.get('attempts', 0) for g, i in d.get('gates', {}).items() if i.get('attempts', 0) > 0}
+    if active:
+        print('RETRY STATE: ' + ', '.join(f'{g}={a} attempts' for g, a in active.items()))
+except Exception:
+    pass
+" 2>/dev/null)
+    if [ -n "$RETRY_INFO" ]; then
+        CONTEXT_LINES+=("$RETRY_INFO")
+    fi
 fi
 
 # --- Pre-compact state (re-inject after compaction) ---

@@ -304,31 +304,43 @@ else
     echo "Proceeding anyway..."
 fi
 
+# Factory-loop context: retry state and next action (machine-readable)
+RETRY_CTL=""
+for _rc in "./scripts/lib/retry_controller.py" \
+           "$HOME/.claude/redwork/scripts/lib/retry_controller.py"; do
+    [ -f "$_rc" ] && RETRY_CTL="$_rc" && break
+done
+NEXT_ACTION="{}"
+if [ -n "$RETRY_CTL" ]; then
+    NEXT_ACTION=$("$PYTHON_BIN" "$RETRY_CTL" next 2>/dev/null || echo "{}")
+fi
+
 # Display resume instructions
 echo ""
 echo "======================================"
 echo -e "${GREEN}Ready to Resume Development${NC}"
 echo "======================================"
 echo ""
-echo -e "${CYAN}Instructions:${NC}"
+echo -e "${CYAN}Next action for the factory loop:${NC}"
 echo ""
-echo "1. Agent $AGENT_NUMBER ($AGENT_FULL) should now:"
+echo "1. Agent $AGENT_FULL executes:"
 echo "   - Read task file: $TASK_FILE_PATH"
 echo "   - Execute task: $NEXT_TASK_ID"
 echo "   - Follow task description: $NEXT_TASK_DESC"
 echo ""
 echo "2. After completing the task, run:"
 echo "   bash scripts/workflow/auto-commit-task.sh $NEXT_TASK_ID \"$NEXT_TASK_DESC\""
+echo "   (the post-commit hook runs run-gates.sh when the wave closes;"
+echo "    on gate FAIL fix within plan scope and re-run run-gates.sh)"
 echo ""
-echo "3. Agent will then automatically continue to next task"
+echo "3. The loop continues to the next task/wave until retry_controller"
+echo "   reports action=done or action=escalate_human."
 echo ""
-echo -e "${YELLOW}IMPORTANT:${NC}"
-echo "  This script has identified the next task and updated its status."
-echo "  You must now manually invoke Agent $AGENT_NUMBER to execute the task."
-echo ""
-echo "  Example invocation (via Claude Code Task tool):"
-echo "    subagent_type: $AGENT_NUMBER-$AGENT_TYPE"
+echo "  Task-tool invocation for the executing agent:"
+echo "    subagent_type: $AGENT_FULL"
 echo "    prompt: Resume Sprint $SPRINT from task $NEXT_TASK_ID: $NEXT_TASK_DESC"
+echo ""
+echo "  NEXT_ACTION: $NEXT_ACTION"
 echo ""
 echo "======================================"
 
