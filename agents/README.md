@@ -59,7 +59,6 @@
 21. **21-learning-agent** - Analyzes patterns, proposes new skills (AUTO-LEARNING)
 
 ### Orchestration
-- **wsl-docker-orchestrator** - Docker orchestration for WSL/Windows
 - **workflow-orchestrator/** - Advanced workflow orchestration
 
 ---
@@ -298,7 +297,6 @@ agents/
 │
 ├── 21-learning-agent.md               # Phase 7: Learning & Optimization
 │
-├── wsl-docker-orchestrator.md         # Orchestration
 └── workflow-orchestrator/             # Advanced orchestration
 ```
 

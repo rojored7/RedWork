@@ -177,6 +177,7 @@ Framework/
   .gitlab/ci/*.yml                 # Child pipeline definitions (8 stages)
   workflow-status.json             # Status template (regenerated dynamically)
   agents/                          # 25+ agent definitions
+  agents/ambient/                  # 9 vendored flow actors (code-explorer, planner, tdd-guide, reviewers...) installed to ~/.claude/agents/
   skills/                          # 14 skill documents (including ux-design-system, api-dx-design)
   scripts/
     install-workflow-hooks.sh      # Installs pre-commit + post-commit v2

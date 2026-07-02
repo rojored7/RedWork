@@ -86,10 +86,13 @@ Rules are copied to projects on `install.py init` (common + stack-specific).
 | `/flow-update` | Add a feature / update an existing project (Docker-aware, TDD slices) |
 | `/flow-bugfix` | Diagnose and fix a bug with a reproducing test first |
 
-The flows orchestrate the numbered RedWork agents (01-25) plus ambient Claude Code
-agents (`code-explorer`, `code-architect`, `planner`, `tdd-guide`, `code-reviewer`,
-`security-reviewer`, `build-error-resolver`) and the `plan-critic` agent. They assume
-those ambient agents exist in the host Claude Code install.
+The flows orchestrate the numbered RedWork agents (01-25) plus 9 ambient agents
+(`code-explorer`, `code-architect`, `planner`, `tdd-guide`, `code-reviewer`,
+`security-reviewer`, `python-reviewer`, `typescript-reviewer`,
+`build-error-resolver`) and the `plan-critic` agent. The ambient agents are
+**vendored in `agents/ambient/`** (upstream: ECC) and `install.py install` copies
+them to `~/.claude/agents/` — ECC is NOT a prerequisite. See
+`agents/ambient/README.md` for the sync rule.
 
 ### impact-prevalidator (total-impact pre-validation, hard gate)
 

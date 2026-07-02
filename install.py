@@ -56,6 +56,42 @@ def _copy_dir(src: Path, dst: Path, manifest_filter: list = None):
             shutil.copy2(str(src_file), str(dst_file))
 
 
+def _install_ambient_agents() -> list:
+    """Copy agents/ambient/*.md to ~/.claude/agents/ (the Task tool registry).
+
+    Non-clobbering policy:
+      - destination missing        -> copy and record
+      - destination identical hash -> skip (already installed, e.g. by ECC)
+      - destination differs        -> keep the user's version, warn
+
+    Returns the list of agent filenames actually copied by this install.
+    """
+    ambient_src = FRAMEWORK_DIR / "agents" / "ambient"
+    if not ambient_src.exists():
+        return []
+
+    print("  Installing ambient agents (Task tool registry)...")
+    agents_dst = Path.home() / ".claude" / "agents"
+    agents_dst.mkdir(parents=True, exist_ok=True)
+
+    copied = []
+    for agent_file in sorted(ambient_src.glob("*.md")):
+        if agent_file.name == "README.md":
+            continue
+        dst = agents_dst / agent_file.name
+        if not dst.exists():
+            shutil.copy2(str(agent_file), str(dst))
+            copied.append(agent_file.name)
+        elif _file_hash(dst) == _file_hash(agent_file):
+            continue  # identical copy already present (e.g. ECC install)
+        else:
+            print(f"    WARNING: ~/.claude/agents/{agent_file.name} differs "
+                  "from the vendored copy - keeping the existing version.")
+    if copied:
+        print(f"    Copied {len(copied)} ambient agents.")
+    return copied
+
+
 def _load_manifest(profile: str) -> list:
     """Load manifest for a profile. Returns empty list for 'full' (copy everything)."""
     manifest_path = FRAMEWORK_DIR / "manifests" / f"{profile}.json"
@@ -133,6 +169,11 @@ def cmd_install(args):
         for cmd_file in commands_src.glob("*.md"):
             shutil.copy2(str(cmd_file), str(commands_dst / cmd_file.name))
 
+    # Install vendored ambient agents to ~/.claude/agents/ (the registry
+    # the Task tool reads). Non-clobbering: never overwrite a differing
+    # user/ECC copy; skip identical ones; record what we actually copied.
+    ambient_installed = _install_ambient_agents()
+
     # Update global settings.json to reference hooks
     settings_src = FRAMEWORK_DIR / ".claude" / "settings.json"
     settings_dst = Path.home() / ".claude" / "settings.json"
@@ -177,6 +218,7 @@ def cmd_install(args):
         "installed_at": _now_iso(),
         "updated_at": _now_iso(),
         "files_count": len(installed_files),
+        "ambient_installed": ambient_installed,
         "framework_source": str(FRAMEWORK_DIR),
     }
 

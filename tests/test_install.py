@@ -139,14 +139,15 @@ class TestCopyDirManifestFilter:
         dst = tmp_path / "agents-out"
         install._copy_dir(FRAMEWORK_ROOT / "agents", dst, manifest)
 
-        copied = sorted(p.name for p in dst.glob("*.md"))
-        expected = sorted(
-            Path(e).name for e in manifest if e.startswith("agents/")
+        copied = sorted(
+            f"agents/{p.relative_to(dst).as_posix()}" for p in dst.rglob("*.md")
         )
+        expected = sorted(e for e in manifest if e.startswith("agents/"))
         assert copied == expected, (
             f"Profile filter copied {len(copied)} agents, expected {len(expected)}"
         )
-        assert "impact-prevalidator.md" in copied
+        assert "agents/impact-prevalidator.md" in copied
+        assert "agents/ambient/planner.md" in copied
 
     def test_unlisted_files_are_skipped(self, tmp_path):
         manifest = ["agents/impact-prevalidator.md"]
