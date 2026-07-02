@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # ============================================================================
 # validate-sprint-completeness.sh
 # ============================================================================
@@ -87,8 +97,8 @@ if [ -z "$TASK_FILES" ]; then
     exit 2
 fi
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: python3 is required but not installed"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "ERROR: "$PYTHON_BIN" is required but not installed"
     exit 2
 fi
 
@@ -97,7 +107,7 @@ mkdir -p "$OUTPUT_DIR"
 # ----------------------------------------------------------------------------
 # Main: delegate parsing + walking to Python (safer than bash for JSON)
 # ----------------------------------------------------------------------------
-python3 - "$SPRINT_NUM" "$SPRINT_DIR" "$STATE_DIR" "$OUTPUT_FILE" "$WAVE_FILTER" <<'PYEOF'
+"$PYTHON_BIN" - "$SPRINT_NUM" "$SPRINT_DIR" "$STATE_DIR" "$OUTPUT_FILE" "$WAVE_FILTER" <<'PYEOF'
 import sys
 import os
 import re

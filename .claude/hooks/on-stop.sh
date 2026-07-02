@@ -1,11 +1,21 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: Stop
 # Persists session state when Claude finishes a response.
 # Lightweight — must complete quickly.
 
 INPUT=$(cat)
 
-CWD=$(echo "$INPUT" | python3 -c "
+CWD=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || pwd)
 cd "$CWD" 2>/dev/null || true
 
@@ -15,7 +25,7 @@ if [ ! -d ".project-state" ]; then
 fi
 
 # Update last_activity in state.json and current_context.json
-python3 -c "
+"$PYTHON_BIN" -c "
 import json, os
 from datetime import datetime, timezone
 
@@ -61,7 +71,12 @@ fi
 if [ -n "$SCRIPTS_PATH" ] && [ -x "$SCRIPTS_PATH/workflow/update-workflow-status.sh" ]; then
     # Only run if workflow-status.json is older than 60 seconds
     if [ -f "workflow-status.json" ]; then
-        AGE=$(( $(date +%s) - $(stat -c %Y "workflow-status.json" 2>/dev/null || echo 0) ))
+        # GNU stat (-c) with BSD (-f) and Python fallbacks for portability
+        MTIME=$(stat -c %Y "workflow-status.json" 2>/dev/null \
+            || stat -f %m "workflow-status.json" 2>/dev/null \
+            || "$PYTHON_BIN" -c "import os;print(int(os.path.getmtime('workflow-status.json')))" 2>/dev/null \
+            || echo 0)
+        AGE=$(( $(date +%s) - MTIME ))
         if [ "$AGE" -gt 60 ]; then
             bash "$SCRIPTS_PATH/workflow/update-workflow-status.sh" "stop-hook" >/dev/null 2>&1 || true
         fi

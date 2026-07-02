@@ -1,5 +1,15 @@
 #!/bin/bash
 
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
+
 # Validation script for Agent 22: Design Compliance Validator
 # Validates that outputs/compliance/sprint_NN_design_compliance.json exists
 # and reports an accepted verdict.
@@ -41,12 +51,12 @@ REQUIRED_KEYS=(
     "final_verdict"
 )
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: python3 required to parse JSON report"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "ERROR: "$PYTHON_BIN" required to parse JSON report"
     exit 1
 fi
 
-python3 - "$REPORT_FILE" "${REQUIRED_KEYS[@]}" <<'PYEOF'
+"$PYTHON_BIN" - "$REPORT_FILE" "${REQUIRED_KEYS[@]}" <<'PYEOF'
 import sys, json
 
 report_file = sys.argv[1]

@@ -1,11 +1,21 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: PreToolUse (Bash)
 # Blocks dangerous shell commands BEFORE they execute.
 # Exit 0 = allow, Exit 2 = block (stderr sent to Claude)
 
 INPUT=$(cat)
 
-COMMAND=$(echo "$INPUT" | python3 -c "
+COMMAND=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json
 d = json.load(sys.stdin)
 ti = d.get('tool_input', {})

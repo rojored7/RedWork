@@ -1,10 +1,20 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: SessionStart
 # Loads project context and injects it as additionalContext to Claude.
 # Fires on: startup, resume, compact (after context compaction)
 
 INPUT=$(cat)
-CWD=$(echo "$INPUT" | python3 -c "import sys,json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || pwd)
+CWD=$(echo "$INPUT" | "$PYTHON_BIN" -c "import sys,json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || pwd)
 cd "$CWD" 2>/dev/null || true
 
 CONTEXT_LINES=()
@@ -43,7 +53,7 @@ fi
 
 # --- State.json (v2.0 unified state) ---
 if [ -f ".project-state/state.json" ]; then
-    STATE_INFO=$(python3 -c "
+    STATE_INFO=$("$PYTHON_BIN" -c "
 import json
 try:
     with open('.project-state/state.json') as f:
@@ -73,7 +83,7 @@ except Exception as e:
 " 2>/dev/null)
     CONTEXT_LINES+=("State: $STATE_INFO")
 elif [ -f "workflow-status.json" ]; then
-    AGENTS_DONE=$(python3 -c "
+    AGENTS_DONE=$("$PYTHON_BIN" -c "
 import json
 try:
     with open('workflow-status.json') as f:
@@ -88,7 +98,7 @@ fi
 
 # --- Sprint state (from state.json or legacy task files) ---
 if [ -d ".project-state" ]; then
-    SPRINT_INFO=$(python3 -c "
+    SPRINT_INFO=$("$PYTHON_BIN" -c "
 import json, glob, os
 files = sorted(glob.glob('.project-state/sprint_*_*_tasks.json'))
 if not files:
@@ -125,7 +135,7 @@ fi
 
 # --- Pre-compact state (re-inject after compaction) ---
 if [ -f ".project-state/pre-compact-state.json" ]; then
-    COMPACT_CTX=$(python3 -c "
+    COMPACT_CTX=$("$PYTHON_BIN" -c "
 import json
 try:
     with open('.project-state/pre-compact-state.json') as f:
@@ -144,7 +154,7 @@ CONTEXT_LINES+=("MANDATE: Backend MUST be FastAPI (Python). No TypeScript in bac
 
 # --- Learning system status ---
 if [ -d ".learning" ]; then
-    LEARNING_INFO=$(python3 -c "
+    LEARNING_INFO=$("$PYTHON_BIN" -c "
 import sys, os
 sys.path.insert(0, os.environ.get('REDWORK_ROOT', os.path.expanduser('~/.claude/redwork')))
 try:
@@ -172,7 +182,7 @@ done
 FULL_CONTEXT="REDWORK CONTEXT (auto-injected by SessionStart hook):\n${CONTEXT}"
 
 # Emit JSON with additionalContext
-python3 -c "
+"$PYTHON_BIN" -c "
 import json
 ctx = '''$FULL_CONTEXT'''
 print(json.dumps({'additionalContext': ctx.replace('\\\\n', chr(10))}))

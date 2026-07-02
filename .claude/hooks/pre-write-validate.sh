@@ -1,18 +1,28 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: PreToolUse (Write|Edit)
 # Blocks prohibited file writes BEFORE they happen.
 # Exit 0 = allow, Exit 2 = block (stderr sent to Claude)
 
 INPUT=$(cat)
 
-FILE_PATH=$(echo "$INPUT" | python3 -c "
+FILE_PATH=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json
 d = json.load(sys.stdin)
 ti = d.get('tool_input', {})
 print(ti.get('file_path', ti.get('filePath', '')))
 " 2>/dev/null)
 
-CONTENT=$(echo "$INPUT" | python3 -c "
+CONTENT=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json
 d = json.load(sys.stdin)
 ti = d.get('tool_input', {})
@@ -25,7 +35,7 @@ FILE_PATH=$(echo "$FILE_PATH" | sed 's|^\./||' | sed "s|^$(pwd)/||")
 # --- Read stack from state.json (default: fastapi) ---
 BACKEND_STACK="fastapi"
 if [ -f ".project-state/state.json" ]; then
-    DECLARED=$(python3 -c "
+    DECLARED=$("$PYTHON_BIN" -c "
 import json
 try:
     with open('.project-state/state.json') as f:
@@ -76,7 +86,7 @@ if echo "$FILE_PATH" | grep -qiE '(tests/fixtures/security|test_security|secret-
     exit 0
 fi
 # Also check the original (non-normalized) path
-ORIG_PATH=$(echo "$INPUT" | python3 -c "
+ORIG_PATH=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json
 d = json.load(sys.stdin)
 ti = d.get('tool_input', {})

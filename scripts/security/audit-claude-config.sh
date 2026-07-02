@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork AgentShield - Claude Configuration Security Auditor
 # Scans 5 configuration domains for security risks using pattern matching.
 #
@@ -115,7 +125,7 @@ scan_file_with_patterns() {
 
     # Use Python scanner for fast pattern matching
     local scanner="$SCRIPT_DIR/audit_scanner.py"
-    python3 "$scanner" "$PATTERNS_FILE" "$file" "$category_filter" 2>/dev/null | while IFS='|' read -r cat sev desc lnum; do
+    "$PYTHON_BIN" "$scanner" "$PATTERNS_FILE" "$file" "$category_filter" 2>/dev/null | while IFS='|' read -r cat sev desc lnum; do
         record_finding "$cat" "$sev" "$desc" "$file" "$lnum"
     done
 }
@@ -292,7 +302,7 @@ if [ "$OUTPUT_MODE" = "json" ]; then
     AUDIT_HIGH="$HIGH_COUNT" \
     AUDIT_MEDIUM="$MEDIUM_COUNT" \
     AUDIT_LOW="$LOW_COUNT" \
-    python3 -c "
+    "$PYTHON_BIN" -c "
 import json, os
 t = int(os.environ.get('AUDIT_TOTAL', 0))
 c = int(os.environ.get('AUDIT_CRITICAL', 0))

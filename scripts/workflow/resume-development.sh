@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # Resume Development Script
 # Resumes development from last completed task after disconnection
 #
@@ -61,8 +71,8 @@ elif [ $# -eq 0 ]; then
         exit 1
     fi
 
-    SPRINT=$(python3 -c "import json; f=open('.project-state/current_context.json'); d=json.load(f); print(d.get('active_sprint', ''))" 2>/dev/null)
-    AGENT_FULL=$(python3 -c "import json; f=open('.project-state/current_context.json'); d=json.load(f); print(d.get('active_agent', ''))" 2>/dev/null)
+    SPRINT=$("$PYTHON_BIN" -c "import json; f=open('.project-state/current_context.json'); d=json.load(f); print(d.get('active_sprint', ''))" 2>/dev/null)
+    AGENT_FULL=$("$PYTHON_BIN" -c "import json; f=open('.project-state/current_context.json'); d=json.load(f); print(d.get('active_agent', ''))" 2>/dev/null)
 
     if [ -z "$SPRINT" ] || [ -z "$AGENT_FULL" ]; then
         echo -e "${RED}FAILED${NC}"
@@ -172,10 +182,10 @@ echo -e "${GREEN}OK${NC}"
 # Parse task state
 echo -n "Loading task state... "
 TASK_STATE=$(cat "$TASK_FILE_PATH")
-TOTAL_TASKS=$(echo "$TASK_STATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(len(d['tasks']))" 2>/dev/null)
-COMPLETED_TASKS=$(echo "$TASK_STATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='completed'))" 2>/dev/null)
-IN_PROGRESS_TASKS=$(echo "$TASK_STATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='in_progress'))" 2>/dev/null)
-PENDING_TASKS=$(echo "$TASK_STATE" | python3 -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='pending'))" 2>/dev/null)
+TOTAL_TASKS=$(echo "$TASK_STATE" | "$PYTHON_BIN" -c "import json,sys; d=json.load(sys.stdin); print(len(d['tasks']))" 2>/dev/null)
+COMPLETED_TASKS=$(echo "$TASK_STATE" | "$PYTHON_BIN" -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='completed'))" 2>/dev/null)
+IN_PROGRESS_TASKS=$(echo "$TASK_STATE" | "$PYTHON_BIN" -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='in_progress'))" 2>/dev/null)
+PENDING_TASKS=$(echo "$TASK_STATE" | "$PYTHON_BIN" -c "import json,sys; d=json.load(sys.stdin); print(sum(1 for t in d['tasks'] if t['status']=='pending'))" 2>/dev/null)
 
 if [ -z "$TOTAL_TASKS" ]; then
     echo -e "${RED}FAILED${NC}"
@@ -208,7 +218,7 @@ fi
 
 # Find next task to execute
 echo "Finding next task to execute..."
-NEXT_TASK=$(python3 -c "
+NEXT_TASK=$("$PYTHON_BIN" -c "
 import json
 import sys
 
@@ -253,9 +263,9 @@ if [ -z "$NEXT_TASK" ] || [ "$NEXT_TASK" = "{}" ]; then
 fi
 
 # Parse next task details
-NEXT_TASK_ID=$(echo "$NEXT_TASK" | python3 -c "import json,sys; print(json.load(sys.stdin)['id'])" 2>/dev/null)
-NEXT_TASK_DESC=$(echo "$NEXT_TASK" | python3 -c "import json,sys; print(json.load(sys.stdin)['description'])" 2>/dev/null)
-NEXT_TASK_STATUS=$(echo "$NEXT_TASK" | python3 -c "import json,sys; print(json.load(sys.stdin)['status'])" 2>/dev/null)
+NEXT_TASK_ID=$(echo "$NEXT_TASK" | "$PYTHON_BIN" -c "import json,sys; print(json.load(sys.stdin)['id'])" 2>/dev/null)
+NEXT_TASK_DESC=$(echo "$NEXT_TASK" | "$PYTHON_BIN" -c "import json,sys; print(json.load(sys.stdin)['description'])" 2>/dev/null)
+NEXT_TASK_STATUS=$(echo "$NEXT_TASK" | "$PYTHON_BIN" -c "import json,sys; print(json.load(sys.stdin)['status'])" 2>/dev/null)
 
 echo ""
 echo -e "${GREEN}Next Task Found:${NC}"
@@ -266,7 +276,7 @@ echo ""
 
 # Update task status to in_progress
 echo -n "Updating task status to in_progress... "
-python3 -c "
+"$PYTHON_BIN" -c "
 import json
 from datetime import datetime, timezone
 

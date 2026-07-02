@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # ============================================================================
 # pipeline-helper.sh - GitLab CI/CD Pipeline Helper
 # ============================================================================
@@ -36,15 +46,15 @@ COMMAND="${1:-help}"
 # Helpers
 # ----------------------------------------------------------------------------
 require_python() {
-  if ! command -v python >/dev/null 2>&1 && ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: python3 is required for this command"
+  if ! command -v python >/dev/null 2>&1 && ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "ERROR: "$PYTHON_BIN" is required for this command"
     exit 1
   fi
 }
 
 py() {
-  if command -v python3 >/dev/null 2>&1; then
-    python3 "$@"
+  if command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    "$PYTHON_BIN" "$@"
   else
     python "$@"
   fi

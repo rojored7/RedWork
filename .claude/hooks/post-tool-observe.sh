@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: PostToolUse (all tools)
 # Captures tool observations for the learning system.
 # Appends one line to .learning/observations.jsonl.
@@ -7,7 +17,7 @@
 INPUT=$(cat)
 
 # Only capture if .learning/ directory exists (learning system active)
-CWD=$(echo "$INPUT" | python3 -c "
+CWD=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || pwd)
 cd "$CWD" 2>/dev/null || true
 
@@ -16,7 +26,7 @@ if [ ! -d ".learning" ]; then
 fi
 
 # Extract tool name and input summary, append to JSONL
-python3 -c "
+"$PYTHON_BIN" -c "
 import sys, json, os
 from datetime import datetime, timezone
 

@@ -1,11 +1,21 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # RedWork Runtime Hook: PreCompact
 # Saves critical context before Claude compacts its conversation.
 # SessionStart (matcher: compact) re-injects this after compaction.
 
 INPUT=$(cat)
 
-CWD=$(echo "$INPUT" | python3 -c "
+CWD=$(echo "$INPUT" | "$PYTHON_BIN" -c "
 import sys, json; print(json.load(sys.stdin).get('cwd',''))" 2>/dev/null || pwd)
 cd "$CWD" 2>/dev/null || true
 
@@ -13,7 +23,7 @@ if [ ! -d ".project-state" ]; then
     exit 0
 fi
 
-python3 -c "
+"$PYTHON_BIN" -c "
 import json, glob, os
 from datetime import datetime, timezone
 

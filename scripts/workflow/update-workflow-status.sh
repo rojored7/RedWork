@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # ============================================================================
 # update-workflow-status.sh
 # ============================================================================
@@ -34,12 +44,12 @@ TRIGGER="${1:-<unspecified>}"
 
 echo "Regenerating $STATUS_FILE (trigger: $TRIGGER)..."
 
-if ! command -v python3 >/dev/null 2>&1; then
-    echo "ERROR: python3 is required but not installed"
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    echo "ERROR: "$PYTHON_BIN" is required but not installed"
     exit 1
 fi
 
-python3 - "$STATUS_FILE" "$TRIGGER" <<'PYEOF'
+"$PYTHON_BIN" - "$STATUS_FILE" "$TRIGGER" <<'PYEOF'
 import sys
 import os
 import re

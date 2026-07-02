@@ -33,6 +33,21 @@ def _find_git_bash() -> str:
 GIT_BASH = _find_git_bash()
 
 
+def _ensure_git_bash_path() -> None:
+    """Prepend Git's usr/bin to PATH so coreutils (dirname, grep, awk)
+    resolve when bash.exe is invoked directly via subprocess (a bare
+    bash.exe call does not source the Git Bash profile that sets PATH)."""
+    if GIT_BASH == "bash":
+        return
+    usr_bin = str(Path(GIT_BASH).parent)
+    current = os.environ.get("PATH", "")
+    if usr_bin not in current.split(os.pathsep):
+        os.environ["PATH"] = usr_bin + os.pathsep + current
+
+
+_ensure_git_bash_path()
+
+
 def to_posix(path) -> str:
     """Convert Windows backslashes to forward slashes for bash.
     C:\\Users\\X -> C:/Users/X (works in both Git Bash and subprocess)."""

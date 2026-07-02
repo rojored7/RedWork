@@ -1,4 +1,14 @@
 #!/bin/bash
+
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+# Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
+for _pd in "$(dirname "${BASH_SOURCE[0]}")/../lib/python-detect.sh" \
+           "$(dirname "${BASH_SOURCE[0]}")/../../scripts/lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 # Auto-Commit Task Script
 # Commits task changes and updates task state in .project-state/
 #
@@ -152,7 +162,7 @@ if [ "$UPDATE_STATE" = true ]; then
     TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
     # Use Python to update JSON (safer than jq for complex updates)
-    python3 -c "
+    "$PYTHON_BIN" -c "
 import json
 import sys
 from datetime import datetime
@@ -201,7 +211,7 @@ fi
 if [ -f ".project-state/current_context.json" ]; then
     echo -n "Updating current context... "
 
-    python3 -c "
+    "$PYTHON_BIN" -c "
 import json
 from datetime import datetime
 
