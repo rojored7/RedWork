@@ -75,6 +75,7 @@ state = {
 # ----------------------------------------------------------------------------
 AGENT_FILES = {
     'project_type_detector':         'outputs/00_project_detection.md',
+    'impact_prevalidator':           'outputs/00b_impact_analysis.md',
     'agent_01_product_discovery':    'outputs/01_product_discovery.md',
     'agent_02_domain_modeling':      'outputs/02_domain_model.md',
     'agent_03_context_mapping':      'outputs/03_context_map.md',

@@ -65,7 +65,19 @@ class TestStateManagerDependencies:
         sm.initialize("test-project")
         return sm
 
-    def test_agent_01_can_run_immediately(self, sm):
+    def test_agent_00b_can_run_immediately(self, sm):
+        can, missing = sm.can_run("00b")
+        assert can is True
+        assert missing == []
+
+    def test_agent_01_blocked_without_00b(self, sm):
+        can, missing = sm.can_run("01")
+        assert can is False
+        assert "00b" in missing
+
+    def test_agent_01_unblocked_after_00b_complete(self, sm):
+        sm.agent_start("00b")
+        sm.agent_complete("00b", "outputs/00b_impact_analysis.md")
         can, missing = sm.can_run("01")
         assert can is True
         assert missing == []
@@ -83,9 +95,11 @@ class TestStateManagerDependencies:
 
     def test_get_next_agent_returns_first_runnable(self, sm):
         next_agent = sm.get_next_agent()
-        assert next_agent == "01"
+        assert next_agent == "00b"
 
     def test_get_next_agent_skips_completed(self, sm):
+        sm.agent_start("00b")
+        sm.agent_complete("00b", "outputs/00b_impact_analysis.md")
         sm.agent_start("01")
         sm.agent_complete("01", "outputs/01.md")
         next_agent = sm.get_next_agent()
@@ -97,6 +111,8 @@ class TestStateManagerResume:
     def sm(self, tmp_path):
         sm = StateManager(str(tmp_path))
         sm.initialize("test-project")
+        sm.agent_start("00b")
+        sm.agent_complete("00b", "outputs/00b_impact_analysis.md")
         sm.agent_start("01")
         sm.agent_complete("01", "outputs/01.md")
         sm.agent_start("02")
@@ -107,7 +123,7 @@ class TestStateManagerResume:
 
     def test_resume_info_shows_state(self, sm):
         info = sm.resume_info()
-        assert info["completed_count"] == 2
+        assert info["completed_count"] == 3  # 00b + 01 + 02
         assert len(info["failed"]) == 1
         assert info["failed"][0]["id"] == "03"
         assert info["next_agent"] == "03"  # failed agent is retryable

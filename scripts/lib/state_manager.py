@@ -14,8 +14,12 @@ from typing import Optional
 
 
 # Agent dependency graph: agent_id -> list of required predecessors
+# "00b" is the impact-prevalidator (hard gate: validate-impact-analysis.sh);
+# it anchors the whole pipeline, so 01 (discovery) and 25 (orchestrator)
+# depend on it.
 AGENT_DEPENDENCIES = {
-    "01": [],
+    "00b": [],
+    "01": ["00b"],
     "02": ["01"],
     "03": ["02"],
     "04": ["03"],
@@ -41,10 +45,11 @@ AGENT_DEPENDENCIES = {
     "22": ["14", "16"],
     "23": ["22"],
     "24": ["23"],
-    "25": ["09"],
+    "25": ["09", "00b"],
 }
 
 AGENT_PHASES = {
+    "prevalidation": ["00b"],
     "discovery": ["01", "02", "03", "04", "04b", "05", "05b"],
     "planning": ["06", "07", "08", "09"],
     "api_contract": ["10", "11"],

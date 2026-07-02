@@ -3,6 +3,11 @@
 ## Execution Flow
 
 ```
+PREVALIDATION (ALWAYS FIRST — hard gate):
+  impact-prevalidator (output 00b_impact_analysis.md)
+    gate: scripts/workflow/validate-impact-analysis.sh
+    No fresh VERDE/AMARILLO report anchored to HEAD -> pipeline blocked.
+
 DISCOVERY (manual, sequential):
   01-product-discovery
   02-domain-modeling
@@ -50,7 +55,7 @@ ORCHESTRATOR:
 ## Dependency Graph
 
 ```
-01 --> 02 --> 03 --> 04 --> 05 --> 06 --> 07 --> 08 --> 09 --> 10 --> 11
+00b --> 01 --> 02 --> 03 --> 04 --> 05 --> 06 --> 07 --> 08 --> 09 --> 10 --> 11
                       |                                         |
                       04b                                       12
                       |                                        / \
@@ -71,6 +76,8 @@ ORCHESTRATOR:
 ## Auxiliary Agents (no fixed number, invoked on demand)
 
 - project-type-detector: Detects project type and validates stack
+- impact-prevalidator: Maps total blast-radius BEFORE the pipeline (state id "00b"; enforced by validate-impact-analysis.sh — Agent 25 Phase 0 check 0.6)
+- plan-critic: Adversarial plan critique at the single human gate
 - configuration-analyzer: Analyzes existing configs in brownfield projects
 - hidden-complexity-analyzer: Discovers non-obvious behaviors in legacy code
 - agent-introspection-debugging: Debugs failing agents

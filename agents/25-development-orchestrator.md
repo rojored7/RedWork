@@ -113,9 +113,9 @@ If inputs are missing or incomplete, STOP and request clarification from user.
 ### Phase 0: Framework Activation (BLOCKING — NEW IN v2)
 
 **This phase is NON-NEGOTIABLE. It runs before anything else. If any of the
-five checks below fail, Agent 25 stops immediately and refuses to create or
+six checks below fail, Agent 25 stops immediately and refuses to create or
 touch `.project-state/`. The user must see the banner `FRAMEWORK ACTIVATED`
-with all five checks green before any development begins.**
+with all six checks green before any development begins.**
 
 This phase exists because Sprint 1 of the GAIA test project closed at 65%
 completeness, and the root cause was: *the framework machinery never
@@ -171,9 +171,26 @@ bash scripts/workflow/validate-git-setup.sh
 
 This is the old Phase 1 check, now moved into Phase 0.
 
+**Step 0.6 — Verify fresh impact analysis (hard gate):**
+
+```bash
+bash scripts/workflow/validate-impact-analysis.sh --allow-amber
+# Or if global: bash ~/.claude/redwork/scripts/workflow/validate-impact-analysis.sh --allow-amber
+```
+
+If the exit code is non-zero → STOP and instruct:
+
+> Run the impact pre-validator first: `lanza el agente impact-prevalidator`
+> (exit 2 = no report; exit 4 = report stale, HEAD moved — re-run the agent;
+> exit 1 = verdict ROJO/AMARILLO blocked — resolve its "Condiciones para VERDE")
+
+An AMARILLO verdict is accepted here ONLY because the approved plan is
+required to have incorporated the report's mitigations. A ROJO verdict is
+never accepted.
+
 **Phase 0 success banner:**
 
-Only after all five steps pass, print this banner verbatim:
+Only after all six steps pass, print this banner verbatim:
 
 ```
 ======================================
@@ -183,6 +200,7 @@ FRAMEWORK ACTIVATED
   [OK] 00_project_detection.md (FastAPI)
   [OK] validate-sprint-completeness.sh
   [OK] validate-git-setup.sh
+  [OK] validate-impact-analysis.sh (00b fresh)
 ======================================
 ```
 
