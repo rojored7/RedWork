@@ -32,6 +32,11 @@ smoke-test-report.md
 !08_*.md
 !09_*.md
 
+# Python bytecode
+__pycache__/
+*.pyc
+.pytest_cache/
+
 # Block temporary test outputs
 *-output.txt
 *-result.txt
