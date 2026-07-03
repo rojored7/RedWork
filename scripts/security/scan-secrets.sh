@@ -124,6 +124,8 @@ while IFS= read -r line; do
             --include="*.toml" --include="*.cfg" --include="*.ini" --include="*.conf" \
             --include="*.env" --include="*.env.*" --include="*.sh" --include="*.bash" \
             --include="*.sql" --include="*.html" --include="*.xml" \
+            --include="Dockerfile*" --include=".npmrc" --include=".pypirc" \
+            --include="docker-compose*.yml" --include="docker-compose*.yaml" \
             --exclude-dir=".git" --exclude-dir="node_modules" \
             --exclude-dir="__pycache__" --exclude-dir=".venv" \
             --exclude-dir=".pytest_cache" --exclude-dir=".mypy_cache" \

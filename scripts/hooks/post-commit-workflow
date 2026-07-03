@@ -28,6 +28,16 @@ done
 
 set +e
 
+# ============================================================================
+# v2.3: The factory engine no longer depends on this hook. Flows invoke the
+# gates DIRECTLY (slice-gate.sh, run-gates.sh). This commit-driven trigger is
+# an OPTIONAL reinforcement, off by default. Enable per-project or per-shell:
+#   export REDWORK_COMMIT_HOOKS=1
+# ============================================================================
+if [ "${REDWORK_COMMIT_HOOKS:-0}" != "1" ]; then
+    exit 0
+fi
+
 echo ""
 echo "======================================"
 echo "POST-COMMIT: Framework Workflow v2"

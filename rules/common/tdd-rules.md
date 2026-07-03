@@ -24,11 +24,11 @@ Agent execution order enforces this:
 3. Write minimal implementation (GREEN)
 4. Run test - confirm pass
 5. Refactor (IMPROVE)
-6. Verify coverage >= 80%
+6. Verify coverage == 100% (--cov-fail-under=100)
 
 ## Coverage Requirement
 
-Minimum 80% test coverage for all modules.
+100% test coverage for all modules. Acceptance is 100%, always.
 
 ## Test Types Required
 
@@ -36,4 +36,4 @@ Minimum 80% test coverage for all modules.
 2. Integration tests - API endpoints, database operations
 3. E2E tests - critical user flows
 
-Enforcement: CI pipeline validates coverage. Agent 25 blocks waves if tests not written first.
+Enforcement: slice-gate.sh, run-gates.sh (post-wave hooks) and project CI all run pytest --cov-fail-under=100 / vitest coverage thresholds 100. Agent 25 blocks waves if tests are not written first.

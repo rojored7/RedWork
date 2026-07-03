@@ -118,7 +118,7 @@ Ejecutar ANTES de cualquier implementacion:
    - RED: tests que fallan
    - GREEN: implementacion minima
    - IMPROVE: refactor
-   - Verificar 80%+ cobertura
+   - Verificar cobertura 100% (gate: slice-gate.sh la exige con --cov-fail-under=100)
    - **REGLA: Calcular a mano cada caso de test ANTES de escribir el expected value**
    - No adivinar valores esperados, derivarlos del algoritmo
 

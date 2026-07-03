@@ -120,6 +120,40 @@ cd ..
 echo "" >> "$REPORT_FILE"
 
 # ============================================
+# VALIDATION 2.5: FRONTEND UNIT TESTS + 100% COVERAGE (BLOCKING)
+# ============================================
+echo ""
+echo "================================================================="
+echo " VALIDATION 2.5: Frontend Tests - vitest coverage 100% (BLOCKING)"
+echo "================================================================="
+
+echo "### VALIDATION 2.5: Frontend Tests (vitest, coverage thresholds 100)" >> "$REPORT_FILE"
+echo "" >> "$REPORT_FILE"
+
+echo "  Running frontend tests (vitest run --coverage)..."
+cd frontend
+# Coverage thresholds (100%) live in vitest.config.* — set by the project
+# template. Coverage is a HARD gate: missing vitest/provider = failure.
+if npx vitest run --coverage > ../frontend-tests-wave5.txt 2>&1; then
+  echo "  [OK] Frontend Tests: PASSED (coverage thresholds met)"
+  echo "- [OK] Frontend Tests: PASSED (coverage thresholds 100 met)" >> "../$REPORT_FILE"
+else
+  echo "  [FAIL] Frontend Tests: failures or coverage below thresholds (100%)"
+  echo "- [FAIL] Frontend Tests: failures or coverage < 100%" >> "../$REPORT_FILE"
+  echo "" >> "../$REPORT_FILE"
+  echo "  **Test Output**:" >> "../$REPORT_FILE"
+  echo '  ```' >> "../$REPORT_FILE"
+  tail -30 ../frontend-tests-wave5.txt >> "../$REPORT_FILE"
+  echo '  ```' >> "../$REPORT_FILE"
+  echo ""
+  echo "  Action Required: cd frontend && npx vitest run --coverage"
+  ERRORS=$((ERRORS + 1))
+fi
+cd ..
+
+echo "" >> "$REPORT_FILE"
+
+# ============================================
 # VALIDATION 3: FULL SYSTEM SMOKE TEST
 # ============================================
 echo ""

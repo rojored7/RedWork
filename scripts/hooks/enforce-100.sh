@@ -58,17 +58,21 @@ if [ -d "backend" ]; then
     echo "  [SKIP] mypy: not installed"
   fi
 
-  # Pytest
+  # Pytest with 100% coverage gate (hard: missing pytest-cov = failure)
   CHECKS=$((CHECKS + 1))
   if [ -d "tests" ]; then
-    if python -m pytest tests/ -q --tb=line > /dev/null 2>&1; then
-      echo "  [OK] pytest: all tests passed"
+    if ! python -c "import pytest_cov" > /dev/null 2>&1; then
+      echo "  [FAIL] pytest-cov not installed (coverage gate unavailable)"
+      ERRORS=$((ERRORS + 1))
+    elif python -m pytest tests/ -q --tb=line --cov=app --cov-fail-under=100 > /dev/null 2>&1; then
+      echo "  [OK] pytest: all tests passed, coverage >= 100%"
     else
-      echo "  [FAIL] pytest: tests failed"
+      echo "  [FAIL] pytest: tests failed or coverage < 100%"
       ERRORS=$((ERRORS + 1))
     fi
   else
-    echo "  [SKIP] pytest: no tests/ directory"
+    echo "  [FAIL] pytest: no tests/ directory (TDD Red phase missing)"
+    ERRORS=$((ERRORS + 1))
   fi
 
   cd ..
@@ -109,10 +113,10 @@ if [ -d "frontend" ]; then
   # Vitest
   CHECKS=$((CHECKS + 1))
   if [ -f "node_modules/.bin/vitest" ] || command -v npx > /dev/null 2>&1; then
-    if npx vitest run --reporter=dot > /dev/null 2>&1; then
-      echo "  [OK] vitest: all tests passed"
+    if npx vitest run --coverage --reporter=dot > /dev/null 2>&1; then
+      echo "  [OK] vitest: all tests passed, coverage thresholds (100) met"
     else
-      echo "  [FAIL] vitest: tests failed"
+      echo "  [FAIL] vitest: tests failed or coverage < 100%"
       ERRORS=$((ERRORS + 1))
     fi
   else

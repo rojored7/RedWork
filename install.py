@@ -334,6 +334,16 @@ def cmd_init(args):
             if stack_rules.exists():
                 _copy_dir(stack_rules, rules_dst / stack_name)
 
+    # Copy project templates (coverage contracts: acceptance is 100%, always)
+    templates_src = FRAMEWORK_DIR / "templates" / "project"
+    if templates_src.exists():
+        backend_toml = templates_src / "backend-pyproject.toml"
+        if backend_toml.exists():
+            shutil.copy2(str(backend_toml), str(project_path / "backend" / "pyproject.toml"))
+        vitest_cfg = templates_src / "frontend-vitest.config.ts"
+        if vitest_cfg.exists():
+            shutil.copy2(str(vitest_cfg), str(project_path / "frontend" / "vitest.config.ts"))
+
     # Generate CLAUDE.md that references global install
     claude_md = f"""# CLAUDE.md - {project_name}
 

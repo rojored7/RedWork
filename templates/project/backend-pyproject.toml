@@ -1,0 +1,27 @@
+# RedWork project template - backend coverage contract.
+# Acceptance is 100%, always: the slice gate, wave gate and CI all run
+#   pytest --cov=app --cov-fail-under=100
+# The omit list below is the ONLY escape hatch and is part of the reviewed
+# contract: entrypoints/wiring only. Agents 13/14 MUST NOT extend it to make
+# coverage pass — write the missing test instead.
+
+[tool.coverage.run]
+source = ["app"]
+omit = [
+    "app/main.py",          # ASGI entrypoint (uvicorn wiring)
+    "app/__init__.py",
+    "app/*/__init__.py",
+]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+    "raise NotImplementedError",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"

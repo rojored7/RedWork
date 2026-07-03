@@ -1,4 +1,8 @@
 #!/bin/bash
+# DEPRECATED (v2.3): for slice checkpoints in the factory flows use
+# scripts/workflow/checkpoint-commit.sh (silent, gate-verified, never
+# pushes). This script remains for task-state tracking compatibility;
+# its push is opt-in via REDWORK_AUTO_PUSH=1 and it scans staged secrets.
 
 # Resolve Python interpreter (Linux/macOS/Windows Git Bash).
 # Sets $PYTHON_BIN; falls back to python3 if the lib is unreachable.
@@ -124,14 +128,36 @@ else
     echo -e "${GREEN}CHANGES DETECTED${NC}"
 fi
 
-# Stage all changes
-echo -n "Staging changes (git add .)... "
-if git add . 2>/dev/null; then
+# Stage changes with defensive excludes (never stage obvious secrets)
+echo -n "Staging changes (selective git add)... "
+if git add -A -- . ':(exclude).env' ':(exclude).env.*' ':(exclude)*.pem' \
+       ':(exclude)*.key' ':(exclude)*.p12' ':(exclude)id_rsa*' 2>/dev/null; then
     echo -e "${GREEN}OK${NC}"
 else
     echo -e "${RED}FAILED${NC}"
     echo "ERROR: Failed to stage changes"
     exit 2
+fi
+
+# BLOCKING secret scan on staged content (before anything is committed)
+SCANNER=""
+for _sc in "$(dirname "${BASH_SOURCE[0]}")/../security/scan-secrets.sh" \
+           "./scripts/security/scan-secrets.sh" \
+           "$HOME/.claude/redwork/scripts/security/scan-secrets.sh"; do
+    [ -f "$_sc" ] && SCANNER="$_sc" && break
+done
+if [ -n "$SCANNER" ]; then
+    echo -n "Scanning staged files for secrets... "
+    if bash "$SCANNER" --staged > /tmp/redwork-scan-$$.txt 2>&1; then
+        echo -e "${GREEN}CLEAN${NC}"
+    else
+        echo -e "${RED}SECRETS DETECTED${NC}"
+        grep -A1 "SECRET DETECTED" /tmp/redwork-scan-$$.txt | head -20
+        rm -f /tmp/redwork-scan-$$.txt
+        echo "ERROR: Commit aborted. Remove the secret(s) and retry."
+        exit 2
+    fi
+    rm -f /tmp/redwork-scan-$$.txt
 fi
 
 # Create commit message
@@ -232,24 +258,20 @@ with open('.project-state/current_context.json', 'w') as f:
     fi
 fi
 
-# Push to remote
-echo -n "Pushing to remote... "
+# Push to remote — OPT-IN ONLY (v2.3: publishing is a human decision).
+# Enable with REDWORK_AUTO_PUSH=1. Default: commit stays local.
 REMOTE_URL=$(git remote get-url origin 2>/dev/null || echo "")
-
-if [ -z "$REMOTE_URL" ]; then
-    echo -e "${YELLOW}SKIPPED${NC}"
-    echo "WARNING: No git remote configured"
-    echo "Changes committed locally but not pushed"
-else
+if [ "${REDWORK_AUTO_PUSH:-0}" = "1" ] && [ -n "$REMOTE_URL" ]; then
+    echo -n "Pushing to remote (REDWORK_AUTO_PUSH=1)... "
     if git push origin HEAD 2>/dev/null; then
         echo -e "${GREEN}OK${NC}"
         echo "  Remote: $REMOTE_URL"
     else
         echo -e "${YELLOW}FAILED${NC}"
-        echo "WARNING: Failed to push to remote"
-        echo "Changes committed locally but not pushed"
-        echo "You may need to push manually: git push origin HEAD"
+        echo "WARNING: Failed to push; commit remains local"
     fi
+else
+    echo "Push: skipped (local checkpoint only; push when YOU decide)"
 fi
 
 echo "======================================"
@@ -259,7 +281,7 @@ echo "Summary:"
 echo "  Task ID: $TASK_ID"
 echo "  Commit SHA: $COMMIT_SHA"
 echo "  State Updated: $UPDATE_STATE"
-echo "  Pushed to Remote: $([ -n "$REMOTE_URL" ] && echo 'Yes' || echo 'No')"
+echo "  Pushed to Remote: $([ "${REDWORK_AUTO_PUSH:-0}" = "1" ] && [ -n "$REMOTE_URL" ] && echo 'Yes' || echo 'No (local checkpoint)')"
 echo ""
 echo "Next steps:"
 echo "  - Continue with next task in sprint"

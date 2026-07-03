@@ -18,6 +18,13 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 cd "$PROJECT_ROOT"
 
+# Resolve Python interpreter (Linux/macOS/Windows Git Bash).
+for _pd in "$SCRIPT_DIR/../lib/python-detect.sh" \
+           "$HOME/.claude/redwork/scripts/lib/python-detect.sh"; do
+    if [ -f "$_pd" ]; then . "$_pd"; break; fi
+done
+[ -n "${PYTHON_BIN:-}" ] || PYTHON_BIN=python3
+
 echo ""
 echo "================================================================="
 echo " POST-WAVE 3 VALIDATION - Backend Application Layer"
@@ -171,30 +178,44 @@ echo "================================================================="
 echo "### VALIDATION 4: Backend Tests (pytest)" >> "$REPORT_FILE"
 echo "" >> "$REPORT_FILE"
 
-echo "  Running backend tests (pytest)..."
+echo "  Running backend tests (pytest, 100% coverage gate)..."
 cd backend
 if [ -d "tests" ]; then
-  if python -m pytest tests/ -v --tb=short > ../backend-tests-wave3.txt 2>&1; then
+  # Coverage is a HARD gate: pytest-cov missing = failure, never a skip.
+  if ! "$PYTHON_BIN" -c "import pytest_cov" 2>/dev/null; then
+    echo "  [FAIL] pytest-cov not installed — coverage gate cannot run"
+    echo "         Install: pip install pytest-cov"
+    echo "- [FAIL] Backend Tests: pytest-cov MISSING (coverage gate unavailable)" >> "../$REPORT_FILE"
+    ERRORS=$((ERRORS + 1))
+  elif "$PYTHON_BIN" -m pytest tests/ -v --tb=short \
+       --cov=app --cov-report=term-missing --cov-fail-under=100 \
+       > ../backend-tests-wave3.txt 2>&1; then
     PASSED=$(grep -oE "[0-9]+ passed" ../backend-tests-wave3.txt | grep -oE "[0-9]+" || echo "0")
-    echo "  [OK] Backend Tests: PASSED ($PASSED tests passed)"
-    echo "- [OK] Backend Tests: PASSED ($PASSED tests passed)" >> "../$REPORT_FILE"
+    COVERAGE=$(grep -oE "TOTAL.*[0-9]+%" ../backend-tests-wave3.txt | grep -oE "[0-9]+%" | tail -1 || echo "n/a")
+    echo "  [OK] Backend Tests: PASSED ($PASSED tests, coverage $COVERAGE)"
+    echo "- [OK] Backend Tests: PASSED ($PASSED tests, coverage $COVERAGE >= 100%)" >> "../$REPORT_FILE"
   else
-    FAILED=$(grep -oE "[0-9]+ failed" ../backend-tests-wave3.txt | grep -oE "[0-9]+" || echo "unknown")
-    echo "  [FAIL] Backend Tests: $FAILED tests failed"
-    echo "- [FAIL] Backend Tests: $FAILED tests failed" >> "../$REPORT_FILE"
+    FAILED=$(grep -oE "[0-9]+ failed" ../backend-tests-wave3.txt | grep -oE "[0-9]+" || echo "0")
+    if grep -q "Required test coverage of 100% not reached" ../backend-tests-wave3.txt 2>/dev/null; then
+      echo "  [FAIL] Backend coverage below 100% (acceptance is 100%, always)"
+    else
+      echo "  [FAIL] Backend Tests: $FAILED tests failed"
+    fi
+    echo "- [FAIL] Backend Tests: failures or coverage < 100%" >> "../$REPORT_FILE"
     echo "" >> "../$REPORT_FILE"
     echo "  **Test Output**:" >> "../$REPORT_FILE"
     echo '  ```' >> "../$REPORT_FILE"
     tail -30 ../backend-tests-wave3.txt >> "../$REPORT_FILE"
     echo '  ```' >> "../$REPORT_FILE"
     echo ""
-    echo "  Action Required: Fix failing tests before proceeding"
-    echo "  Run: cd backend && python -m pytest tests/ -v --tb=short"
+    echo "  Action Required: Fix failing tests / raise coverage to 100%"
+    echo "  Run: cd backend && python -m pytest tests/ -v --cov=app --cov-fail-under=100"
     ERRORS=$((ERRORS + 1))
   fi
 else
-  echo "  [WARN] No tests/ directory found in backend"
-  echo "- [WARN] Backend Tests: NO tests/ DIRECTORY FOUND" >> "../$REPORT_FILE"
+  echo "  [FAIL] No tests/ directory found in backend — TDD Red phase missing"
+  echo "- [FAIL] Backend Tests: NO tests/ DIRECTORY (Agent 13 did not run?)" >> "../$REPORT_FILE"
+  ERRORS=$((ERRORS + 1))
 fi
 cd ..
 

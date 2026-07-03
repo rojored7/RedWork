@@ -214,7 +214,7 @@ build → test → security → deploy-staging → deploy-production
 - **Needs:** [build-backend] [VERIFIED: line 45]
 - **Script:**
   - mvn test [VERIFIED: line 47]
-- **Coverage:** 80% minimum [VERIFIED: line 49]
+- **Coverage:** 100% required (--cov-fail-under=100) [VERIFIED: gate flags]
 - **Artifacts:**
   - target/coverage-reports/ [VERIFIED: line 51]
 

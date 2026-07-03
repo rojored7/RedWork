@@ -151,7 +151,7 @@ From actual code analysis:
   - Unit tests: src/test/java/**/*Test.java (JUnit 5)
   - Integration tests: src/test/java/**/*IntegrationTest.java (Testcontainers)
   - E2E tests: e2e/**/*.spec.ts (Playwright)
-  - Coverage target: 80% (enforced by Jacoco)
+  - Coverage target: 100% (enforced by pytest-cov / vitest coverage thresholds)
 * Package-by-feature NOT package-by-layer (feature.user.*, feature.order.*)
 * DTOs named with suffix: UserDTO, OrderDTO (in feature.*.dto packages)
 ```
