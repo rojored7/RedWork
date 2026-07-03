@@ -19,8 +19,8 @@ from conftest import FRAMEWORK_ROOT, to_posix
 
 RULES_DIR = FRAMEWORK_ROOT / "rules"
 COMMON_RULES = ["framework-rules.md", "tdd-rules.md", "agent-sequence-rules.md"]
-STACK_DIRS = ["fastapi", "django", "react", "vue"]
-VALID_APPLIES_TO = {"all", "fastapi", "django", "react", "vue"}
+STACK_DIRS = ["fastapi", "react"]
+VALID_APPLIES_TO = {"all", "fastapi", "react"}
 VALID_PHASES = {"always", "discovery", "planning", "development", "validation"}
 VALID_ENFORCEMENT = {"hook", "convention", "ci"}
 
@@ -258,20 +258,8 @@ class TestInitRulesDistribution:
         assert not (rules_dst / "django").exists()
         assert not (rules_dst / "vue").exists()
 
-    def test_init_creates_rules_for_django_vue(self, tmp_path):
-        """Simulate init with django + vue: only those stacks get rules."""
-        rules_dst = tmp_path / ".claude" / "rules"
-
-        from install import _copy_dir
+    def test_unsupported_stack_rules_removed(self):
+        """django/vue scaffolding was pruned in v2.3 (FastAPI+React only)."""
         rules_src = FRAMEWORK_ROOT / "rules"
-
-        _copy_dir(rules_src / "common", rules_dst / "common")
-        for stack_name in ["django", "vue"]:
-            stack_src = rules_src / stack_name
-            if stack_src.exists():
-                _copy_dir(stack_src, rules_dst / stack_name)
-
-        assert (rules_dst / "django" / "stack-rules.md").exists()
-        assert (rules_dst / "vue" / "stack-rules.md").exists()
-        assert not (rules_dst / "fastapi").exists()
-        assert not (rules_dst / "react").exists()
+        assert not (rules_src / "django").exists()
+        assert not (rules_src / "vue").exists()

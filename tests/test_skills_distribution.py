@@ -28,11 +28,14 @@ GENERIC_SKILLS = [
 ]
 
 FASTAPI_SKILLS = ["patterns.md", "testing.md", "security.md"]
-DJANGO_SKILLS = ["patterns.md", "testing.md", "orm-ddd.md"]
-VUE_SKILLS = ["component-patterns.md", "state-management.md"]
+
 REACT_SKILLS = [
-    "component-patterns.md", "state-management.md", "performance.md",
-    "accessibility.md", "api-client.md", "typescript-quality.md",
+    "accessibility.md",
+    "api-client.md",
+    "component-patterns.md",
+    "performance.md",
+    "state-management.md",
+    "typescript-quality.md",
     "ux-design-system.md",
 ]
 
@@ -64,28 +67,18 @@ class TestFastAPISkills:
         assert len(content) > 100
 
 
-class TestDjangoSkills:
+class TestPrunedStacks:
+    """django/vue scaffolding was pruned in v2.3 (FastAPI+React only)."""
 
-    @pytest.mark.parametrize("filename", DJANGO_SKILLS)
-    def test_skill_exists(self, filename):
-        assert (SKILLS_DIR / "django" / filename).exists()
+    def test_django_skills_removed(self):
+        assert not (SKILLS_DIR / "django").exists()
 
-    @pytest.mark.parametrize("filename", DJANGO_SKILLS)
-    def test_skill_not_empty(self, filename):
-        content = (SKILLS_DIR / "django" / filename).read_text(encoding="utf-8")
-        assert len(content) > 100
+    def test_vue_skills_removed(self):
+        assert not (SKILLS_DIR / "vue").exists()
 
-
-class TestVueSkills:
-
-    @pytest.mark.parametrize("filename", VUE_SKILLS)
-    def test_skill_exists(self, filename):
-        assert (SKILLS_DIR / "vue" / filename).exists()
-
-    @pytest.mark.parametrize("filename", VUE_SKILLS)
-    def test_skill_not_empty(self, filename):
-        content = (SKILLS_DIR / "vue" / filename).read_text(encoding="utf-8")
-        assert len(content) > 100
+    def test_pruned_stack_configs_removed(self):
+        assert not (STACKS_DIR / "django").exists()
+        assert not (STACKS_DIR / "vue").exists()
 
 
 class TestReactSkills:
@@ -101,7 +94,7 @@ class TestReactSkills:
 
 class TestStackConfigSkills:
 
-    @pytest.mark.parametrize("stack", ["fastapi", "django", "react", "vue"])
+    @pytest.mark.parametrize("stack", ["fastapi", "react"])
     def test_config_has_applicable_skills(self, stack):
         config_path = STACKS_DIR / stack / "config.yaml"
         with open(config_path) as f:
@@ -109,7 +102,7 @@ class TestStackConfigSkills:
         assert "applicable_skills" in config, \
             f"stacks/{stack}/config.yaml must have applicable_skills"
 
-    @pytest.mark.parametrize("stack", ["fastapi", "django", "react", "vue"])
+    @pytest.mark.parametrize("stack", ["fastapi", "react"])
     def test_all_referenced_skills_exist(self, stack):
         config_path = STACKS_DIR / stack / "config.yaml"
         with open(config_path) as f:
@@ -119,7 +112,7 @@ class TestStackConfigSkills:
             assert skill_path.exists(), \
                 f"Skill '{skill_ref}' referenced in {stack}/config.yaml does not exist"
 
-    @pytest.mark.parametrize("stack", ["fastapi", "django", "react", "vue"])
+    @pytest.mark.parametrize("stack", ["fastapi", "react"])
     def test_has_at_least_3_skills(self, stack):
         config_path = STACKS_DIR / stack / "config.yaml"
         with open(config_path) as f:
@@ -134,22 +127,6 @@ class TestStackConfigSkills:
         skills = config.get("applicable_skills", [])
         fastapi_skills = [s for s in skills if s.startswith("fastapi/")]
         assert len(fastapi_skills) >= 3
-
-    def test_django_has_stack_specific_skills(self):
-        config_path = STACKS_DIR / "django" / "config.yaml"
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-        skills = config.get("applicable_skills", [])
-        django_skills = [s for s in skills if s.startswith("django/")]
-        assert len(django_skills) >= 3
-
-    def test_vue_has_stack_specific_skills(self):
-        config_path = STACKS_DIR / "vue" / "config.yaml"
-        with open(config_path) as f:
-            config = yaml.safe_load(f)
-        skills = config.get("applicable_skills", [])
-        vue_skills = [s for s in skills if s.startswith("vue/")]
-        assert len(vue_skills) >= 2
 
     def test_react_has_stack_specific_skills(self):
         config_path = STACKS_DIR / "react" / "config.yaml"

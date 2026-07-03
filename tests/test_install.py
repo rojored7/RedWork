@@ -80,15 +80,19 @@ def test_init_creates_state_json(init_env):
     assert state["framework_version"] == "2.0.0"
 
 
-def test_init_respects_backend_flag(init_env):
-    """--backend django puts 'django' in state.json."""
-    workspace, _ = init_env
-    _run_init("django-proj", backend="django")
+def test_init_rejects_unsupported_backend():
+    """--backend django was pruned in v2.3: argparse rejects it (exit 2)."""
+    import subprocess
 
-    project = (workspace / ".." / "django-proj").resolve()
-    state_file = project / ".project-state" / "state.json"
-    state = json.loads(state_file.read_text(encoding="utf-8"))
-    assert state["stack"]["backend"] == "django"
+    result = subprocess.run(
+        [sys.executable, "install.py", "init", "x-proj", "--backend", "django"],
+        cwd=str(FRAMEWORK_ROOT),
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert result.returncode == 2
+    assert "invalid choice" in result.stderr
 
 
 def test_init_creates_claude_md(init_env):

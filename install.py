@@ -6,7 +6,7 @@ Usage:
     python install.py install [--profile full|backend-only|frontend-only]
     python install.py update
     python install.py uninstall
-    python install.py init <project-name> [--backend fastapi|django] [--frontend react|vue]
+    python install.py init <project-name> [--backend fastapi] [--frontend react]
     python install.py status
 """
 
@@ -497,8 +497,8 @@ def main():
     # init
     p_init = subparsers.add_parser("init", help="Initialize a new project")
     p_init.add_argument("project_name", help="Name of the project")
-    p_init.add_argument("--backend", choices=["fastapi", "django"], default="fastapi")
-    p_init.add_argument("--frontend", choices=["react", "vue"], default="react")
+    p_init.add_argument("--backend", choices=["fastapi"], default="fastapi")
+    p_init.add_argument("--frontend", choices=["react"], default="react")
 
     # status
     subparsers.add_parser("status", help="Show installation status")

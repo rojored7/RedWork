@@ -35,12 +35,19 @@ class TestGetStackNames:
 
         state_file = fake_state_dir / "state.json"
         state_file.write_text(
-            json.dumps({"stack": {"backend": "django", "frontend": "vue"}}),
+            json.dumps({"stack": {"backend": "fastapi", "frontend": "react"}}),
             encoding="utf-8",
         )
 
         result = get_stack_names()
-        assert result == {"backend": "django", "frontend": "vue"}
+        assert result == {"backend": "fastapi", "frontend": "react"}
+
+    def test_pruned_stacks_removed_from_builtins(self, fake_state_dir):
+        """django/vue were removed in v2.3 (FastAPI+React only)."""
+        from scripts.lib.stack_resolver import BUILTIN_CONFIGS
+
+        assert "django" not in BUILTIN_CONFIGS
+        assert "vue" not in BUILTIN_CONFIGS
 
 
 class TestStackConfigs:

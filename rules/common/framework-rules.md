@@ -22,7 +22,7 @@ Enforcement: convention + pre-bash-validate.sh blocks credential commands.
 
 ## 3. FastAPI is default backend
 
-All new projects use FastAPI as the backend framework unless explicitly overridden with `--backend django`.
+All new projects use FastAPI as the backend framework and React as the frontend. No other stacks are supported.
 This is a non-negotiable architectural decision.
 
 Forbidden patterns in backend/:

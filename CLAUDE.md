@@ -68,9 +68,7 @@ See `rules/` directory for modular, distributable rules:
 
 - `rules/common/` - Framework-wide rules (no emojis, TDD, agent sequence)
 - `rules/fastapi/` - FastAPI stack constraints
-- `rules/django/` - Django stack constraints
 - `rules/react/` - React stack constraints
-- `rules/vue/` - Vue stack constraints
 
 Rules are copied to projects on `install.py init` (common + stack-specific).
 
@@ -176,7 +174,7 @@ Framework/
     lib/                        # Python libs (state, metrics, stack, paths, retry_controller) + python-detect.sh
     workflow/                   # Validators, gates (validate-impact-analysis, run-gates), auto-commit, sprints
     hooks/                      # Git hooks (post-commit v2, post-wave-*)
-  stacks/                       # Stack configs (fastapi, django, react, vue)
+  stacks/                       # Stack configs (fastapi, react)
   .claude/
     settings.json               # Runtime hooks configuration
     hooks/                      # Claude Code hooks (session, pre-write, pre-bash, etc.)
