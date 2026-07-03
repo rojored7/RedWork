@@ -1,12 +1,9 @@
 """
-Tests for GitLab CI pipeline configuration.
-
-Validates:
-- YAML is valid
-- Required stages exist in correct order
-- Security scan stage exists
-- No duplicate stage names
-- Child pipeline references exist
+Tests for the v2.3 CI reality:
+- .github/workflows/framework-ci.yml is the canonical CI (executes, blocks)
+- templates/project/github-workflows-ci.yml carries the 100% coverage gates
+- .gitlab-ci.yml is a minimal honest mirror (no theater)
+- the GitLab child-pipeline theater and deploy stubs are gone
 """
 
 from pathlib import Path
@@ -14,114 +11,110 @@ from pathlib import Path
 import pytest
 import yaml
 
-from conftest import FRAMEWORK_ROOT
+from tests.conftest import FRAMEWORK_ROOT
 
-CI_FILE = FRAMEWORK_ROOT / ".gitlab-ci.yml"
+FRAMEWORK_CI = FRAMEWORK_ROOT / ".github" / "workflows" / "framework-ci.yml"
+PROJECT_CI = FRAMEWORK_ROOT / "templates" / "project" / "github-workflows-ci.yml"
+GITLAB_CI = FRAMEWORK_ROOT / ".gitlab-ci.yml"
 
 
-@pytest.fixture
-def ci_config():
-    with open(CI_FILE) as f:
+def _load(path: Path) -> dict:
+    with open(path, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-class TestCIFileValid:
+class TestFrameworkCI:
+    def test_workflow_exists_and_parses(self):
+        assert FRAMEWORK_CI.exists()
+        data = _load(FRAMEWORK_CI)
+        assert "jobs" in data
 
-    def test_gitlab_ci_exists(self):
-        assert CI_FILE.exists()
+    def test_expected_jobs_present(self):
+        jobs = _load(FRAMEWORK_CI)["jobs"]
+        for job in ("tests", "security", "reference-integrity"):
+            assert job in jobs, f"framework-ci.yml missing job '{job}'"
 
-    def test_gitlab_ci_valid_yaml(self):
-        with open(CI_FILE) as f:
-            config = yaml.safe_load(f)
-        assert isinstance(config, dict)
+    def test_no_continue_on_error(self):
+        content = FRAMEWORK_CI.read_text(encoding="utf-8")
+        assert "continue-on-error" not in content, "CI must block, never tolerate"
 
-    def test_has_stages_key(self, ci_config):
-        assert "stages" in ci_config
+    def test_runs_the_real_suite(self):
+        content = FRAMEWORK_CI.read_text(encoding="utf-8")
+        assert "pytest tests/" in content
+        assert "validate-no-nestjs-contamination.sh" in content
+        assert "scan-secrets.sh" in content
+        assert "sweep_references.py --check" in content
 
-    def test_stages_is_list(self, ci_config):
-        assert isinstance(ci_config["stages"], list)
-
-
-class TestStageOrder:
-
-    EXPECTED_ORDER = [
-        "test-framework",
-        "setup",
-        "discovery",
-        "planning",
-        "api-contract",
-        "infrastructure",
-        "sprint-1",
-        "quality",
-        "deploy",
-    ]
-
-    def test_test_framework_is_first_stage(self, ci_config):
-        stages = ci_config["stages"]
-        assert stages[0] == "test-framework"
-
-    def test_deploy_is_last_stage(self, ci_config):
-        stages = ci_config["stages"]
-        assert stages[-1] == "deploy"
-
-    def test_stages_in_expected_order(self, ci_config):
-        stages = ci_config["stages"]
-        assert stages == self.EXPECTED_ORDER
-
-    def test_no_duplicate_stages(self, ci_config):
-        stages = ci_config["stages"]
-        assert len(stages) == len(set(stages))
+    def test_no_deploy_job(self):
+        jobs = _load(FRAMEWORK_CI)["jobs"]
+        assert not any("deploy" in j.lower() for j in jobs)
 
 
-class TestRequiredJobs:
+class TestProjectCITemplate:
+    def test_template_exists_and_parses(self):
+        assert PROJECT_CI.exists()
+        data = _load(PROJECT_CI)
+        assert "jobs" in data
 
-    def test_test_framework_validate_job_exists(self, ci_config):
-        assert "test-framework: validate" in ci_config
+    def test_backend_gate_matches_local_gate(self):
+        """ONE contract: the CI runs the same coverage command the local
+        slice/wave gates run."""
+        content = PROJECT_CI.read_text(encoding="utf-8")
+        assert "--cov=app" in content
+        assert "--cov-fail-under=100" in content
+        assert "ruff check" in content
+        assert "mypy app/" in content
 
-    def test_test_framework_security_scan_exists(self, ci_config):
-        assert "test-framework: security-scan" in ci_config
+    def test_frontend_gate_has_coverage(self):
+        content = PROJECT_CI.read_text(encoding="utf-8")
+        assert "vitest run --coverage" in content
+        assert "tsc --noEmit" in content
+        assert "eslint src/" in content
 
-    def test_setup_environment_job_exists(self, ci_config):
-        assert "setup: environment" in ci_config
+    def test_security_job_present(self):
+        jobs = _load(PROJECT_CI)["jobs"]
+        assert "security" in jobs
 
-
-class TestTestFrameworkJobs:
-
-    def test_validate_runs_pytest(self, ci_config):
-        job = ci_config.get("test-framework: validate", {})
-        script = " ".join(job.get("script", []))
-        assert "pytest" in script
-
-    def test_validate_runs_contamination_check(self, ci_config):
-        job = ci_config.get("test-framework: validate", {})
-        script = " ".join(job.get("script", []))
-        assert "nestjs-contamination" in script
-
-    def test_security_scan_runs_scan_secrets(self, ci_config):
-        job = ci_config.get("test-framework: security-scan", {})
-        script = " ".join(job.get("script", []))
-        assert "scan-secrets" in script
-
-    def test_security_scan_runs_scan_config(self, ci_config):
-        job = ci_config.get("test-framework: security-scan", {})
-        script = " ".join(job.get("script", []))
-        assert "scan-config" in script
+    def test_no_deploy_and_no_continue_on_error(self):
+        content = PROJECT_CI.read_text(encoding="utf-8")
+        jobs = _load(PROJECT_CI)["jobs"]
+        assert not any("deploy" in j.lower() for j in jobs)
+        assert "continue-on-error" not in content
+        assert "DEPLOYMENT.md" in content  # honest scope note
 
 
-class TestPipelineIntegrity:
+class TestGitLabMirrorIsMinimal:
+    def test_parses(self):
+        data = _load(GITLAB_CI)
+        assert data
 
-    def test_has_variables_section(self, ci_config):
-        assert "variables" in ci_config
+    def test_only_test_framework_stage(self):
+        data = _load(GITLAB_CI)
+        assert data.get("stages") == ["test-framework"]
 
-    def test_outputs_dir_variable(self, ci_config):
-        assert ci_config.get("variables", {}).get("OUTPUTS_DIR") == "outputs"
+    def test_no_theater(self):
+        content = GITLAB_CI.read_text(encoding="utf-8")
+        for forbidden in ("when: manual", "allow_failure", "trigger:",
+                          "wait-for-file", "deploy", "sleep"):
+            assert forbidden not in content, f"GitLab theater residue: {forbidden}"
 
-    def test_all_jobs_have_stage(self, ci_config):
-        """Every job (except special keys) must have a stage."""
-        special_keys = {"stages", "variables", "include", "default", "workflow"}
-        for key, value in ci_config.items():
-            if key in special_keys or not isinstance(value, dict):
-                continue
-            if key.startswith("."):
-                continue  # hidden/template jobs
-            assert "stage" in value, f"Job '{key}' is missing 'stage' field"
+    def test_child_pipelines_removed(self):
+        assert not (FRAMEWORK_ROOT / ".gitlab").exists()
+
+
+class TestTheaterRemoved:
+    def test_pipeline_scripts_removed(self):
+        assert not (FRAMEWORK_ROOT / "scripts/workflow/install-pipeline.sh").exists()
+        assert not (FRAMEWORK_ROOT / "scripts/workflow/pipeline-helper.sh").exists()
+
+    def test_new_sprint_generates_no_gitlab_yaml(self):
+        content = (FRAMEWORK_ROOT / "scripts/workflow/new_sprint.py").read_text(encoding="utf-8")
+        assert ".gitlab" not in content
+        assert "sprint-template" not in content
+
+    def test_init_does_not_copy_gitlab(self):
+        content = (FRAMEWORK_ROOT / "install.py").read_text(encoding="utf-8")
+        assert '".gitlab"' not in content
+        assert ".gitlab-ci.yml" not in content
+        assert "github-workflows-ci.yml" in content
+        assert "DEPLOYMENT.md" in content

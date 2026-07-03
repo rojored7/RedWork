@@ -305,20 +305,28 @@ def cmd_init(args):
         ".learning/analysis", ".learning/proposed-skills", ".learning/errors-kb",
         "backend", "frontend", "docs",
         ".claude/hooks",
-        ".gitlab/ci",
+        ".github/workflows",
+        "scripts/security",
     ]
     for d in dirs:
         (project_path / d).mkdir(parents=True, exist_ok=True)
 
-    # Copy CI files (these are project-specific)
-    ci_src = FRAMEWORK_DIR / ".gitlab-ci.yml"
-    if ci_src.exists():
-        shutil.copy2(str(ci_src), str(project_path / ".gitlab-ci.yml"))
+    # Project CI: GitHub Actions (same gate commands as slice-gate/run-gates).
+    # Deployment is out of scope by design (docs/DEPLOYMENT.md).
+    ci_template = FRAMEWORK_DIR / "templates" / "project" / "github-workflows-ci.yml"
+    if ci_template.exists():
+        shutil.copy2(str(ci_template), str(project_path / ".github" / "workflows" / "ci.yml"))
 
-    ci_dir_src = FRAMEWORK_DIR / ".gitlab" / "ci"
-    if ci_dir_src.exists():
-        for yml in ci_dir_src.glob("*.yml"):
-            shutil.copy2(str(yml), str(project_path / ".gitlab" / "ci" / yml.name))
+    deployment_doc = FRAMEWORK_DIR / "templates" / "project" / "DEPLOYMENT.md"
+    if deployment_doc.exists():
+        shutil.copy2(str(deployment_doc), str(project_path / "docs" / "DEPLOYMENT.md"))
+
+    # Security scripts travel with the project (CI runners have no ~/.claude)
+    security_src = FRAMEWORK_DIR / "scripts" / "security"
+    if security_src.exists():
+        for sec_file in security_src.iterdir():
+            if sec_file.is_file():
+                shutil.copy2(str(sec_file), str(project_path / "scripts" / "security" / sec_file.name))
 
     # Copy rules (common + stack-specific)
     rules_src = FRAMEWORK_DIR / "rules"
@@ -432,6 +440,10 @@ coverage/
 
 # Learning data
 .learning/
+
+# RedWork local state (per-machine; never merged between developers)
+.project-state/
+.project-orchestration/
 """
     (project_path / ".gitignore").write_text(gitignore, encoding="utf-8")
 

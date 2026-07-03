@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 """
-Generate a new sprint CI pipeline and update project state.
+Register a new sprint in project state.
+
+v2.3: the GitLab child-pipeline generation was removed with the CI theater.
+The gate engine consumes .project-state/sprint_*_tasks.json and
+outputs/09_sprint_plan/ — no CI YAML is involved in sprint mechanics.
 
 Usage:
     python new_sprint.py <sprint-number> [--force]
@@ -12,14 +16,12 @@ Example:
 
 import argparse
 import json
-import os
-import re
 import sys
 from pathlib import Path
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Generate a new sprint CI pipeline")
+    parser = argparse.ArgumentParser(description="Register a new sprint in project state")
     parser.add_argument("sprint", type=int, help="Sprint number")
     parser.add_argument(
         "--force",
@@ -29,12 +31,8 @@ def main():
     args = parser.parse_args()
 
     sprint_num = args.sprint
-    sprint_str = f"{sprint_num:02d}"
-
     project_root = Path.cwd()
     state_file = project_root / ".project-state" / "state.json"
-    ci_dir = project_root / ".gitlab" / "ci"
-    parent_ci = project_root / ".gitlab-ci.yml"
 
     # Validate state
     if not state_file.exists():
@@ -62,75 +60,7 @@ def main():
                 if response != "y":
                     sys.exit(0)
 
-    # Find sprint template
-    template_path = None
-    for candidate in [
-        ci_dir / "_sprint-template.yml",
-        Path.home() / ".claude" / "redwork" / "scripts" / "hooks" / "_sprint-template.yml",
-    ]:
-        if candidate.exists():
-            template_path = candidate
-            break
-
-    if not template_path:
-        # Generate inline
-        print("WARNING: No sprint template found. Generating minimal pipeline.")
-        template_content = _minimal_template()
-    else:
-        with open(template_path) as f:
-            template_content = f.read()
-
-    # Replace variables
-    sprint_ci = template_content.replace("${SPRINT_NUM}", str(sprint_num))
-    sprint_ci = sprint_ci.replace("${SPRINT}", str(sprint_num))
-
-    # Write sprint CI file
-    ci_dir.mkdir(parents=True, exist_ok=True)
-    sprint_file = ci_dir / f"sprint-{sprint_num}.yml"
-    with open(sprint_file, "w") as f:
-        f.write(sprint_ci)
-    print(f"Created: {sprint_file}")
-
-    # Update parent .gitlab-ci.yml to include new sprint stage
-    if parent_ci.exists():
-        with open(parent_ci) as f:
-            parent_content = f.read()
-
-        # Add stage if not present
-        stage_name = f"sprint-{sprint_num}"
-        if stage_name not in parent_content:
-            # Add stage to stages list
-            parent_content = parent_content.replace(
-                "  - deploy",
-                f"  - {stage_name}\n  - deploy"
-            )
-
-            # Add trigger block before deploy section
-            deploy_marker = "# ============================================================================\n# STAGE 8: DEPLOY"
-            if deploy_marker in parent_content:
-                sprint_block = f"""# ============================================================================
-# STAGE: SPRINT {sprint_num}
-# ============================================================================
-
-"sprint-{sprint_num}: pipeline":
-  stage: {stage_name}
-  trigger:
-    include: .gitlab/ci/sprint-{sprint_num}.yml
-    strategy: depend
-  needs:
-    - "sprint-{sprint_num - 1}: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-"""
-                parent_content = parent_content.replace(deploy_marker, sprint_block + deploy_marker)
-
-            with open(parent_ci, "w") as f:
-                f.write(parent_content)
-            print(f"Updated: {parent_ci} (added sprint-{sprint_num} stage)")
-
-    # Update state.json
+    # Register sprint in state.json
     sprint_key = str(sprint_num)
     if "sprints" not in state:
         state["sprints"] = {}
@@ -148,38 +78,7 @@ def main():
     print(f"Updated: {state_file} (added sprint {sprint_num})")
 
     print(f"\nSprint {sprint_num} ready.")
-    print(f"Next: Run Agent 25 (development-orchestrator) to plan and execute.")
-
-
-def _minimal_template() -> str:
-    return """stages:
-  - infrastructure
-  - development
-  - validation
-
-"infrastructure":
-  stage: infrastructure
-  script: ["echo 'Sprint ${SPRINT_NUM} infrastructure'"]
-  rules: [{when: manual}]
-
-"backend-tests":
-  stage: development
-  needs: ["infrastructure"]
-  script: ["echo 'Sprint ${SPRINT_NUM} backend tests'"]
-  rules: [{when: manual}]
-
-"frontend-tests":
-  stage: development
-  needs: ["infrastructure"]
-  script: ["echo 'Sprint ${SPRINT_NUM} frontend tests'"]
-  rules: [{when: manual}]
-
-"validation":
-  stage: validation
-  needs: ["backend-tests", "frontend-tests"]
-  script: ["echo 'Sprint ${SPRINT_NUM} validation'"]
-  rules: [{when: manual}]
-"""
+    print("Next: Run Agent 25 (development-orchestrator) to plan and execute.")
 
 
 if __name__ == "__main__":

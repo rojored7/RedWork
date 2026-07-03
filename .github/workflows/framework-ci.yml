@@ -1,0 +1,50 @@
+# RedWork framework CI — canonical (the repo lives on GitHub).
+# Simple and real: everything here EXECUTES and BLOCKS. No manual stages,
+# no allow_failure, no polling. Deployment is out of scope by design.
+name: framework-ci
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install test dependencies
+        run: pip install pytest pyyaml
+      - name: Bash syntax check (all framework scripts)
+        run: |
+          fails=0
+          for f in $(git ls-files '*.sh' 'scripts/hooks/post-commit-workflow'); do
+            bash -n "$f" || { echo "SYNTAX FAIL: $f"; fails=1; }
+          done
+          exit $fails
+      - name: Framework test suite
+        run: python -m pytest tests/ -v --tb=short
+      - name: FastAPI mandate (no NestJS contamination)
+        run: bash scripts/workflow/validate-no-nestjs-contamination.sh
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Secret scan
+        run: bash scripts/security/scan-secrets.sh .
+      - name: Claude config scan
+        run: bash scripts/security/scan-config.sh .
+
+  reference-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Content-layer reference sweep
+        run: python scripts/maintenance/sweep_references.py --check

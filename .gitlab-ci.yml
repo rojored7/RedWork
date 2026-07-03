@@ -1,289 +1,38 @@
 # ============================================================================
-# GitLab CI/CD Pipeline - Framework Orchestrator (v3.0)
+# RedWork Framework CI (GitLab mirror — MINIMAL and honest)
 # ============================================================================
-# Backend Mandate: FastAPI (Python). NestJS/Express/Spring PROHIBITED.
-#
-# This is a PARENT-CHILD pipeline orchestrator.
-# Each phase is a separate child pipeline visualized as its own card in
-# GitLab with its own internal DAG.
-#
-# Visual structure in GitLab:
-#
-#   [setup] -> [discovery] -> [planning] -> [api-contract] ---.
-#                                                              |
-#                                       .----------------------'
-#                                       v
-#                              [infrastructure] -> [sprint-1] -> [quality]
-#                                                                    |
-#                                                                    v
-#                                                               [deploy]
-#
-# Each card (child pipeline) can be clicked to expand and see its own stages.
-# Use "View pipeline as DAG" in GitLab to see the full flow with arrows.
+# The canonical CI is GitHub Actions (.github/workflows/framework-ci.yml).
+# This file exists only so a GitLab mirror still validates pushes. Everything
+# here executes and blocks; no stage waits for a human, none tolerates
+# failure, and there is no child-pipeline theater. Shipping is out of scope.
 # ============================================================================
 
-variables:
-  FRAMEWORK_BRANCH: "framework"
-  OUTPUTS_DIR: "outputs"
-
-# ----------------------------------------------------------------------------
-# Parent Pipeline Stages (these are the "cards" you see in GitLab)
-# ----------------------------------------------------------------------------
 stages:
   - test-framework
-  - setup
-  - discovery
-  - planning
-  - api-contract
-  - infrastructure
-  - sprint-1
-  - quality
-  - deploy
-
-# ============================================================================
-# STAGE 0: TEST FRAMEWORK - Validates framework scripts before anything runs
-# ============================================================================
 
 "test-framework: validate":
   stage: test-framework
   image: python:3.12-slim
-  timeout: 5m
+  timeout: 10m
   before_script:
+    - apt-get update -qq && apt-get install -y -qq git bash grep >/dev/null
     - pip install pytest pyyaml >/dev/null 2>&1
   script:
     - python -m pytest tests/ -v --tb=short
     - bash scripts/workflow/validate-no-nestjs-contamination.sh
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-    - if: $CI_PIPELINE_SOURCE == "web"
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
 
 "test-framework: security-scan":
   stage: test-framework
   image: python:3.12-slim
   timeout: 5m
+  before_script:
+    - apt-get update -qq && apt-get install -y -qq git bash grep >/dev/null
   script:
     - bash scripts/security/scan-secrets.sh .
     - bash scripts/security/scan-config.sh .
   rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-    - if: $CI_PIPELINE_SOURCE == "web"
-
-# ============================================================================
-# STAGE 1: SETUP - Environment detection (runs automatically)
-# ============================================================================
-
-"setup: environment":
-  stage: setup
-  image: alpine:3.19
-  timeout: 5m
-  variables:
-    C_RESET: "\e[0m"
-    C_BOLD: "\e[1m"
-    C_RED: "\e[31m"
-    C_GREEN: "\e[32m"
-    C_YELLOW: "\e[33m"
-    C_BLUE: "\e[34m"
-    C_MAGENTA: "\e[35m"
-    C_CYAN: "\e[36m"
-    C_WHITE: "\e[37m"
-    C_BG_GREEN: "\e[42m"
-    C_BG_RED: "\e[41m"
-    C_BG_YELLOW: "\e[43m"
-    C_BG_BLUE: "\e[44m"
-    C_BG_MAGENTA: "\e[45m"
-  before_script:
-    - apk add --no-cache git bash grep findutils >/dev/null
-  script:
-    - |
-      printf "\n"
-      printf "${C_BOLD}${C_BG_BLUE}${C_WHITE}  ==============================================================  ${C_RESET}\n"
-      printf "${C_BOLD}${C_BG_BLUE}${C_WHITE}                                                                    ${C_RESET}\n"
-      printf "${C_BOLD}${C_BG_BLUE}${C_WHITE}      Framework Pipeline v3.0  -  Parent-Child Orchestrator        ${C_RESET}\n"
-      printf "${C_BOLD}${C_BG_BLUE}${C_WHITE}                                                                    ${C_RESET}\n"
-      printf "${C_BOLD}${C_BG_BLUE}${C_WHITE}  ==============================================================  ${C_RESET}\n"
-      printf "\n"
-      printf "${C_CYAN}  Pipeline:  ${C_YELLOW}%s${C_RESET}\n" "$CI_PIPELINE_ID"
-      printf "${C_CYAN}  Commit:    ${C_YELLOW}%s${C_RESET}\n" "$CI_COMMIT_SHORT_SHA"
-      printf "${C_CYAN}  Branch:    ${C_YELLOW}%s${C_RESET}\n" "$CI_COMMIT_REF_NAME"
-      printf "${C_CYAN}  Project:   ${C_YELLOW}%s${C_RESET}\n" "$CI_PROJECT_NAME"
-      printf "${C_CYAN}  User:      ${C_YELLOW}%s${C_RESET}\n" "$GITLAB_USER_NAME"
-      printf "\n"
-      printf "${C_BOLD}${C_MAGENTA}  --------------------------------------------------------------${C_RESET}\n"
-      printf "${C_BOLD}${C_MAGENTA}      Repository detection${C_RESET}\n"
-      printf "${C_BOLD}${C_MAGENTA}  --------------------------------------------------------------${C_RESET}\n"
-
-      MODE="unknown"
-      if [ -d "agents" ] && [ -d "skills" ] && [ -f "init-new-project.sh" ]; then
-        MODE="framework"
-      elif [ -d ".framework" ] || [ -d "outputs" ] || [ -d "backend" ]; then
-        MODE="project"
-      fi
-      printf "${C_WHITE}  Mode:  ${C_BOLD}${C_GREEN}%s${C_RESET}\n" "$MODE"
-
-      STACK="none"
-      STACK_VIOLATION=""
-      if [ -f "backend/app/main.py" ] || (find backend -name "*.py" -type f 2>/dev/null | head -1 | grep -q .); then
-        STACK="fastapi"
-        STACK_COLOR="$C_GREEN"
-      elif [ -f "backend/package.json" ] && grep -q "@nestjs\|express" backend/package.json 2>/dev/null; then
-        STACK="nestjs"
-        STACK_COLOR="$C_RED"
-        STACK_VIOLATION="backend/package.json contains @nestjs or express"
-      elif find backend -name "*.ts" -type f 2>/dev/null | head -1 | grep -q .; then
-        STACK="typescript"
-        STACK_COLOR="$C_RED"
-        STACK_VIOLATION="TypeScript files found under backend/"
-      elif [ -f "backend/pom.xml" ] || [ -f "backend/build.gradle" ]; then
-        STACK="java"
-        STACK_COLOR="$C_RED"
-        STACK_VIOLATION="Java project files detected under backend/"
-      else
-        STACK_COLOR="$C_WHITE"
-      fi
-      printf "${C_WHITE}  Stack: ${C_BOLD}%s%s${C_RESET}\n" "$STACK_COLOR" "$STACK"
-      printf "\n"
-
-      printf "${C_BOLD}${C_CYAN}  --------------------------------------------------------------${C_RESET}\n"
-      printf "${C_BOLD}${C_CYAN}      Child pipelines (trigger manually)${C_RESET}\n"
-      printf "${C_BOLD}${C_CYAN}  --------------------------------------------------------------${C_RESET}\n"
-      printf "${C_RED}  [1] discovery       ${C_WHITE}-> Agents 01, 02, 03, 04, 04b, 05, 05b${C_RESET}\n"
-      printf "${C_YELLOW}  [2] planning        ${C_WHITE}-> Agents 06, 07, 08, 09${C_RESET}\n"
-      printf "${C_GREEN}  [3] api-contract    ${C_WHITE}-> Agents 10, 11${C_RESET}\n"
-      printf "${C_CYAN}  [4] infrastructure  ${C_WHITE}-> Agent 12${C_RESET}\n"
-      printf "${C_BLUE}  [5] sprint-1        ${C_WHITE}-> Waves 1-5 (Agents 10, 11, 13-20)${C_RESET}\n"
-      printf "${C_MAGENTA}  [6] quality         ${C_WHITE}-> Agents 19, 20 + Framework checks${C_RESET}\n"
-      printf "${C_BOLD}${C_GREEN}  [7] deploy          ${C_WHITE}-> Staging + Production${C_RESET}\n"
-      printf "\n"
-
-      if [ -n "$STACK_VIOLATION" ]; then
-        printf "${C_BG_RED}${C_BOLD}  [ BLOCKED ] ${C_RESET} ${C_RED}FastAPI mandate violated${C_RESET}\n"
-        printf "${C_RED}  Framework supports EXCLUSIVELY FastAPI (Python) for backend.${C_RESET}\n"
-        printf "${C_RED}  Detected violation: %s${C_RESET}\n" "$STACK_VIOLATION"
-        printf "${C_RED}  Pipeline is HALTED. Remove non-FastAPI backend code and retry.${C_RESET}\n"
-        printf "\n"
-        exit 1
-      fi
-      printf "\n"
-      printf "${C_BG_GREEN}${C_BOLD}  [ READY ] ${C_RESET} Environment validated. Trigger child pipelines when ready.\n"
-      printf "\n"
-  environment:
-    name: pipeline/setup
-    action: prepare
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-    - if: $CI_PIPELINE_SOURCE == "web"
-    - if: $CI_PIPELINE_SOURCE == "schedule"
-    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
-
-# ============================================================================
-# STAGE 2: DISCOVERY - Child Pipeline (Agents 01-05b)
-# ============================================================================
-
-"discovery: pipeline":
-  stage: discovery
-  trigger:
-    include: .gitlab/ci/discovery.yml
-    strategy: depend
-  needs:
-    - "setup: environment"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == "push"
-      when: manual
-      allow_failure: true
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 3: PLANNING - Child Pipeline (Agents 06-09)
-# ============================================================================
-
-"planning: pipeline":
-  stage: planning
-  trigger:
-    include: .gitlab/ci/planning.yml
-    strategy: depend
-  needs:
-    - "discovery: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 4: API-CONTRACT - Child Pipeline (Agents 10, 11)
-# ============================================================================
-
-"api-contract: pipeline":
-  stage: api-contract
-  trigger:
-    include: .gitlab/ci/api-contract.yml
-    strategy: depend
-  needs:
-    - "planning: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 5: INFRASTRUCTURE - Child Pipeline (Agent 12)
-# ============================================================================
-
-"infrastructure: pipeline":
-  stage: infrastructure
-  trigger:
-    include: .gitlab/ci/infrastructure.yml
-    strategy: depend
-  needs:
-    - "api-contract: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 6: SPRINT 1 - Child Pipeline (Waves 1-5, Agents 10-18)
-# ============================================================================
-
-"sprint-1: pipeline":
-  stage: sprint-1
-  trigger:
-    include: .gitlab/ci/sprint-1.yml
-    strategy: depend
-  needs:
-    - "infrastructure: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 7: QUALITY GATES - Child Pipeline (Agents 19, 20)
-# ============================================================================
-
-"quality: pipeline":
-  stage: quality
-  trigger:
-    include: .gitlab/ci/quality.yml
-    strategy: depend
-  needs:
-    - "sprint-1: pipeline"
-  rules:
-    - when: manual
-      allow_failure: true
-
-# ============================================================================
-# STAGE 8: DEPLOY - Child Pipeline (Staging + Production)
-# ============================================================================
-
-"deploy: pipeline":
-  stage: deploy
-  trigger:
-    include: .gitlab/ci/deploy.yml
-    strategy: depend
-  needs:
-    - "quality: pipeline"
-  rules:
-    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
-      when: manual
-      allow_failure: true
-
-# ============================================================================
-# END OF ORCHESTRATOR
-# ============================================================================
+    - if: '$CI_PIPELINE_SOURCE == "push"'
+    - if: '$CI_PIPELINE_SOURCE == "web"'
