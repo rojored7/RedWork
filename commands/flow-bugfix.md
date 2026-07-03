@@ -47,9 +47,16 @@ Pipeline de agentes para diagnosticar, corregir y validar la solucion de un bug.
 4. **tdd-guide** - Refactor si es necesario (IMPROVE)
    - Solo si el fix introdujo deuda tecnica obvia
 
-**Gate de commit del fix:** el fix SOLO se commitea con typecheck + suite de tests del
-modulo + build (si aplica) en verde. El test que reproduce el bug debe quedar incluido
-en el mismo commit que el fix.
+**Gate del fix (comandos directos del flujo):**
+```bash
+# 1. Gate: lint + types + tests con cobertura 100% (el test que reproduce incluido)
+bash scripts/workflow/slice-gate.sh auto
+
+# 2. Checkpoint silencioso: test + fix juntos en el mismo checkpoint; NUNCA pushea
+bash scripts/workflow/checkpoint-commit.sh "fix: <bug>" "bugfix"
+```
+Si el gate falla: corregir dentro del alcance y re-ejecutar (reintentos acotados
+por retry_controller; agotados -> parar con reporte consolidado).
 
 ### Fase 4: Review (en PARALELO)
 

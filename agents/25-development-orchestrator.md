@@ -301,10 +301,12 @@ bash scripts/workflow/validate-git-setup.sh
    - Estimated time
    - Success criteria
 
-3. **Git Strategy**
-   - Auto-commit after each task
-   - Commit message format: `[TASK-S1-BE-001] Description`
-   - Branch strategy (if applicable)
+3. **Git Strategy (background checkpoints)**
+   - After each green slice-gate: silent checkpoint via
+     `checkpoint-commit.sh "<desc>" <task-id>` (never pushes)
+   - Task IDs remain useful for traceability in the checkpoint message,
+     but no gate depends on commit-message format anymore
+   - Publishing (push) is always a human decision
 
 4. **Tracking Setup**
    - Create .project-state/sprint_XX_[agent]_tasks.json
@@ -370,15 +372,16 @@ bash scripts/workflow/validate-git-setup.sh
 
 [... Tasks 3-5 ...]
 
-## Git Commit Strategy
+## Git Checkpoint Strategy (background, silent)
 
-After EACH task completion:
-1. Run: `bash scripts/workflow/auto-commit-task.sh <task-id> "<description>"`
-2. Script will:
-   - Stage all changes (git add .)
-   - Commit with format: [TASK-S1-BE-001] Setup FastAPI project structure
-   - Update .project-state/sprint_01_backend_tasks.json
-   - Push to remote
+After EACH task/slice completion:
+1. Run the slice gate: `bash scripts/workflow/slice-gate.sh auto`
+2. If green: `bash scripts/workflow/checkpoint-commit.sh "<description>" <task-id>`
+   - Selective staging (defensive excludes) + staged secret scan
+   - Quiet checkpoint commit — NEVER pushes (publishing is human)
+3. Update task state: mark the task completed in
+   .project-state/sprint_01_backend_tasks.json (auto-commit-task.sh remains
+   available for state tracking; its push is opt-in and off by default)
 
 ## Task Tracking
 
@@ -411,9 +414,9 @@ Enables:
 ## Execution Kickoff
 
 - Agent 14 (Backend Development) will execute tasks sequentially
-- Auto-commits after each task ([TASK-SN-XX-NNN])
+- Per slice: slice-gate.sh -> silent checkpoint (never pushed)
 - Progress tracked in .project-state/
-- Gates run automatically on wave completion (run-gates.sh)
+- Per wave close: run-gates.sh <wave> invoked DIRECTLY by this loop
 - Can resume if disconnected (resume-development.sh)
 
 Starting continuous execution now (plan already authorized at the flow gate).
@@ -436,8 +439,12 @@ contradicts the Execution Doctrine in CLAUDE.md.
    "$PYTHON_BIN" scripts/lib/retry_controller.py next
    ```
 2. **action=run_agent** → invoke that agent (Task tool) with its task
-   context; task commits (`[TASK-SN-XX-NNN]`) trigger the post-commit hook,
-   which runs `run-gates.sh <wave>` when the wave closes.
+   context. Per slice: `slice-gate.sh` then `checkpoint-commit.sh`. When
+   the wave's tasks are all complete, YOU run the wave gate DIRECTLY:
+   ```bash
+   bash scripts/workflow/run-gates.sh <wave>
+   ```
+   (No commit-message protocol involved — the loop invokes the gates.)
 3. **action=retry_gate** → the wave gate failed but retries remain:
    - Read the gate report (post-wave output, completeness JSON)
    - Fix WITHIN plan scope: build-error-resolver for build/type errors,
@@ -787,8 +794,9 @@ After you hand off:
 2. Load task file (sprint_01_backend_tasks.json)
 3. Execute tasks sequentially
 4. Update task status (pending → in_progress → completed)
-5. Call auto-commit-task.sh after each task
-6. Continue until all tasks completed or error
+5. Per task: slice-gate.sh → checkpoint-commit.sh (silent, no push)
+6. Continue until all tasks completed or error; then the loop runs
+   run-gates.sh <wave> directly
 
 **If user disconnects:**
 - Task state persists in .project-state/

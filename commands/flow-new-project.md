@@ -77,33 +77,34 @@ Ejecutar secuencialmente, cada agente depende del anterior:
 
 ### Fase 4: Implementacion (por sprint, en paralelo)
 
-Lanzar en PARALELO por cada sprint:
+Por cada sprint, en orden de waves TDD (tests SIEMPRE antes que implementacion):
 
-10. **12-infrastructure-deployment** - Levantar infra Docker/WSL
+10. **Wave 0 — 12-infrastructure-deployment** - Levantar infra Docker/WSL
     - Entrada: `04_architecture_decision.md`, `05_service_design.md`
     - Salida: Docker containers, `runtime-infrastructure.json`
+    - Gate: `bash scripts/workflow/run-gates.sh 0`
 
-11. **14-backend-development** - Implementar backend
-    - Entrada: `05_service_design.md`, `09_sprint_plan/`
-    - Salida: codigo backend FastAPI
+11. **Wave 3a — 13-backend-test** (TDD Red) - Tests de backend PRIMERO
+    - Todos deben FALLAR antes de implementar
 
-12. **16-frontend-development** - Implementar frontend
-    - Entrada: `05_service_design.md`, `09_sprint_plan/`
-    - Salida: codigo frontend
+12. **Wave 3b — 14-backend-development** (TDD Green) - Implementar backend
+    - Por cada slice/tarea:
+      `bash scripts/workflow/slice-gate.sh backend` (cobertura 100%) →
+      `bash scripts/workflow/checkpoint-commit.sh "<desc>" <task-id>`
+    - Al cerrar la wave: `bash scripts/workflow/run-gates.sh 3`
 
-### Fase 5: Validacion (en paralelo)
+13. **Wave 5a — 15-frontend-test** (TDD Red) + **Wave 5b — 16-frontend-development** (TDD Green)
+    - Mismo patron: tests primero, slice-gate + checkpoint por slice,
+      y al cerrar: `bash scripts/workflow/run-gates.sh 5`
 
-Lanzar en PARALELO:
+### Fase 5: Validacion
 
-13. **13-backend-test** - Tests de backend
-14. **15-frontend-test** - Tests de frontend
-15. **20-linting-validator** - Zero errores, zero warnings
+Secuencial tras las waves:
 
-Luego secuencial:
-
-16. **17-integration-test** - Tests de integracion real
-17. **18-e2e-test** - Tests end-to-end de flujos criticos
-18. **19-smoke-test** - Validacion de flujos minimos viables
+14. **17-integration-test** - Tests de integracion real
+15. **18-e2e-test** - Tests end-to-end de flujos criticos
+16. **19-smoke-test** - Validacion de flujos minimos viables
+17. **20-linting-validator** - Zero errores, zero warnings
 
 ### Fase 6: Seguridad y Cierre
 

@@ -133,14 +133,26 @@ The flows implement this as **a single human gate** (impact verdict + plan +
 plan-critic critique), then continuous execution with automatic gates (tests green,
 linting, smoke) as the only advance condition.
 
-**Bounded retries (factory loop):** wave gates run through
-`scripts/workflow/run-gates.sh <wave>`, which shares a persistent retry counter
-(`.project-state/retry_state.json`, cap `FRAMEWORK_MAX_RETRIES`, default 3) with the
-post-commit hook. Gate pass clears `wave_N_blocked.flag` automatically; exhausting
-the retries creates `needs_human.flag` and the loop STOPS with a consolidated report
+**The flows invoke the gates (v2.3 — git stays in the background):**
+- Per slice: `slice-gate.sh` (lint + types + tests with 100% coverage) then
+  `checkpoint-commit.sh` — a silent checkpoint that requires a fresh gate pass,
+  scans staged secrets, and NEVER pushes. Publishing is a human decision.
+- Per wave close: the flow/Agent 25 runs `run-gates.sh <wave>` DIRECTLY.
+  No gate depends on commit messages or the post-commit hook anymore
+  (that hook is opt-in reinforcement via `REDWORK_COMMIT_HOOKS=1`).
+
+**Bounded retries (factory loop):** all gates share the persistent retry counter
+(`.project-state/retry_state.json`, cap `FRAMEWORK_MAX_RETRIES`, default 3).
+Gate pass clears `wave_N_blocked.flag` automatically; exhausting the retries
+creates `needs_human.flag` and the loop STOPS with a consolidated report
 (attempts, evidence per attempt, concrete options). Ask
 `"$PYTHON_BIN" scripts/lib/retry_controller.py next` for the machine-readable next
 action (`run_agent | retry_gate | escalate_human | done`).
+
+**Acceptance is 100%, always:** sprint completeness (all tasks), test suites
+green, linting zero errors, and code coverage (`--cov-fail-under=100` /
+vitest thresholds 100). The only escape hatch is the reviewed `omit` list in
+the project templates (entrypoints only) — never extended to make a gate pass.
 
 ---
 
@@ -154,7 +166,9 @@ action (`run_agent | retry_gate | escalate_human | done`).
 | `python install.py status` | Show installation info |
 | `python scripts/workflow/new_sprint.py N [--force]` | Generate sprint N pipeline |
 | `bash scripts/workflow/validate-impact-analysis.sh --allow-amber` | Impact hard gate (00b) |
-| `bash scripts/workflow/run-gates.sh <wave>` | Re-run a wave gate (bounded retries) |
+| `bash scripts/workflow/slice-gate.sh [backend\|frontend\|auto]` | Per-slice gate (100% coverage) |
+| `bash scripts/workflow/checkpoint-commit.sh "<desc>" [id]` | Silent checkpoint (never pushes) |
+| `bash scripts/workflow/run-gates.sh <wave>` | Wave gate (bounded retries) |
 | `python scripts/lib/retry_controller.py next` | Next factory-loop action |
 | `python -m pytest tests/ -v` | Run framework tests |
 

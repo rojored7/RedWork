@@ -102,6 +102,54 @@ class TestSkillReferences:
         assert not dupes, "Byte-identical duplicate skills:\n" + "\n".join(dupes)
 
 
+class TestFlowGateContracts:
+    """The flows must invoke the gates DIRECTLY (v2.3 factory engine) and
+    must not reintroduce git ceremony."""
+
+    FLOWS = ["flow-update.md", "flow-bugfix.md", "flow-new-project.md"]
+
+    @pytest.mark.parametrize("flow", FLOWS)
+    def test_flow_invokes_impact_gate(self, flow):
+        content = (COMMANDS / flow).read_text(encoding="utf-8")
+        assert "impact-prevalidator" in content
+        assert "validate-impact-analysis.sh" in content
+
+    @pytest.mark.parametrize("flow", FLOWS)
+    def test_flow_invokes_slice_gate_and_checkpoint(self, flow):
+        content = (COMMANDS / flow).read_text(encoding="utf-8")
+        assert "slice-gate.sh" in content, f"{flow} must invoke slice-gate.sh"
+        assert "checkpoint-commit.sh" in content, (
+            f"{flow} must checkpoint via checkpoint-commit.sh"
+        )
+
+    @pytest.mark.parametrize("flow", FLOWS)
+    def test_flow_never_pushes(self, flow):
+        content = (COMMANDS / flow).read_text(encoding="utf-8")
+        assert "git push" not in content, f"{flow} must not push automatically"
+
+    def test_wave_flows_invoke_run_gates(self):
+        for flow in ("flow-update.md", "flow-new-project.md"):
+            content = (COMMANDS / flow).read_text(encoding="utf-8")
+            assert "run-gates.sh" in content, f"{flow} must invoke run-gates.sh"
+
+    def test_no_task_protocol_requirement(self):
+        """[TASK-...] may appear only to say it is NOT required."""
+        for flow in self.FLOWS:
+            content = (COMMANDS / flow).read_text(encoding="utf-8")
+            for line in content.splitlines():
+                if "[TASK-" in line:
+                    assert "ya no es requisito" in line or "no es requisito" in line, (
+                        f"{flow} reintroduces the TASK commit protocol: {line.strip()}"
+                    )
+
+    def test_agent_25_loop_invokes_gates_directly(self):
+        content = (AGENTS / "25-development-orchestrator.md").read_text(encoding="utf-8")
+        assert "slice-gate.sh" in content
+        assert "run-gates.sh" in content
+        assert "checkpoint-commit.sh" in content
+        assert "Type 'proceed'" not in content
+
+
 class TestOutputConventions:
     OUTPUT_DECL = re.compile(r"outputs/(\d{2}b?)_[a-z0-9_]+\.(md|yaml|json)")
 

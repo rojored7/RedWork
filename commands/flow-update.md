@@ -127,12 +127,25 @@ Ejecutar ANTES de cualquier implementacion:
     - **16-frontend-development** (si es frontend)
     - O implementacion directa si es otro stack
 
-10.5. **Regla de slices (1 slice = 1 commit):**
-    - Implementar slice por slice segun la descomposicion del plan
-    - Un slice SOLO se commitea cuando typecheck + tests del modulo + build (si aplica)
-      estan en verde — "deberia funcionar" no es verde
-    - NUNCA acumular varios slices en un solo commit gigante
-    - Si un slice rompe algo de un slice anterior, arreglarlo ANTES de seguir al siguiente
+10.5. **Regla de slices (gate directo + checkpoint silencioso):**
+    Por CADA slice de la descomposicion del plan, en este orden exacto:
+    ```bash
+    # 1. Gate del slice (lint + types + tests con cobertura 100%)
+    bash scripts/workflow/slice-gate.sh auto
+    # exit 0 = verde | exit 1 = corregir dentro del alcance y re-ejecutar
+
+    # 2. Checkpoint silencioso (solo posible con gate verde; NUNCA pushea)
+    bash scripts/workflow/checkpoint-commit.sh "<que hace el slice>" "slice-N"
+    ```
+    - El gate es un comando del flujo: NO depende de commits, hooks ni
+      formato de mensaje ([TASK-...] ya no es requisito de nada)
+    - Si slice-gate falla: corregir dentro del alcance (build-error-resolver
+      si es de build) y re-ejecutar; reintentos acotados por retry_controller
+      (gate id "slice", tope FRAMEWORK_MAX_RETRIES=3; agotado -> parar con
+      reporte consolidado)
+    - NUNCA acumular varios slices en un checkpoint gigante
+    - Si un slice rompe algo de un slice anterior, arreglarlo ANTES de seguir
+    - El push NUNCA es automatico: publicar es decision del humano al final
 
 ### Fase 3.5: Rebuild + Migracion (OBLIGATORIA despues de implementar)
 
