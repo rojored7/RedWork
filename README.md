@@ -1,6 +1,6 @@
 # Framework Agents v2 - Complete Development Automation
 
-Automated workflow with 25+ specialized agents for full-stack development with GitLab CI/CD.
+AI software factory: 25+ specialized agents, flow-invoked quality gates (100% acceptance) and silent git checkpoints. FastAPI + React.
 
 Backend: FastAPI (Python) exclusively. Frontend: Full UX design system. API: Beautiful DX-first.
 
@@ -11,7 +11,7 @@ Backend: FastAPI (Python) exclusively. Frontend: Full UX design system. API: Bea
 ### 1. Clone and Install Globally
 
 ```bash
-git clone https://gitlab.com/rojored7-group/redwork.git Framework
+git clone https://github.com/rojored7/RedWork.git Framework
 cd Framework
 python install.py install --profile full
 ```
@@ -28,10 +28,10 @@ cd ../my-project
 This creates ONLY local structure (outputs/, .project-state/, CI). No .framework/ copy.
 Agents, skills, and scripts live globally in ~/.claude/redwork/.
 
-### 3. Push to GitLab
+### 3. Push to GitHub (when YOU decide)
 
 ```bash
-git remote add origin <your-gitlab-repo-url>
+git remote add origin <your-github-repo-url>
 git push -u origin main
 ```
 
@@ -57,10 +57,13 @@ c) "lanza el agente 06-epic-generation"
    -> Then agents 10, 11 (API Contract phase)
 
 d) "lanza el agente 25-development-orchestrator"
-   -> Phase 0 installs git hooks v2 AUTOMATICALLY
-   -> Activates completeness gate
-   -> Runs development agents (10-14, 18-20) in wave order
+   -> Phase 0 activates all machinery (hooks, detection, impact gate)
+   -> Runs development agents (12-16) in TDD wave order, invoking the
+      gates DIRECTLY: slice-gate.sh per slice, run-gates.sh per wave
 ```
+
+Or simply use the flows, which orchestrate everything end to end:
+`/flow-new-project`, `/flow-update`, `/flow-bugfix`.
 
 **NO manual hook installation needed.** Agent 25 Phase 0 handles everything.
 
@@ -83,6 +86,7 @@ Phase 0 — Framework Activation (BLOCKING)
   [OK] 00_project_detection.md exists (FastAPI validated)
   [OK] validate-sprint-completeness.sh present
   [OK] validate-git-setup.sh passes
+  [OK] validate-impact-analysis.sh (00b fresh)
   >>> FRAMEWORK ACTIVATED <<<
 ```
 
@@ -94,17 +98,22 @@ Then Agent 25 reads the sprint plan and invokes development agents in wave order
 - Wave 5a: Frontend TESTS first (Agent 15) — writes Vitest tests from specs, all tests MUST fail (Red)
 - Wave 5b: Frontend implementation (Agent 16) — makes the tests pass (Green)
 
-### Automatic Machinery (fires on every commit)
+### The Gate Engine (flows invoke the gates — git stays in the background)
 
-Once hooks are installed, every `git commit` triggers:
+Since v2.3 the flows run the gates DIRECTLY; no gate depends on commit
+messages or hooks:
 
-1. **Pre-commit hook**: blocks NestJS/Express/Spring contamination in `backend/`
-2. **Post-commit hook v2**: detects task commits `[TASK-SN-XX-NNN]` and:
-   - Updates `workflow-status.json` dynamically
-   - Detects if the task closes a wave (all tasks in that wave completed)
-   - If wave closed: runs `post-wave-N-*.sh` (linting, smoke tests, security)
-   - If wave passed: runs `validate-sprint-completeness.sh` (tasks vs repo)
-   - If 100% complete: clears the wave for next one
+1. **Per slice**: `slice-gate.sh` (ruff + mypy + pytest with 100% coverage /
+   eslint + tsc + vitest coverage 100) -> if green, `checkpoint-commit.sh`
+   creates a SILENT local commit (staged secret scan included; NEVER pushes —
+   publishing is your decision).
+2. **Per wave close**: `run-gates.sh <wave>` (post-wave validations +
+   completeness gate) with bounded retries (`FRAMEWORK_MAX_RETRIES`, default
+   3); pass auto-clears `wave_N_blocked.flag`, exhaustion creates
+   `needs_human.flag` + a consolidated report.
+3. **Pre-commit hook** (installed): still blocks NestJS contamination and
+   staged secrets on every commit. The post-commit trigger is optional
+   reinforcement (`REDWORK_COMMIT_HOOKS=1`).
 
 ### Completeness Gate
 
@@ -173,8 +182,8 @@ Once hooks are installed, every `git commit` triggers:
 ```
 Framework/
   install.py                       # Global installer (install/update/uninstall/init/status)
-  .gitlab-ci.yml                   # Pipeline v3.0 (FastAPI mandate, no LEGACY-TOLERANT)
-  .gitlab/ci/*.yml                 # Child pipeline definitions (8 stages)
+  .github/workflows/framework-ci.yml  # Canonical CI (tests, security, integrity)
+  templates/project/               # Project templates (CI 100% coverage, DEPLOYMENT.md)
   workflow-status.json             # Status template (regenerated dynamically)
   agents/                          # 25+ agent definitions
   agents/ambient/                  # 9 vendored flow actors (code-explorer, planner, tdd-guide, reviewers...) installed to ~/.claude/agents/
@@ -241,5 +250,5 @@ The JSON report lists every task with status (implemented/missing/unverifiable).
 
 ---
 
-Version: 2.2.0
+Version: 2.3.0
 Updated: 2026-07-02

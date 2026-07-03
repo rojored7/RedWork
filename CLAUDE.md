@@ -1,4 +1,4 @@
-# CLAUDE.md - RedWork Framework v2.1
+# CLAUDE.md - RedWork Framework v2.3
 
 Instructions for Claude Code when working with this framework repository.
 
@@ -24,11 +24,11 @@ Installs to `~/.claude/redwork/`. Agents, skills, and scripts are shared globall
 ```bash
 python install.py init my-project --backend fastapi --frontend react
 cd ../my-project
-git remote add origin <gitlab-url>
+git remote add origin <github-url>
 git push -u origin main
 ```
 
-Projects get ONLY: outputs/, .project-state/, .gitlab-ci.yml, CLAUDE.md. No framework copy.
+Projects get ONLY: outputs/, .project-state/, .github/workflows/ci.yml, docs/DEPLOYMENT.md, CLAUDE.md. No framework copy.
 
 ---
 
@@ -194,7 +194,8 @@ Framework/
     hooks/                      # Claude Code hooks (session, pre-write, pre-bash, etc.)
   tests/                        # Framework tests
   manifests/                    # Installation profiles
-  .gitlab-ci.yml               # Pipeline v3.0 with test-framework stage
+  .github/workflows/           # Canonical CI (framework-ci.yml)
+  .gitlab-ci.yml               # Minimal mirror (test-framework only)
 ```
 
 ---
@@ -205,9 +206,9 @@ Framework/
 python scripts/workflow/new_sprint.py 2
 ```
 
-Generates `.gitlab/ci/sprint-2.yml` from template with parallel waves.
+Registers sprint 2 in state.json (no CI YAML involved since v2.3).
 State.json tracks multiple sprints and wave progress.
 
 ---
 
-Version: 2.2.0
+Version: 2.3.0
