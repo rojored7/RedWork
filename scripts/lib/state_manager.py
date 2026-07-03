@@ -76,13 +76,20 @@ class StateManager:
     def exists(self) -> bool:
         return self.state_file.exists()
 
-    def initialize(self, project_name: str, stack: Optional[dict] = None):
+    def initialize(self, project_name: str, stack: Optional[dict] = None,
+                   framework_version: Optional[str] = None):
         """Create initial state.json for a new project."""
+        if framework_version is None:
+            try:
+                from scripts.lib.version import FRAMEWORK_VERSION
+            except ImportError:  # loose-script execution
+                from version import FRAMEWORK_VERSION
+            framework_version = FRAMEWORK_VERSION
         self.state_dir.mkdir(parents=True, exist_ok=True)
         state = {
             "project_name": project_name,
             "created_at": _now_iso(),
-            "framework_version": "2.0.0",
+            "framework_version": framework_version,
             "stack": stack or {"backend": "fastapi", "frontend": "react"},
             "current_phase": "discovery",
             "agents": {},

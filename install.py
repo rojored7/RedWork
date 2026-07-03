@@ -20,7 +20,11 @@ import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
-VERSION = "2.2.0"
+# Version comes from the single source of truth in scripts/lib/version.py
+try:
+    from scripts.lib.version import FRAMEWORK_VERSION as VERSION
+except ImportError:
+    VERSION = "2.3.0"  # fallback when imported outside the repo root
 GLOBAL_ROOT = Path.home() / ".claude" / "redwork"
 FRAMEWORK_DIR = Path(__file__).parent.resolve()
 

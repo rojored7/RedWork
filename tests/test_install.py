@@ -74,10 +74,12 @@ def test_init_creates_state_json(init_env):
     assert state_file.exists()
 
     state = json.loads(state_file.read_text(encoding="utf-8"))
+    from scripts.lib.version import FRAMEWORK_VERSION
+
     assert state["project_name"] == "my-app"
     assert state["stack"]["backend"] == "fastapi"
     assert state["stack"]["frontend"] == "react"
-    assert state["framework_version"] == "2.0.0"
+    assert state["framework_version"] == FRAMEWORK_VERSION
 
 
 def test_init_rejects_unsupported_backend():

@@ -106,9 +106,14 @@ while IFS= read -r line; do
     if [ "$SCAN_MODE" = "staged" ]; then
         for file in $FILES_TO_SCAN; do
             [ -f "$file" ] || continue
-            # Skip binary-like extensions
+            # Skip binary-like extensions and the scanner's own pattern files
+            # (they contain the patterns themselves — guaranteed false positives)
             case "$file" in
                 *.png|*.jpg|*.gif|*.ico|*.woff|*.pyc|*.exe|*.zip|*.lock) continue ;;
+                *secret-patterns.txt|*config-audit-patterns.txt) continue ;;
+                # Markdown docs are not scanned in directory mode either
+                # (rules/skills teach with anti-example snippets)
+                *.md) continue ;;
             esac
             FILE_MATCHES=$(grep $GREP_FLAGS -E -- "$pattern" "$file" 2>/dev/null || true)
             if [ -n "$FILE_MATCHES" ]; then
