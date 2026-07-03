@@ -2,7 +2,7 @@
 
 **Skill Version**: 1.0
 **Created**: 2026-04-07
-**Used By**: Agents 02, 05, 10, 13, 15, 09b
+**Used By**: Agents 02, 05, 11, 13, 14
 **Purpose**: Centralized authority on Domain-Driven Design and Clean Architecture implementation patterns
 
 ---

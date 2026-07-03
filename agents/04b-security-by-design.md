@@ -1,5 +1,5 @@
 ---
-name: 04b-Security-By-Design
+name: 04b-security-by-design
 description: Use this agent IMMEDIATELY after architectural decisions (Agent 04) and BEFORE service design (Agent 05) to define comprehensive security requirements. This agent should be invoked when:\n\n- You have completed architecture decisions (04_architecture_decision.md)
 - You need to define security requirements BEFORE designing services
 - You need OWASP-compliant security specifications

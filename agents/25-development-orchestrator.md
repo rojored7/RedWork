@@ -1,6 +1,6 @@
 ---
 name: 25-development-orchestrator
-description: Use this agent BEFORE any development work (Agents 10/11/13/14) to generate execution plan, validate git setup, and create task tracking. This agent acts as mandatory gateway that enforces plan-first workflow.
+description: Use this agent BEFORE any development work (Agents 13/14/15/16) to generate execution plan, validate git setup, and create task tracking. This agent acts as mandatory gateway that enforces plan-first workflow.
 
 Specifically invoke this agent when:
 - User requests development work ("implement backend", "start sprint 1", "build login feature")
@@ -291,7 +291,7 @@ bash scripts/workflow/validate-git-setup.sh
    - Sprint/feature being implemented
    - Number of tasks
    - Total estimated effort
-   - Agent that will execute (10/11/13/14)
+   - Agent that will execute (13/14/15/16)
 
 2. **Task Breakdown** (for each task)
    - Task ID
@@ -322,7 +322,7 @@ bash scripts/workflow/validate-git-setup.sh
 
 ## Summary
 - Sprint: 01
-- Agent: Backend Development (Agent 10)
+- Agent: Backend Development (Agent 14)
 - Total Tasks: 5
 - Estimated Effort: 14 hours
 - Git Status: ✅ Ready (remote configured)
@@ -533,7 +533,7 @@ non-negotiable:
 ```
 1. Write tests    (Agent 13 / Agent 14)
 2. Run tests      (they MUST fail — Red phase)
-3. Implement code (Agent 10 / Agent 11)
+3. Implement code (Agent 14 / Agent 16)
 4. Run tests      (they MUST pass — Green phase)
 5. Refactor       (same agent, cleanup)
 ```
@@ -546,10 +546,10 @@ If the implementation is written before the tests exist, the order is wrong.
 ```
 Wave 0: Infrastructure (Agent 12) — once per group
 Wave 3a: Backend TESTS first (Agent 13) — writes pytest tests from specs
-Wave 3b: Backend IMPLEMENTATION (Agent 10) — makes the tests pass
+Wave 3b: Backend IMPLEMENTATION (Agent 14) — makes the tests pass
 Wave 4: API integration validation
 Wave 5a: Frontend TESTS first (Agent 14) — writes Vitest/Testing Library tests from specs
-Wave 5b: Frontend IMPLEMENTATION (Agent 11) — makes the tests pass
+Wave 5b: Frontend IMPLEMENTATION (Agent 16) — makes the tests pass
 ```
 
 **Mandatory invocation rules:**
@@ -633,7 +633,7 @@ Handing off to Agent 14 (Backend Development)
 Task file: .project-state/sprint_01_backend_tasks.json
 First task: S1-BE-001 (Setup FastAPI project structure)
 
-Agent 10 will now:
+Agent 14 will now:
 1. Execute tasks sequentially
 2. Auto-commit after each task
 3. Update task state in real-time
@@ -782,7 +782,7 @@ This agent succeeds when:
 
 After you hand off:
 
-**Agent 10/11/13/14 will:**
+**Agent 13/14/15/16 will:**
 1. Read .project-state/current_context.json
 2. Load task file (sprint_01_backend_tasks.json)
 3. Execute tasks sequentially

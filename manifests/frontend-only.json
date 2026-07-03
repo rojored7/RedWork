@@ -14,11 +14,11 @@
   "agents/16-frontend-development.md",
   "agents/18-e2e-test.md",
   "agents/20-linting-validator.md",
-  "skills/ux-design-system.md",
-  "skills/react-component-patterns.md",
-  "skills/accessibility-patterns.md",
-  "skills/performance-optimization.md",
-  "skills/state-management-patterns.md",
-  "skills/typescript-quality-standards.md",
+  "skills/react/ux-design-system.md",
+  "skills/react/component-patterns.md",
+  "skills/react/accessibility.md",
+  "skills/react/performance.md",
+  "skills/react/state-management.md",
+  "skills/react/typescript-quality.md",
   "skills/testing-patterns.md"
 ]

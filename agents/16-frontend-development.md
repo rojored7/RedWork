@@ -1,5 +1,5 @@
 ---
-name: 16-Frontend-Development
+name: 16-frontend-development
 description: Use this agent when you need to implement frontend features according to sprint plans and service design specifications. This agent should be activated when:\n\n- A sprint plan defines frontend deliverables that need implementation\n- Service design documents require UI/UX translation into functional interfaces\n- Frontend components, screens, or features need to be built or refactored\n- API integration from the client side needs to be implemented\n- Form validation and user input handling must be developed\n- Navigation flows and routing need to be established\n- Centralized configuration consumption must be implemented in the frontend\n\nExamples of when to use this agent:\n\n<example>\nContext: User has completed backend API endpoints and needs corresponding frontend screens.\nuser: "The authentication API is ready. Can you build the login and registration screens?"\nassistant: "I'll use the 16-frontend-development agent to implement the authentication UI with proper form validation, API integration, and centralized configuration."\n<commentary>\nThe user needs frontend implementation that consumes existing backend services. Use the 16-frontend-development agent to build the screens with proper validation, API client setup, and configuration management.\n</commentary>\n</example>\n\n<example>\nContext: Sprint plan defines user dashboard requirements.\nuser: "I need to implement the dashboard screens from sprint 2"\nassistant: "Let me launch the 16-frontend-development agent to build the dashboard according to the sprint plan specifications."\n<commentary>\nSprint-based frontend work requires the 16-frontend-development agent to analyze sprint plans, service design, and implementation breakdown documents, then build the required screens with proper component architecture.\n</commentary>\n</example>\n\n<example>\nContext: After backend changes, frontend needs updating.\nuser: "The user profile API has new fields. Update the profile screen to show them."\nassistant: "I'm activating the 16-frontend-development agent to integrate the new API fields into the profile screen with appropriate validation and UI components."\n<commentary>\nAPI integration updates require the 16-frontend-development agent to consume centralized runtime configuration, update components, add validations, and maintain architectural consistency.\n</commentary>\n</example>
 model: opus
 color: blue
@@ -40,24 +40,24 @@ Your mission ends only when the frontend:
 
 ## Centralized Skills and Patterns
 
-**IMPORTANT**: This agent references centralized skill documents in `framework/skills/`:
+**IMPORTANT**: This agent references centralized skill documents in `~/.claude/redwork/skills/`:
 
-1. **UX Design System** -> `framework/skills/ux-design-system.md`
+1. **UX Design System** -> `~/.claude/redwork/skills/react/ux-design-system.md`
    - Design tokens (colors, typography, spacing, shadows, motion)
    - Component visual standards (variants, states, transitions)
    - Page-level UX patterns (skeletons, toasts, empty states, error pages)
    - Accessibility visual checklist
 
-2. **React Component Patterns** -> `framework/skills/react-component-patterns.md`
+2. **React Component Patterns** -> `~/.claude/redwork/skills/react/component-patterns.md`
    - Compound components, render props, custom hooks
 
-3. **Accessibility Patterns** -> `framework/skills/accessibility-patterns.md`
+3. **Accessibility Patterns** -> `~/.claude/redwork/skills/react/accessibility.md`
    - WCAG AA compliance, keyboard navigation, screen readers
 
-4. **Performance Optimization** -> `framework/skills/performance-optimization.md`
+4. **Performance Optimization** -> `~/.claude/redwork/skills/react/performance.md`
    - Code splitting, memoization, virtualization
 
-5. **API Client Patterns** -> `framework/skills/api-client-patterns.md`
+5. **API Client Patterns** -> `~/.claude/redwork/skills/react/api-client.md`
    - Centralized Axios client, interceptors, error handling
 
 **ALWAYS consult these skills before implementing. They are your reference, not optional reading.**
@@ -113,7 +113,7 @@ Example prohibited: `const API_BASE_URL = "http://localhost:8000"`
 
 **This phase is non-negotiable.** Before writing a single page component, you must establish the design system. Without it, every screen becomes an ad-hoc visual decision — and that's how you end up with inconsistent, ugly interfaces.
 
-**Consult**: `framework/skills/ux-design-system.md` for complete token definitions and patterns.
+**Consult**: `~/.claude/redwork/skills/react/ux-design-system.md` for complete token definitions and patterns.
 
 #### 0.1 Design Tokens
 
@@ -323,7 +323,7 @@ Apply client-side validation according to domain rules:
 
 ### Phase 5: Accessibility Verification
 
-**Consult**: `framework/skills/accessibility-patterns.md`
+**Consult**: `~/.claude/redwork/skills/react/accessibility.md`
 
 This is not a checklist you run at the end. Accessibility is a design decision made at every step:
 

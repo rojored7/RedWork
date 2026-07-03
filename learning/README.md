@@ -86,7 +86,7 @@ cat .learning/proposed-skills/09-discovery-sequence.md
 
 # If approved, activate in project
 cp .learning/proposed-skills/09-discovery-sequence.md \
-   .framework/agents/workflow-orchestrator/skills/
+   .framework/skills/learned/
 ```
 
 ### 5. Share to Framework (Optional)
@@ -95,12 +95,12 @@ Share approved skills with the community:
 
 ```bash
 # Copy approved skill to framework
-cp project/.framework/agents/workflow-orchestrator/skills/09-discovery-sequence.md \
-   ~/Proyectos/Framework/agents/workflow-orchestrator/skills/
+cp project/.framework/skills/learned/09-discovery-sequence.md \
+   <framework-repo>/skills/learned/
 
 # Commit to framework repo
 cd ~/Proyectos/Framework
-git add agents/workflow-orchestrator/skills/09-discovery-sequence.md
+git add skills/learned/09-discovery-sequence.md
 git commit -m "feat: add community skill 09-discovery-sequence
 
 Learned from project: project-name
@@ -266,20 +266,20 @@ cat .learning/proposed-skills/09-discovery-sequence.md
 ```bash
 # If approved, activate
 cp .learning/proposed-skills/09-discovery-sequence.md \
-   .framework/agents/workflow-orchestrator/skills/
+   .framework/skills/learned/
 
 # Now you can use it
-# In workflow-orchestrator: "Execute skill 09"
+# In learning-agent: "Execute skill 09"
 ```
 
 **Phase 4: Share (optional)**
 ```bash
 # Share with community
-cp .framework/agents/workflow-orchestrator/skills/09-discovery-sequence.md \
-   ~/Proyectos/Framework/agents/workflow-orchestrator/skills/
+cp .framework/skills/learned/09-discovery-sequence.md \
+   <framework-repo>/skills/learned/
 
 cd ~/Proyectos/Framework
-git add agents/workflow-orchestrator/skills/09-discovery-sequence.md
+git add skills/learned/09-discovery-sequence.md
 git commit -m "feat: community skill 09-discovery-sequence"
 git push origin framework
 ```
@@ -447,7 +447,7 @@ Track learning system effectiveness:
 ls -1 .learning/proposed-skills/ | wc -l
 
 # Count approved skills
-ls -1 .framework/agents/workflow-orchestrator/skills/ | grep -E '^[0-9]' | wc -l
+ls -1 .framework/skills/learned/ | grep -E '^[0-9]' | wc -l
 
 # Review analysis history
 ls -lt .learning/analysis/

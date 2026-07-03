@@ -1,5 +1,5 @@
 ---
-name: 22-design-compliance-validator
+name: 22-design-compliance
 description: Use this agent PROACTIVELY after backend/frontend development (agents 10, 11) and BEFORE testing phases (15, 16, 18) to verify that implemented code matches the architecture defined in 05_service_design.md. This agent enforces a 99% compliance threshold - nearly perfect alignment between design and implementation. Examples:
 
 <example>

@@ -1,4 +1,11 @@
-# Agent 21: Learning Agent
+---
+name: learning-agent
+description: Analyzes project git history, agent outputs and error patterns to propose new workflow skills into skills/learned/. Invoke on demand ("lanza el agente learning-agent") after several sprints or periodically; requires 20+ commits of history for meaningful analysis.
+model: sonnet
+color: green
+---
+
+# Learning Agent
 
 **Specialized agent that analyzes project history, patterns, and errors to automatically propose new workflow skills.**
 
@@ -207,7 +214,7 @@ Create concrete skill proposals based on detected patterns.
 For each high-confidence pattern (frequency ≥3, confidence ≥80%):
 
 1. **Determine Skill Number**
-   - Check existing skills in `~/.claude/redwork/agents/workflow-orchestrator/skills/`
+   - Check existing skills in `~/.claude/redwork/skills/learned/`
    - Assign next available number (09, 10, 11, etc.)
 
 2. **Generate Skill Content**
@@ -303,7 +310,7 @@ Template:
 **Suggested Actions**:
 - [ ] Review this proposal
 - [ ] Test the proposed workflow
-- [ ] If approved, copy to `~/.claude/redwork/agents/workflow-orchestrator/skills/`
+- [ ] If approved, copy to `~/.claude/redwork/skills/learned/`
 - [ ] Update skill number if needed
 - [ ] Add to workflow orchestrator documentation
 
@@ -405,7 +412,7 @@ Total Error Types Cataloged: {N}
 
 1. Review proposed skills in `.learning/proposed-skills/`
 2. Test high-confidence skills in development environment
-3. Approve skills by copying to `~/.claude/redwork/agents/workflow-orchestrator/skills/`
+3. Approve skills by copying to `~/.claude/redwork/skills/learned/`
 
 ### Data Collection
 
@@ -430,13 +437,13 @@ cat .learning/proposed-skills/{XX}-{name}.md
 
 # 3. If approved, copy to skills directory
 cp .learning/proposed-skills/{XX}-{name}.md \\
-   ~/.claude/redwork/agents/workflow-orchestrator/skills/
+   ~/.claude/redwork/skills/learned/
 
 # 4. Share to framework (optional)
-cp ~/.claude/redwork/agents/workflow-orchestrator/skills/{XX}-{name}.md \\
-   ~/Proyectos/Framework/agents/workflow-orchestrator/skills/
+cp ~/.claude/redwork/skills/learned/{XX}-{name}.md \\
+   <framework-repo>/skills/learned/
 cd ~/Proyectos/Framework
-git add agents/workflow-orchestrator/skills/{XX}-{name}.md
+git add skills/learned/{XX}-{name}.md
 git commit -m "feat: add auto-learned skill {XX}-{name}"
 git push origin framework
 ```
@@ -506,7 +513,7 @@ NEXT STEPS:
 
 3. Approve Skills:
    cp .learning/proposed-skills/{XX}-name.md \\
-      ~/.claude/redwork/agents/workflow-orchestrator/skills/
+      ~/.claude/redwork/skills/learned/
 
 4. Share to Framework (optional):
    See instructions in summary report
@@ -594,7 +601,7 @@ cat .learning/proposed-skills/09-discovery-sequence.md
 
 # If approved, activate skill
 cp .learning/proposed-skills/09-discovery-sequence.md \\
-   ~/.claude/redwork/agents/workflow-orchestrator/skills/
+   ~/.claude/redwork/skills/learned/
 ```
 
 ---

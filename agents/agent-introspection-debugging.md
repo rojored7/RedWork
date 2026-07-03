@@ -1,5 +1,5 @@
 ---
-name: 04c-Agent-Introspection-Debugging
+name: agent-introspection-debugging
 description: Use this agent IMMEDIATELY when another agent fails repeatedly, loops without progress, or produces incorrect output. This agent performs structured self-debugging using capture, diagnosis, contained recovery, and introspection reports. Trigger this agent when:\n\n- An agent (01-21) completes but the output is incorrect or incomplete\n- An agent enters an infinite loop or retries the same action multiple times\n- An agent consumes excessive tokens without making progress
 - An agent produces output that contradicts mandatory requirements (e.g., using NestJS instead of FastAPI)
 - File system state doesn't match what the agent expected

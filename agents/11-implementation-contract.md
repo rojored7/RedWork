@@ -1,5 +1,5 @@
 ---
-name: 11-Implementation-Contract
+name: 11-implementation-contract
 description: Use this agent AFTER sprint planning (Agent 09) AND after API specification generation (Agent 10), BEFORE implementation begins to generate a detailed implementation contract that specifies EXACTLY what to implement and what quality gates must pass. This agent should be invoked when:\n\n- You have completed sprint planning (09_sprint_plan/)\n- You have generated OpenAPI specification (10_api_specification.yaml) from Agent 10
 - You need a detailed implementation contract for developers
 - You need to specify quality gates for each wave

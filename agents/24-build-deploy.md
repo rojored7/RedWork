@@ -1,5 +1,5 @@
 ---
-name: 24-build-deploy-analyzer
+name: 24-build-deploy
 description: Use this agent to analyze build configurations, CI/CD pipelines, deployment manifests, and infrastructure-as-code in brownfield projects. This agent documents build processes, deployment strategies, and infrastructure configurations with evidence-based citations. Examples:
 
 <example>

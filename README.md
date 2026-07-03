@@ -89,10 +89,10 @@ Phase 0 — Framework Activation (BLOCKING)
 Then Agent 25 reads the sprint plan and invokes development agents in wave order:
 - Wave 0: Infrastructure (Agent 12) — once per group (compose, monitoring, logging, staging, backup, perf)
 - Wave 3a: Backend TESTS first (Agent 13) — writes pytest from specs, all tests MUST fail (Red)
-- Wave 3b: Backend implementation (Agent 10) — makes the tests pass (Green)
+- Wave 3b: Backend implementation (Agent 14) — makes the tests pass (Green)
 - Wave 4: API integration validation
-- Wave 5a: Frontend TESTS first (Agent 14) — writes Vitest tests from specs, all tests MUST fail (Red)
-- Wave 5b: Frontend implementation (Agent 11) — makes the tests pass (Green)
+- Wave 5a: Frontend TESTS first (Agent 15) — writes Vitest tests from specs, all tests MUST fail (Red)
+- Wave 5b: Frontend implementation (Agent 16) — makes the tests pass (Green)
 
 ### Automatic Machinery (fires on every commit)
 
@@ -128,24 +128,24 @@ Once hooks are installed, every `git commit` triggers:
 04  Architecture Decision
 04b Security by Design
 05  Service Design
-05c API-First Specification    (Beautiful API with DX-first principles)
 06  Epic Generation
 07  User Story Generation
 08  Tech Lead Delivery         (Expected Files per task — mandatory)
 09  Sprint Orchestrator
-09b Implementation Contract Generator
+10  API Specification          (Beautiful API with DX-first principles)
+11  Implementation Contract Generator
 25  Development Orchestrator   (Phase 0: activates all machinery)
     |
     +-- 12  Infrastructure     (once per group, not once total)
     +-- 13  Backend TESTS FIRST (TDD Red phase — pytest from specs)
-    +-- 10  Backend Dev        (TDD Green phase — makes tests pass)
-    +-- 14  Frontend TESTS FIRST (TDD Red phase — Vitest from specs)
-    +-- 11  Frontend Dev       (TDD Green phase — makes tests pass)
-    +-- 18  Smoke Tests
-    +-- 19  Security Review
+    +-- 14  Backend Dev        (TDD Green phase — makes tests pass)
+    +-- 15  Frontend TESTS FIRST (TDD Red phase — Vitest from specs)
+    +-- 16  Frontend Dev       (TDD Green phase — makes tests pass)
+    +-- 19  Smoke Tests
+    +-- 21  Security Review
     +-- 20  Linting Validator
-15  Integration Tests
-16  E2E Tests
+17  Integration Tests
+18  E2E Tests
 22  Design Compliance
 23  Quick Reference Generator
 24  Build & Deploy Analyzer
@@ -160,7 +160,7 @@ Once hooks are installed, every `git commit` triggers:
 | Impact analysis before everything | `validate-impact-analysis.sh` blocks flows and Agent 25 (check 0.6) without a fresh HEAD-anchored `00b_impact_analysis.md`. |
 | Bounded automatic retries | `run-gates.sh` + `retry_controller.py`: gate pass auto-clears `wave_N_blocked.flag`; `FRAMEWORK_MAX_RETRIES` (3) exhausted -> `needs_human.flag` + consolidated report. |
 | Backend = FastAPI (Python) | Pre-commit hook blocks NestJS/TS. Pipeline setup exits 1. Project Type Detector marks UNSUPPORTED. |
-| Frontend = Full UX design | Agent 11 requires Design System Phase 0 before any screen. No blank pages. |
+| Frontend = Full UX design | Agent 16 requires Design System Phase 0 before any screen. No blank pages. |
 | API = Beautiful DX | Agent 10 enforces 7 DX principles: naming, envelopes, suggestions in errors, etc. |
 | Sprint completeness = 100% | `validate-sprint-completeness.sh` blocks wave if tasks are missing. |
 | Author != Reviewer | Agent 25 mandates 15-frontend-test as independent pass after 16-frontend-development. |

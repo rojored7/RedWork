@@ -1,5 +1,5 @@
 ---
-name: 23-quick-reference-generator
+name: 23-quick-reference
 description: Use this agent AFTER brownfield analysis (Agents 00, 06bis, 07bis, 02, 03, 04, 05) to generate a concise CLAUDE.md quick reference (1000-1500 words) following the promptInitProyecto.txt methodology. This agent distills all analysis into a focused, pattern-based guide for developers. Examples:
 
 <example>

@@ -1,5 +1,5 @@
 ---
-name: 05b-Technical-Design-Validator-Agent
+name: 05b-technical-design-validator
 description: Use this agent IMMEDIATELY after service design (Agent 05) to validate that the technical design meets all security requirements, quality gates, and architectural constraints. This agent acts as a BLOCKING GATE - if validation fails, service design must be revised. This agent should be invoked when:\n\n- You have completed service design (05_service_design.md)
 - You need to validate design completeness before implementation
 - You need to ensure security requirements are incorporated

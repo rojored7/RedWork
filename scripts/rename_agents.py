@@ -181,8 +181,6 @@ def update_cross_references():
     # Files to scan
     scan_patterns = [
         "agents/*.md",
-        "agents/workflow-orchestrator/*.md",
-        "agents/workflow-orchestrator/skills/*.md",
         "skills/*.md",
         "scripts/workflow/*.sh",
         "scripts/workflow/*.py",
