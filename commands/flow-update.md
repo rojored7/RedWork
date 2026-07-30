@@ -58,23 +58,45 @@ Lanzar en PARALELO (el impact-prevalidator de Fase 0 puede correr en paralelo co
    - Documentar la estrategia de rebuild necesaria para backend y frontend
    - Ejecutar: `docker compose ps` para ver estado actual de servicios
 
+### Fase 1.5: Revision de Seguridad/Arquitectura Pre-Implementacion (condicional, tras Fase 1)
+
+3.5. **security-reviewer** - Revisar el blueprint de `code-architect` ANTES de planificar
+   - **CONDICIONAL**: solo si la feature toca auth, input de usuario no confiable,
+     APIs expuestas, pagos, criptografia o datos sensibles (mismo criterio que Fase 4)
+   - Entrada: blueprint de `code-architect` (Fase 1) + codigo existente relevante
+     (para detectar patrones ya duplicados que la feature va a repetir)
+   - Busca anti-patrones visibles desde el diseno: duplicacion de logica entre los
+     archivos que el plan va a tocar, recursos sin limite (cache/colas/buffers sin
+     bound), decisiones de arquitectura riesgosas (ej. objetos no hasheables usados
+     como clave de cache), secretos hardcodeados, superficie de ataque nueva
+   - Salida: hallazgos con severidad (CRITICAL/HIGH/MEDIUM/LOW), anclados a archivos
+     concretos del blueprint
+   - **No reemplaza** a `security-reviewer` de Fase 4: esta pasada solo adelanta lo
+     que ya es visible en el diseno, antes de que se escriba y testee codigo
+
 ### Fase 2: Planificacion
 
 4. **planner** - Crear plan de implementacion
    - Entrada: hallazgos de code-explorer + code-architect + mapeo de entorno
      + `outputs/00b_impact_analysis.md` (Fase 0)
+     + hallazgos de `security-reviewer` si corrio Fase 1.5
    - Requerimientos, riesgos, fases
    - **OBLIGATORIO si el veredicto de impacto fue AMARILLO**: incorporar TODAS
      las "Condiciones para VERDE" del reporte de impacto como pasos del plan
+   - **OBLIGATORIO si Fase 1.5 corrio**: incorporar todo hallazgo CRITICAL/HIGH como
+     paso explicito del plan (ej. centralizar una funcion en vez de duplicarla desde
+     el slice 1, usar una estructura con bound en vez de una sin limite)
    - **OBLIGATORIO en el plan**: incluir pasos de rebuild/restart de containers si aplica
    - **OBLIGATORIO en el plan**: incluir pasos de migracion de DB si hay cambios de schema
    - **OBLIGATORIO en el plan**: descomponer la implementacion en slices TDD (3-9 slices;
      cada slice = test + implementacion + verificacion, commiteable de forma independiente)
 
 4.5. **plan-critic** (OBLIGATORIO antes del gate humano) - Critica adversarial del plan
-   - Entrada: el plan del planner + ruta del proyecto
+   - Entrada: el plan del planner + ruta del proyecto + hallazgos de Fase 1.5 (si corrio)
    - Intenta refutar el plan: dependencias no consideradas, orden incorrecto, supuestos
      sin verificar, migraciones/rebuild olvidados, falta de rollback
+   - **Si Fase 1.5 encontro CRITICAL/HIGH**: verificar que el plan los incorporo; si no,
+     es motivo de RECHAZADO
    - Salida: APROBADO / APROBADO CON OBSERVACIONES / RECHAZADO con evidencia
    - Si RECHAZADO: el planner corrige el plan y se re-critica (max 2 iteraciones)
    - Presentar al usuario el PLAN + LA CRITICA juntos
@@ -231,8 +253,8 @@ docker compose exec db psql -U <user> -d <db> -c "SELECT email FROM users WHERE 
 
 **GATE HUMANO UNICO — tras Fase 2, paso 4.5 (impacto + plan + critica):**
 El usuario recibe EN UN SOLO MENSAJE: veredicto de impacto (Fase 0) + hallazgos
-del analisis (Fase 1 NO se detiene; sus hallazgos se presentan junto al plan) +
-plan con slices + critica de plan-critic. Una sola aprobacion.
+del analisis (Fase 1 y Fase 1.5 NO se detienen; sus hallazgos se presentan junto
+al plan) + plan con slices + critica de plan-critic. Una sola aprobacion.
 
 **Despues de la aprobacion: EJECUCION CONTINUA (Fases 2.5 a 7) SIN PAUSAS.**
 Plan aprobado = autorizacion completa (ver Doctrina de Ejecucion en CLAUDE.md global).
@@ -282,16 +304,17 @@ El flujo automaticamente:
 1. Explora el codigo de auth existente + mapea entorno Docker
 2. Detecta si docker-compose.yml tiene bugs de configuracion
 3. Disena la feature sobre la arquitectura actual
-4. Planifica incluyendo pasos de rebuild y migracion
-5. Verifica que servicios Docker estan sanos
-6. Escribe tests primero (con valores calculados, no adivinados)
-7. Implementa
-8. Rebuild containers afectados
-9. Aplica migracion, verifica schema
-10. Smoke test del endpoint nuevo
-11. Revisa seguridad (porque toca auth)
-12. Valida linting y build
-13. Ejecuta tests E2E con datos reales de la DB
+4. Revisa seguridad del diseno ANTES de planificar (toca auth -> dispara Fase 1.5)
+5. Planifica incorporando los hallazgos de seguridad + pasos de rebuild y migracion
+6. Verifica que servicios Docker estan sanos
+7. Escribe tests primero (con valores calculados, no adivinados)
+8. Implementa
+9. Rebuild containers afectados
+10. Aplica migracion, verifica schema
+11. Smoke test del endpoint nuevo
+12. Revisa seguridad post-implementacion (Fase 4, cambios que solo son visibles con codigo)
+13. Valida linting y build
+14. Ejecuta tests E2E con datos reales de la DB
 
 ## Comandos Relacionados
 
