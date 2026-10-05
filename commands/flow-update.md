@@ -14,14 +14,15 @@ Pipeline de agentes para implementar una nueva funcionalidad en un proyecto que 
 
 ## Resolucion de scripts de gate (leer antes de Fase 0)
 
-El flujo usa tres scripts que viven en cada proyecto, no en la configuracion global.
+El flujo usa cuatro scripts que viven en cada proyecto, no en la configuracion global.
 Cada proyecto puede tener todos, algunos o ninguno, y pueden estar en rutas distintas.
 Por eso cada script se resuelve de forma independiente y desde la raiz del repo, para
 que funcione aunque el comando se invoque desde un subdirectorio:
 
 ```bash
 ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
-# Para cada script X en: validate-impact-analysis.sh, slice-gate.sh, checkpoint-commit.sh
+# Para cada script X en: validate-impact-analysis.sh, slice-gate.sh,
+#                        checkpoint-commit.sh, run-gates.sh
 #   1. $ROOT/scripts/workflow/X
 #   2. $ROOT/plataforma/scripts/workflow/X
 #   3. ausente
@@ -36,6 +37,7 @@ Comportamiento por script ausente:
 | validate-impact-analysis.sh | Verifica que `outputs/00b_impact_analysis.md` exista, este anclado al HEAD actual y tenga veredicto. ROJO sigue bloqueando |
 | slice-gate.sh | Corre lint, type-check y tests del proyecto a mano y reporta el resultado |
 | checkpoint-commit.sh | Commit manual del slice con git, sin push. Si no hay git, lista los slices en el reporte final |
+| run-gates.sh | Solo en proyectos organizados por waves. Al cerrar una wave corre la suite completa y verifica cobertura; si falta, el cierre de wave es la suma de los slice-gates de esa wave |
 
 Nunca inventes que un gate paso. Un gate manual mal reportado es peor que un gate ausente.
 
@@ -202,6 +204,9 @@ cualquier servicio y nunca bajar servicios que ya estaban corriendo.
     - No acumular varios slices en un checkpoint gigante: pierdes la capacidad de
       revertir uno solo
     - Si un slice rompe algo de un slice anterior, arreglarlo antes de seguir
+    - En proyectos organizados por waves, al cerrar cada wave: `bash "$RUN_GATES" <wave>`
+      (ruta resuelta arriba; si el script esta ausente, el cierre es la suma de los
+      slice-gates de la wave)
     - El push nunca es automatico: publicar es decision del humano al final
 
 ### Fase 3.5: Rebuild + Migracion (despues de implementar)
