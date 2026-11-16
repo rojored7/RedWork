@@ -107,6 +107,34 @@ def _unregister_agents(agents_root: Path, dest: Path, registered: list) -> list:
     return removed
 
 
+def _merge_settings(settings_src: Path, settings_dst: Path) -> bool:
+    """Suma los hooks de RedWork al settings.json del usuario sin tocar nada mas.
+
+    - UTF-8 explicito al leer y escribir: en Windows la lectura por defecto es cp1252 y danaba
+      cualquier texto no ASCII del usuario (p. ej. un em dash en autoMode).
+    - Si la fusion no cambia nada, el archivo no se reescribe.
+    - Escritura atomica (archivo temporal + replace).
+    Devuelve True si escribio.
+    """
+    existing = {}
+    if settings_dst.exists():
+        existing = json.loads(settings_dst.read_text(encoding="utf-8-sig"))
+    redwork_settings = json.loads(settings_src.read_text(encoding="utf-8-sig"))
+    merged = json.loads(json.dumps(existing))
+    for event, hook_list in (redwork_settings.get("hooks") or {}).items():
+        current = merged.setdefault("hooks", {}).setdefault(event, [])
+        commands = {h.get("command") for h in current if isinstance(h, dict)}
+        for hook in hook_list:
+            if isinstance(hook, dict) and hook.get("command") not in commands:
+                current.append(hook)
+    if settings_dst.exists() and merged == existing:
+        return False
+    tmp = settings_dst.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(merged, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    os.replace(str(tmp), str(settings_dst))
+    return True
+
+
 def _load_manifest(profile: str) -> list:
     """Load manifest for a profile. Returns empty list for 'full' (copy everything)."""
     manifest_path = FRAMEWORK_DIR / "manifests" / f"{profile}.json"
@@ -201,31 +229,8 @@ def cmd_install(args):
     settings_dst = Path.home() / ".claude" / "settings.json"
     if settings_src.exists():
         print("  Updating Claude Code settings.json...")
-        # Merge: keep existing settings, add hooks from RedWork
-        existing = {}
-        if settings_dst.exists():
-            with open(settings_dst) as f:
-                existing = json.load(f)
-
-        with open(settings_src) as f:
-            redwork_settings = json.load(f)
-
-        # Merge hooks (RedWork hooks + existing hooks)
-        if "hooks" in redwork_settings:
-            if "hooks" not in existing:
-                existing["hooks"] = {}
-            for event, hook_list in redwork_settings["hooks"].items():
-                if event not in existing["hooks"]:
-                    existing["hooks"][event] = hook_list
-                else:
-                    # Append RedWork hooks that don't already exist
-                    existing_commands = {h.get("command") for h in existing["hooks"][event] if isinstance(h, dict)}
-                    for hook in hook_list:
-                        if isinstance(hook, dict) and hook.get("command") not in existing_commands:
-                            existing["hooks"][event].append(hook)
-
-        with open(settings_dst, "w") as f:
-            json.dump(existing, f, indent=2)
+        changed = _merge_settings(settings_src, settings_dst)
+        print("    settings.json updated." if changed else "    settings.json already up to date (not rewritten).")
 
     # Write install state
     installed_files = []

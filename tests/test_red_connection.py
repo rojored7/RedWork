@@ -7,6 +7,7 @@ Lo que estas pruebas protegen, descubierto en una prueba real (2026-11-15):
   test de integridad no lo veia porque solo miraba nombres en minusculas.
 """
 
+import json
 import re
 import sys
 from pathlib import Path
@@ -139,3 +140,31 @@ class TestGateScriptsAndDocs:
     def test_smoke_test_keeps_its_script(self):
         smoke = (AGENTS_DIR / "19-smoke-test.md").read_text(encoding="utf-8")
         assert "outputs/smoke/" in smoke
+
+
+class TestSettingsEncoding:
+    """El instalador no debe danar settings.json con caracteres no ASCII (Windows lee cp1252 por defecto).
+
+    Hallazgo real (2026-11-16): `install.py update` convirtio un em dash del autoMode del usuario en
+    mojibake al leer settings.json sin encoding y reescribirlo.
+    """
+
+    def test_merge_preserves_non_ascii_text(self, tmp_path):
+        src = tmp_path / "redwork-settings.json"
+        dst = tmp_path / "settings.json"
+        src.write_text('{"hooks": {"Stop": [{"command": "bash x.sh"}]}}', encoding="utf-8")
+        original = {"autoMode": {"soft_deny": ["Bash(deploy:*) — produccion"]}, "nota": "año"}
+        dst.write_text(json.dumps(original, ensure_ascii=False, indent=2), encoding="utf-8")
+        install._merge_settings(src, dst)
+        merged = json.loads(dst.read_text(encoding="utf-8"))
+        assert merged["autoMode"] == original["autoMode"]
+        assert merged["nota"] == "año"
+        assert merged["hooks"]["Stop"] == [{"command": "bash x.sh"}]
+
+    def test_merge_does_not_duplicate_hooks(self, tmp_path):
+        src = tmp_path / "redwork-settings.json"
+        dst = tmp_path / "settings.json"
+        src.write_text('{"hooks": {"Stop": [{"command": "bash x.sh"}]}}', encoding="utf-8")
+        dst.write_text('{"hooks": {"Stop": [{"command": "bash x.sh"}, {"command": "mio"}]}}', encoding="utf-8")
+        install._merge_settings(src, dst)
+        assert len(json.loads(dst.read_text(encoding="utf-8"))["hooks"]["Stop"]) == 2
