@@ -81,7 +81,7 @@ Nunca inventes que un gate paso.
 **Gate del fix (comandos directos del flujo):**
 ```bash
 # 1. Gate: lint + types + tests (el test que reproduce incluido), con el umbral
-#    de cobertura que fije el slice-gate del proyecto (COV_MIN) o 80% si no hay script
+#    de cobertura que fije el slice-gate del proyecto (COV_MIN) o 100% si no hay script
 bash "$SLICE_GATE" auto
 
 # 2. Checkpoint silencioso: test + fix juntos en el mismo checkpoint; nunca pushea
