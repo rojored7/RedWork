@@ -9,6 +9,7 @@
   "agents/ambient/typescript-reviewer.md",
   "agents/ambient/build-error-resolver.md",
   "agents/ambient/README.md",
+  "agents/ambient/doc-updater.md",
   "agents/impact-prevalidator.md",
   "agents/01-product-discovery.md",
   "agents/02-domain-modeling.md",

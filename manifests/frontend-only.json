@@ -9,6 +9,7 @@
   "agents/ambient/typescript-reviewer.md",
   "agents/ambient/build-error-resolver.md",
   "agents/ambient/README.md",
+  "agents/ambient/doc-updater.md",
   "agents/impact-prevalidator.md",
   "agents/15-frontend-test.md",
   "agents/16-frontend-development.md",

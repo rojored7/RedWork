@@ -67,6 +67,7 @@ You must actually run the tests, not just provide code:
 Your output must be concrete and actionable, including only verifiable work:
 
 1. **Complete Test Code**: Fully functional test scripts, configuration files, and setup code that someone else could run without modification.
+   Save every smoke script under `outputs/smoke/` and NEVER delete it after running: report the exact path and the exact command to re-run it, so an independent verifier can reproduce the smoke as-is.
 
 2. **Execution Commands**: Exact commands used to set up the environment and run tests, including any environment variables or flags.
 

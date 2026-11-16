@@ -31,6 +31,7 @@ AMBIENT_AGENTS = [
     "python-reviewer",
     "typescript-reviewer",
     "build-error-resolver",
+    "doc-updater",
 ]
 
 
@@ -150,8 +151,8 @@ class TestInvocationIntegrity:
 class TestInstallerIntegration:
     def test_install_py_installs_ambient(self):
         content = (FRAMEWORK_ROOT / "install.py").read_text(encoding="utf-8")
-        assert "_install_ambient_agents" in content
-        assert "ambient_installed" in content
+        assert "_register_agents(" in content
+        assert "ambient_installed" in content and "agents_registered" in content
 
     def test_manifests_include_ambient(self):
         import json

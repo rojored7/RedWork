@@ -1,6 +1,6 @@
 # Ambient Agents (vendored from ECC)
 
-These 9 agents are the "ambient" actors that the RedWork flows
+These 10 agents are the "ambient" actors that the RedWork flows
 (`/flow-new-project`, `/flow-update`, `/flow-bugfix`) invoke via the Task
 tool. They are vendored here so RedWork is self-contained: installing
 RedWork no longer assumes ECC (everything-claude-code) is present on the
@@ -17,6 +17,7 @@ host.
 | python-reviewer | Review phase (Python changes) |
 | typescript-reviewer | Review phase (TS/JS changes) |
 | build-error-resolver | Gate failures: fix build/type errors within plan scope |
+| doc-updater | /flow-update and /flow-bugfix: sync CLAUDE.md / TECHNICAL_DOCUMENTATION.md per CLAUDE.local.md (vendored 2026-11-16) |
 
 ## Provenance and sync rule
 
@@ -29,8 +30,9 @@ host.
 
 ## Install behavior
 
-`install.py install` copies these to `~/.claude/agents/` (the registry the
-Task tool actually reads) with a non-clobbering policy:
+`install.py install` registers these AND the pipeline agents (impact-prevalidator,
+01-25, plan-critic...) in `~/.claude/agents/` (the registry the Task tool actually
+reads), so every agent a flow names resolves by name. Non-clobbering policy:
 - destination missing -> copy (and record in install-state.json)
 - destination identical (hash) -> skip (ECC already installed it)
 - destination differs -> keep the user's version and warn (never overwrite)

@@ -24,7 +24,10 @@ ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 #                        checkpoint-commit.sh, run-gates.sh
 #   1. $ROOT/scripts/workflow/X
 #   2. $ROOT/plataforma/scripts/workflow/X
-#   3. ausente
+#   3. $HOME/.claude/redwork/scripts/workflow/validate-impact-analysis.sh  (solo ese script: es generico,
+#      lee outputs/00b y HEAD. slice-gate, checkpoint y run-gates asumen la plantilla
+#      del proyecto (paquete app, cobertura 100) y nunca se toman de la instalacion global)
+#   4. ausente
 ```
 
 Si un script esta ausente, el gate no desaparece: el agente verifica la misma condicion
@@ -77,10 +80,21 @@ Ejecutar secuencialmente, cada agente depende del anterior:
    - Decide monolito modular vs microservicios, patrones de comunicacion
    - No pausar aqui: la decision se presenta en el paquete del gate unico
 
+4b. **04b-security-by-design** - Requisitos de seguridad desde el diseno
+   - Entrada: `04_architecture_decision.md`
+   - Corre inmediatamente despues de 04 y antes de 05: autenticacion, autorizacion,
+     datos sensibles, secretos y amenazas se deciden antes de disenar servicios
+   - Sus requisitos son entrada obligatoria de 05 y de 05b
+
 5. **05-service-design** - Disenar estructura interna de servicios
    - Entrada: `02_domain_model.md`, `03_context_map.md`, `04_architecture_decision.md`
    - Salida: `05_service_design.md`
    - Clean Architecture + Hexagonal, capas, puertos, adaptadores
+
+5b. **05b-technical-design-validator** - Gate bloqueante del diseno
+   - Entrada: `05_service_design.md` + requisitos de 04b
+   - Valida que el diseno cumple seguridad, calidad y restricciones de arquitectura
+   - Si falla, se corrige 05 y se re-valida antes de planificar (max 2 iteraciones)
 
 ### Fase 3: Planificacion de Trabajo
 
@@ -102,29 +116,44 @@ Ejecutar secuencialmente, cada agente depende del anterior:
    - Entrada: `07_user_stories/`, `08_implementation_breakdown/`
    - Salida: `09_sprint_plan/`
 
+### Fase 3.5: Contrato de API (antes del gate humano)
+
+10. **10-api-specification** - Especificacion OpenAPI unica
+    - Entrada: `07_user_stories/`, `08_implementation_breakdown/`, `09_sprint_plan/`
+    - Backend y frontend comparten este contrato como fuente unica de verdad
+
+11. **11-implementation-contract** - Contrato de implementacion
+    - Entrada: `09_sprint_plan/` + la especificacion de 10
+    - Define exactamente que implementar y que gates de calidad deben pasar
+
+El usuario aprueba el contrato de API junto con el resto del paquete de decisiones.
+
 ### Fase 4: Implementacion (por sprint, en paralelo)
+
+Este flujo orquesta las waves directamente. **25-development-orchestrator** es la entrada
+alternativa cuando los agentes se ejecutan a mano, uno por uno: no se invocan los dos a la vez.
 
 Por cada sprint, en orden de waves TDD. Los tests van siempre antes que la
 implementacion: un test escrito despues del codigo tiende a describir lo que el codigo
 hace, no lo que deberia hacer.
 
-10. **Wave 0 - 12-Infrastructure-Development-Agent** - Levantar infra Docker/WSL
+12. **Wave 0 - 12-infrastructure-deployment** - Levantar infra Docker/WSL
     - Entrada: `04_architecture_decision.md`, `05_service_design.md`
     - Salida: Docker containers, `runtime-infrastructure.json`
     - Verificar puertos libres antes de levantar servicios; nunca bajar los que ya
       estaban corriendo
     - Gate: `bash "$RUN_GATES" 0` (o verificacion manual si el script esta ausente)
 
-11. **Wave 3a - 13-Backend-Test-Agent** (TDD Red) - Tests de backend PRIMERO
+13. **Wave 3a - 13-backend-test** (TDD Red) - Tests de backend PRIMERO
     - Todos deben fallar antes de implementar
 
-12. **Wave 3b - 10-Backend-Development-Agent** (TDD Green) - Implementar backend
+14. **Wave 3b - 14-backend-development** (TDD Green) - Implementar backend
     - Por cada slice/tarea:
       `bash "$SLICE_GATE" backend` (umbral de cobertura del proyecto) y despues
       `bash "$CHECKPOINT_COMMIT" "<desc>" <task-id>`
     - Al cerrar la wave: `bash "$RUN_GATES" 3`
 
-13. **Wave 5a - 14-Frontend-Test-Agent** (TDD Red) + **Wave 5b - 11-Frontend-Development-Agent** (TDD Green)
+15. **Wave 5a - 15-frontend-test** (TDD Red) + **Wave 5b - 16-frontend-development** (TDD Green)
     - Mismo patron: tests primero, slice-gate + checkpoint por slice,
       y al cerrar: `bash "$RUN_GATES" 5`
 
@@ -132,15 +161,15 @@ hace, no lo que deberia hacer.
 
 Secuencial tras las waves:
 
-14. **17-integration-test** - Tests de integracion real
-15. **18-e2e-test** - Tests end-to-end de flujos criticos
-16. **19-smoke-test** - Validacion de flujos minimos viables
-17. **20-linting-validator** - Zero errores, zero warnings
+16. **17-integration-test** - Tests de integracion real
+17. **18-e2e-test** - Tests end-to-end de flujos criticos
+18. **19-smoke-test** - Validacion de flujos minimos viables
+19. **20-linting-validator** - Zero errores, zero warnings
 
 ### Fase 6: Seguridad y Cierre
 
-18. **21-security-review** - Auditoria de seguridad completa
-19. **20-linting-validator** - Validacion final de linting
+20. **21-security-review** - Auditoria de seguridad completa
+21. **20-linting-validator** - Validacion final de linting
 
 ## Gates: UN solo gate humano, el resto automaticos
 
@@ -149,7 +178,9 @@ El usuario recibe EN UN SOLO MENSAJE el paquete de decisiones de producto:
 - Veredicto de impacto (Fase 0: `00b_impact_analysis.md`)
 - Dominio (Fase 1: `02_domain_model.md`, entidades y reglas clave resumidas)
 - Arquitectura (Fase 2: `04_architecture_decision.md`, decision y trade-offs)
+- Requisitos de seguridad (04b) y veredicto del validador de diseno (05b)
 - Sprint plan (Fase 3: `09_sprint_plan/`)
+- Contrato de API (Fase 3.5: especificacion OpenAPI de 10 y contrato de implementacion de 11)
 - Critica de **plan-critic** sobre el sprint plan (dependencias, orden, supuestos)
 - Las preguntas abiertas acumuladas en Fases 1-3 (si las hay)
 

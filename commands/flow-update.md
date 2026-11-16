@@ -25,7 +25,10 @@ ROOT=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
 #                        checkpoint-commit.sh, run-gates.sh
 #   1. $ROOT/scripts/workflow/X
 #   2. $ROOT/plataforma/scripts/workflow/X
-#   3. ausente
+#   3. $HOME/.claude/redwork/scripts/workflow/validate-impact-analysis.sh  (solo ese script: es generico,
+#      lee outputs/00b y HEAD. slice-gate, checkpoint y run-gates asumen la plantilla
+#      del proyecto (paquete app, cobertura 100) y nunca se toman de la instalacion global)
+#   4. ausente
 ```
 
 Si un script esta ausente, el gate no desaparece: el agente verifica la misma condicion
@@ -260,6 +263,13 @@ Lanzar en PARALELO estos agentes:
     - Para otros lenguajes (go, rust, java, kotlin, csharp, flutter, cpp): usar el
       reviewer especifico solo si esta instalado en ~/.claude/agents (RedWork no los
       vendoriza); si no, **code-reviewer** generico
+
+**Sincronizacion de documentacion (si el proyecto tiene el protocolo):** si existen
+`CLAUDE.md`, `TECHNICAL_DOCUMENTATION.md` o `CLAUDE.local.md`, lanzar **doc-updater** con el
+diff final: aplica las reglas de `CLAUDE.local.md` (que cambios exigen actualizar que seccion
+y cuales no) y marca lo actualizado con `[VERIFICADO] - <fecha>`. Los documentos actualizados
+entran en el ultimo checkpoint del flujo, nunca quedan sin versionar. Si las reglas dicen que
+el cambio no exige actualizacion, se declara asi en el reporte final.
 
 ### Fase 5: Correccion y Validacion
 

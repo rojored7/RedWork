@@ -60,40 +60,51 @@ def _copy_dir(src: Path, dst: Path, manifest_filter: list = None):
             shutil.copy2(str(src_file), str(dst_file))
 
 
-def _install_ambient_agents() -> list:
-    """Copy agents/ambient/*.md to ~/.claude/agents/ (the Task tool registry).
+AGENT_REGISTRY = Path.home() / ".claude" / "agents"
 
-    Non-clobbering policy:
-      - destination missing        -> copy and record
-      - destination identical hash -> skip (already installed, e.g. by ECC)
-      - destination differs        -> keep the user's version, warn
 
-    Returns the list of agent filenames actually copied by this install.
+def _agent_sources(agents_root: Path) -> list:
+    """Agentes del pipeline (agents/*.md) y ambient (agents/ambient/*.md), sin los README."""
+    files = list(agents_root.glob("*.md")) + list((agents_root / "ambient").glob("*.md"))
+    return sorted((f for f in files if f.name != "README.md"), key=lambda f: f.name)
+
+
+def _register_agents(agents_root: Path, dest: Path, previously: list) -> list:
+    """Registra los agentes de RedWork en el registro de subagentes (~/.claude/agents).
+
+    Sin esto los flujos nombran agentes (impact-prevalidator, 13-backend-test...) que el Task tool
+    no encuentra por nombre, y un orquestador termina haciendo su trabajo "a mano".
+    Politica no destructiva:
+      - destino ausente                         -> se copia y se registra
+      - destino identico                        -> se registra (ya estaba)
+      - destino distinto y registrado por RedWork -> se actualiza (es nuestra copia)
+      - destino distinto y ajeno (usuario/ECC)  -> se conserva el del usuario y se avisa
+    Devuelve los nombres que quedan registrados por RedWork.
     """
-    ambient_src = FRAMEWORK_DIR / "agents" / "ambient"
-    if not ambient_src.exists():
-        return []
-
-    print("  Installing ambient agents (Task tool registry)...")
-    agents_dst = Path.home() / ".claude" / "agents"
-    agents_dst.mkdir(parents=True, exist_ok=True)
-
-    copied = []
-    for agent_file in sorted(ambient_src.glob("*.md")):
-        if agent_file.name == "README.md":
-            continue
-        dst = agents_dst / agent_file.name
-        if not dst.exists():
-            shutil.copy2(str(agent_file), str(dst))
-            copied.append(agent_file.name)
-        elif _file_hash(dst) == _file_hash(agent_file):
-            continue  # identical copy already present (e.g. ECC install)
+    dest.mkdir(parents=True, exist_ok=True)
+    registered = []
+    for agent_file in _agent_sources(agents_root):
+        target = dest / agent_file.name
+        if not target.exists() or agent_file.name in previously:
+            shutil.copy2(str(agent_file), str(target))
+            registered.append(agent_file.name)
+        elif _file_hash(target) == _file_hash(agent_file):
+            registered.append(agent_file.name)
         else:
-            print(f"    WARNING: ~/.claude/agents/{agent_file.name} differs "
-                  "from the vendored copy - keeping the existing version.")
-    if copied:
-        print(f"    Copied {len(copied)} ambient agents.")
-    return copied
+            print(f"    WARNING: {target} differs from RedWork's copy - keeping the existing version.")
+    return registered
+
+
+def _unregister_agents(agents_root: Path, dest: Path, registered: list) -> list:
+    """Quita del registro solo las copias que RedWork registro y que nadie modifico despues."""
+    sources = {f.name: f for f in _agent_sources(agents_root)}
+    removed = []
+    for name in registered:
+        target, source = dest / name, sources.get(name)
+        if target.exists() and source is not None and _file_hash(target) == _file_hash(source):
+            target.unlink()
+            removed.append(name)
+    return removed
 
 
 def _load_manifest(profile: str) -> list:
@@ -173,10 +184,17 @@ def cmd_install(args):
         for cmd_file in commands_src.glob("*.md"):
             shutil.copy2(str(cmd_file), str(commands_dst / cmd_file.name))
 
-    # Install vendored ambient agents to ~/.claude/agents/ (the registry
-    # the Task tool reads). Non-clobbering: never overwrite a differing
-    # user/ECC copy; skip identical ones; record what we actually copied.
-    ambient_installed = _install_ambient_agents()
+    # Register every installed agent (pipeline + ambient) in ~/.claude/agents/,
+    # the registry the Task tool reads. Non-clobbering for user/ECC copies.
+    previous_state = GLOBAL_ROOT / "install-state.json"
+    previously = []
+    if previous_state.exists():
+        with open(previous_state) as f:
+            previously = json.load(f).get("agents_registered", [])
+    print("  Registering agents in ~/.claude/agents (Task tool registry)...")
+    agents_registered = _register_agents(GLOBAL_ROOT / "agents", AGENT_REGISTRY, previously)
+    ambient_installed = [n for n in agents_registered
+                         if (FRAMEWORK_DIR / "agents" / "ambient" / n).exists()]
 
     # Update global settings.json to reference hooks
     settings_src = FRAMEWORK_DIR / ".claude" / "settings.json"
@@ -223,6 +241,7 @@ def cmd_install(args):
         "updated_at": _now_iso(),
         "files_count": len(installed_files),
         "ambient_installed": ambient_installed,
+        "agents_registered": agents_registered,
         "framework_source": str(FRAMEWORK_DIR),
     }
 
@@ -276,6 +295,12 @@ def cmd_uninstall(args):
         return
 
     print(f"Uninstalling RedWork from {GLOBAL_ROOT}...")
+    state_file = GLOBAL_ROOT / "install-state.json"
+    if state_file.exists():
+        with open(state_file) as f:
+            registered = json.load(f).get("agents_registered", [])
+        removed = _unregister_agents(GLOBAL_ROOT / "agents", AGENT_REGISTRY, registered)
+        print(f"  Unregistered {len(removed)} agents from ~/.claude/agents.")
     shutil.rmtree(str(GLOBAL_ROOT))
     print("RedWork uninstalled.")
     print("Note: Project-local files (outputs/, .project-state/) are NOT removed.")
