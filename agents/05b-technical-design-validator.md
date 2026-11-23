@@ -1,35 +1,36 @@
 ---
 name: 05b-technical-design-validator
-description: Use this agent IMMEDIATELY after service design (Agent 05) to validate that the technical design meets all security requirements, quality gates, and architectural constraints. This agent acts as a BLOCKING GATE - if validation fails, service design must be revised. This agent should be invoked when:\n\n- You have completed service design (05_service_design.md)
-- You need to validate design completeness before implementation
-- You need to ensure security requirements are incorporated
-- You need to verify quality gates are defined
-- You want to prevent implementation of incomplete or insecure designs
+description: |
+  Use this agent IMMEDIATELY after service design (Agent 05) to validate that the technical design meets all security requirements, quality gates, and architectural constraints. This agent acts as a BLOCKING GATE - if validation fails, service design must be revised. This agent should be invoked when:\n\n- You have completed service design (05_service_design.md)
+  - You need to validate design completeness before implementation
+  - You need to ensure security requirements are incorporated
+  - You need to verify quality gates are defined
+  - You want to prevent implementation of incomplete or insecure designs
 
-This agent is MANDATORY in the workflow - it prevents teams from implementing designs that are incomplete, insecure, or don't meet quality standards.
+  This agent is MANDATORY in the workflow - it prevents teams from implementing designs that are incomplete, insecure, or don't meet quality standards.
 
-Examples of when to use this agent:
+  Examples of when to use this agent:
 
-<example>
-Context: User has just completed service design and wants to proceed to implementation
-user: "I've finished the service design document. Can we start implementing now?"
-assistant: "Before implementation, I need to use the Technical-Design-Validator agent to ensure the design is complete, secure, and meets all requirements. This is a mandatory validation gate."
-<Task tool invocation with technical-design-validator agent>
-</example>
+  <example>
+  Context: User has just completed service design and wants to proceed to implementation
+  user: "I've finished the service design document. Can we start implementing now?"
+  assistant: "Before implementation, I need to use the Technical-Design-Validator agent to ensure the design is complete, secure, and meets all requirements. This is a mandatory validation gate."
+  <Task tool invocation with technical-design-validator agent>
+  </example>
 
-<example>
-Context: User is following the framework workflow
-user: "Agent 05 (Service Design) is complete. What's next?"
-assistant: "Now I'll run the Technical-Design-Validator agent (05b) to validate the design before we proceed to implementation planning. This ensures the design is production-ready."
-<Task tool invocation with technical-design-validator agent>
-</example>
+  <example>
+  Context: User is following the framework workflow
+  user: "Agent 05 (Service Design) is complete. What's next?"
+  assistant: "Now I'll run the Technical-Design-Validator agent (05b) to validate the design before we proceed to implementation planning. This ensures the design is production-ready."
+  <Task tool invocation with technical-design-validator agent>
+  </example>
 
-<example>
-Context: Proactive validation to prevent issues
-user: "Here's my service design document."
-assistant: "I'm going to validate this design using the Technical-Design-Validator agent to ensure it's complete and secure before any implementation begins."
-<Task tool invocation with technical-design-validator agent>
-</example>
+  <example>
+  Context: Proactive validation to prevent issues
+  user: "Here's my service design document."
+  assistant: "I'm going to validate this design using the Technical-Design-Validator agent to ensure it's complete and secure before any implementation begins."
+  <Task tool invocation with technical-design-validator agent>
+  </example>
 model: opus
 color: orange
 ---

@@ -1,36 +1,37 @@
 ---
 name: project-type-detector
-description: Use this agent FIRST before any other agent to determine if the project is greenfield (new) or brownfield (existing) and auto-detect the technology stack. This agent routes the workflow to the appropriate agent chain. Examples:
+description: |
+  Use this agent FIRST before any other agent to determine if the project is greenfield (new) or brownfield (existing) and auto-detect the technology stack. This agent routes the workflow to the appropriate agent chain. Examples:
 
-<example>
-Context: User wants to start working on a project but unclear if it's new or existing.
-user: "I need to start documenting this project"
-assistant: "Let me first use the project-type-detector agent to determine if this is a new or existing project and what technologies it uses"
-<Uses Task tool to launch project-type-detector>
-<commentary>
-Before running any analysis or design agents, ALWAYS detect project type and tech stack to route to appropriate workflow.
-</commentary>
-</example>
+  <example>
+  Context: User wants to start working on a project but unclear if it's new or existing.
+  user: "I need to start documenting this project"
+  assistant: "Let me first use the project-type-detector agent to determine if this is a new or existing project and what technologies it uses"
+  <Uses Task tool to launch project-type-detector>
+  <commentary>
+  Before running any analysis or design agents, ALWAYS detect project type and tech stack to route to appropriate workflow.
+  </commentary>
+  </example>
 
-<example>
-Context: User mentions working in a directory with existing code.
-user: "I'm in the /backend folder and need to understand the architecture"
-assistant: "I'll use the project-type-detector agent first to analyze what exists and determine the technology stack"
-<Uses Task tool to launch project-type-detector>
-<commentary>
-Project has existing code, so this is brownfield. Project Type Detector will detect tech stack and route to brownfield analysis workflow.
-</commentary>
-</example>
+  <example>
+  Context: User mentions working in a directory with existing code.
+  user: "I'm in the /backend folder and need to understand the architecture"
+  assistant: "I'll use the project-type-detector agent first to analyze what exists and determine the technology stack"
+  <Uses Task tool to launch project-type-detector>
+  <commentary>
+  Project has existing code, so this is brownfield. Project Type Detector will detect tech stack and route to brownfield analysis workflow.
+  </commentary>
+  </example>
 
-<example>
-Context: User wants to create a brand new system.
-user: "I want to build a new e-commerce platform from scratch"
-assistant: "Let me use the project-type-detector to confirm this is greenfield and set up the appropriate workflow"
-<Uses Task tool to launch project-type-detector>
-<commentary>
-Even for obviously greenfield projects, run Project Type Detector to document the decision and initialize the workflow properly.
-</commentary>
-</example>
+  <example>
+  Context: User wants to create a brand new system.
+  user: "I want to build a new e-commerce platform from scratch"
+  assistant: "Let me use the project-type-detector to confirm this is greenfield and set up the appropriate workflow"
+  <Uses Task tool to launch project-type-detector>
+  <commentary>
+  Even for obviously greenfield projects, run Project Type Detector to document the decision and initialize the workflow properly.
+  </commentary>
+  </example>
 model: opus
 color: gray
 ---

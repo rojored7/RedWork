@@ -1,35 +1,36 @@
 ---
 name: hidden-complexity-analyzer
-description: Use this agent AFTER Agent 06bis (Configuration Analyzer) to discover non-obvious execution flows, middleware chains, interceptors, filters, aspects, lifecycle hooks, and annotation-driven behaviors in brownfield projects. This agent reveals the "magic" that confuses developers. Examples:
+description: |
+  Use this agent AFTER Agent 06bis (Configuration Analyzer) to discover non-obvious execution flows, middleware chains, interceptors, filters, aspects, lifecycle hooks, and annotation-driven behaviors in brownfield projects. This agent reveals the "magic" that confuses developers. Examples:
 
-<example>
-Context: Agent 06bis analyzed Spring Boot configurations.
-user: "Now discover the hidden complexity in this Spring Boot app"
-assistant: "I'll use the hidden-complexity-analyzer to discover all interceptors, filters, AOP aspects, lifecycle hooks, and annotation-driven behaviors that affect execution flow"
-<Uses Task tool to launch hidden-complexity-analyzer>
-<commentary>
-Hidden complexity includes things like @Transactional boundaries, @Async methods, security filters, request interceptors - all the framework magic that isn't obvious from reading business logic code.
-</commentary>
-</example>
+  <example>
+  Context: Agent 06bis analyzed Spring Boot configurations.
+  user: "Now discover the hidden complexity in this Spring Boot app"
+  assistant: "I'll use the hidden-complexity-analyzer to discover all interceptors, filters, AOP aspects, lifecycle hooks, and annotation-driven behaviors that affect execution flow"
+  <Uses Task tool to launch hidden-complexity-analyzer>
+  <commentary>
+  Hidden complexity includes things like @Transactional boundaries, @Async methods, security filters, request interceptors - all the framework magic that isn't obvious from reading business logic code.
+  </commentary>
+  </example>
 
-<example>
-Context: Express.js project with multiple middleware layers.
-user: "Analyze the middleware execution order in this Express app"
-assistant: "I'll launch the hidden-complexity-analyzer to map the complete middleware chain, including authentication, logging, error handlers, and their execution order"
-<Uses Task tool to launch hidden-complexity-analyzer>
-<commentary>
-For Node.js/Express, hidden complexity includes middleware chains, error handlers, async hooks, event listeners - things that execute outside the normal request-response flow.
-</commentary>
-</example>
+  <example>
+  Context: Express.js project with multiple middleware layers.
+  user: "Analyze the middleware execution order in this Express app"
+  assistant: "I'll launch the hidden-complexity-analyzer to map the complete middleware chain, including authentication, logging, error handlers, and their execution order"
+  <Uses Task tool to launch hidden-complexity-analyzer>
+  <commentary>
+  For Node.js/Express, hidden complexity includes middleware chains, error handlers, async hooks, event listeners - things that execute outside the normal request-response flow.
+  </commentary>
+  </example>
 
-<example>
-Context: Proactive analysis after configuration discovery.
-assistant: "Configuration analysis complete. Now I need to discover hidden complexity before analyzing the domain model. Launching hidden-complexity-analyzer."
-<Uses Task tool to launch hidden-complexity-analyzer>
-<commentary>
-For brownfield projects, hidden complexity analysis should run after configuration analysis but before domain modeling, to understand non-obvious behaviors.
-</commentary>
-</example>
+  <example>
+  Context: Proactive analysis after configuration discovery.
+  assistant: "Configuration analysis complete. Now I need to discover hidden complexity before analyzing the domain model. Launching hidden-complexity-analyzer."
+  <Uses Task tool to launch hidden-complexity-analyzer>
+  <commentary>
+  For brownfield projects, hidden complexity analysis should run after configuration analysis but before domain modeling, to understand non-obvious behaviors.
+  </commentary>
+  </example>
 model: opus
 color: orange
 ---

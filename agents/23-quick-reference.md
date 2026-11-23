@@ -1,35 +1,36 @@
 ---
 name: 23-quick-reference
-description: Use this agent AFTER brownfield analysis (Agents 00, 06bis, 07bis, 02, 03, 04, 05) to generate a concise CLAUDE.md quick reference (1000-1500 words) following the promptInitProyecto.txt methodology. This agent distills all analysis into a focused, pattern-based guide for developers. Examples:
+description: |
+  Use this agent AFTER brownfield analysis (Agents 00, 06bis, 07bis, 02, 03, 04, 05) to generate a concise CLAUDE.md quick reference (1000-1500 words) following the promptInitProyecto.txt methodology. This agent distills all analysis into a focused, pattern-based guide for developers. Examples:
 
-<example>
-Context: All brownfield analysis agents have completed.
-user: "Generate the quick reference guide"
-assistant: "I'll use the quick-reference-generator to create a concise CLAUDE.md from all the analysis performed by agents 00, 06bis, 07bis, and domain agents"
-<Uses Task tool to launch quick-reference-generator>
-<commentary>
-Quick reference is the final step in brownfield analysis, creating a 1-page developer onboarding guide from all previous analysis.
-</commentary>
-</example>
+  <example>
+  Context: All brownfield analysis agents have completed.
+  user: "Generate the quick reference guide"
+  assistant: "I'll use the quick-reference-generator to create a concise CLAUDE.md from all the analysis performed by agents 00, 06bis, 07bis, and domain agents"
+  <Uses Task tool to launch quick-reference-generator>
+  <commentary>
+  Quick reference is the final step in brownfield analysis, creating a 1-page developer onboarding guide from all previous analysis.
+  </commentary>
+  </example>
 
-<example>
-Context: Developer needs onboarding documentation.
-user: "Create a concise guide for new developers joining this project"
-assistant: "I'll launch the quick-reference-generator to create CLAUDE.md - a focused guide covering architecture, conventions, hidden complexity, and quick commands"
-<Uses Task tool to launch quick-reference-generator>
-<commentary>
-CLAUDE.md is designed for fast developer onboarding - everything a new developer needs to know in 1000-1500 words.
-</commentary>
-</example>
+  <example>
+  Context: Developer needs onboarding documentation.
+  user: "Create a concise guide for new developers joining this project"
+  assistant: "I'll launch the quick-reference-generator to create CLAUDE.md - a focused guide covering architecture, conventions, hidden complexity, and quick commands"
+  <Uses Task tool to launch quick-reference-generator>
+  <commentary>
+  CLAUDE.md is designed for fast developer onboarding - everything a new developer needs to know in 1000-1500 words.
+  </commentary>
+  </example>
 
-<example>
-Context: Proactive generation after brownfield workflow completion.
-assistant: "Brownfield analysis complete. Now generating quick reference guide (CLAUDE.md) for easy developer onboarding."
-<Uses Task tool to launch quick-reference-generator>
-<commentary>
-For brownfield projects, CLAUDE.md should be generated automatically after all analysis agents complete.
-</commentary>
-</example>
+  <example>
+  Context: Proactive generation after brownfield workflow completion.
+  assistant: "Brownfield analysis complete. Now generating quick reference guide (CLAUDE.md) for easy developer onboarding."
+  <Uses Task tool to launch quick-reference-generator>
+  <commentary>
+  For brownfield projects, CLAUDE.md should be generated automatically after all analysis agents complete.
+  </commentary>
+  </example>
 model: opus
 color: green
 ---

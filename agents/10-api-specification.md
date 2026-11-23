@@ -1,29 +1,30 @@
 ---
 name: 10-api-specification
-description: Use this agent AFTER sprint planning (09) to consolidate all API information from user stories (07) and implementation breakdown (08) into a complete OpenAPI 3.0 specification. This agent ensures backend and frontend share a single source of truth for API contracts. Invoke when:\n\n- Sprint planning (09) is complete with detailed user stories and implementation breakdown
-- Before implementation contract generation (Agent 11) to establish the formal API contract
-- Before backend/frontend implementation (14/16) so both teams implement from the same contract
-- When API contracts need to be updated or versioned
+description: |
+  Use this agent AFTER sprint planning (09) to consolidate all API information from user stories (07) and implementation breakdown (08) into a complete OpenAPI 3.0 specification. This agent ensures backend and frontend share a single source of truth for API contracts. Invoke when:\n\n- Sprint planning (09) is complete with detailed user stories and implementation breakdown
+  - Before implementation contract generation (Agent 11) to establish the formal API contract
+  - Before backend/frontend implementation (14/16) so both teams implement from the same contract
+  - When API contracts need to be updated or versioned
 
-Examples:
+  Examples:
 
-<example>
-Context: Sprint planning complete with user stories and implementation breakdown.
-user: "Sprint planning is done. User stories define endpoints, breakdown defines DTOs. Ready to generate OpenAPI spec."
-assistant: "I'll use the api-first-specification agent to consolidate all API information from user stories (07) and implementation breakdown (08) into a complete OpenAPI 3.0 specification."
-</example>
+  <example>
+  Context: Sprint planning complete with user stories and implementation breakdown.
+  user: "Sprint planning is done. User stories define endpoints, breakdown defines DTOs. Ready to generate OpenAPI spec."
+  assistant: "I'll use the api-first-specification agent to consolidate all API information from user stories (07) and implementation breakdown (08) into a complete OpenAPI 3.0 specification."
+  </example>
 
-<example>
-Context: Backend and frontend teams need shared API contract before implementation.
-user: "We have detailed user stories with endpoints and DTOs defined in breakdown. Need formal API contract before coding starts."
-assistant: "I'll use the api-first-specification agent to create a formal OpenAPI spec from your planning outputs. This becomes the single source of truth for both backend and frontend implementation."
-</example>
+  <example>
+  Context: Backend and frontend teams need shared API contract before implementation.
+  user: "We have detailed user stories with endpoints and DTOs defined in breakdown. Need formal API contract before coding starts."
+  assistant: "I'll use the api-first-specification agent to create a formal OpenAPI spec from your planning outputs. This becomes the single source of truth for both backend and frontend implementation."
+  </example>
 
-<example>
-Context: Implementation contract generator (Agent 11) needs OpenAPI specification.
-user: "Agent 09 (Sprint Orchestrator) is complete. What's next?"
-assistant: "Now I'll use the api-first-specification agent to aggregate all API details from user stories and implementation breakdown into OpenAPI 3.0 spec. Then Agent 11 can generate implementation contracts based on this formal API contract."
-</example>
+  <example>
+  Context: Implementation contract generator (Agent 11) needs OpenAPI specification.
+  user: "Agent 09 (Sprint Orchestrator) is complete. What's next?"
+  assistant: "Now I'll use the api-first-specification agent to aggregate all API details from user stories and implementation breakdown into OpenAPI 3.0 spec. Then Agent 11 can generate implementation contracts based on this formal API contract."
+  </example>
 model: opus
 color: cyan
 ---

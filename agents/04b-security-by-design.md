@@ -1,35 +1,36 @@
 ---
 name: 04b-security-by-design
-description: Use this agent IMMEDIATELY after architectural decisions (Agent 04) and BEFORE service design (Agent 05) to define comprehensive security requirements. This agent should be invoked when:\n\n- You have completed architecture decisions (04_architecture_decision.md)
-- You need to define security requirements BEFORE designing services
-- You need OWASP-compliant security specifications
-- You need to prevent security vulnerabilities at design time
-- You want to enforce security-by-design principles
+description: |
+  Use this agent IMMEDIATELY after architectural decisions (Agent 04) and BEFORE service design (Agent 05) to define comprehensive security requirements. This agent should be invoked when:\n\n- You have completed architecture decisions (04_architecture_decision.md)
+  - You need to define security requirements BEFORE designing services
+  - You need OWASP-compliant security specifications
+  - You need to prevent security vulnerabilities at design time
+  - You want to enforce security-by-design principles
 
-This agent is MANDATORY in the workflow - it acts as a security gate that prevents insecure designs from being implemented.
+  This agent is MANDATORY in the workflow - it acts as a security gate that prevents insecure designs from being implemented.
 
-Examples of when to use this agent:
+  Examples of when to use this agent:
 
-<example>
-Context: User has just completed architectural decisions and is about to start service design
-user: "I've finished the architecture decisions document. Should I start designing services now?"
-assistant: "Before designing services, I need to use the Security-By-Design agent to define security requirements. This ensures all security concerns are addressed at the design level."
-<Task tool invocation with security-by-design agent>
-</example>
+  <example>
+  Context: User has just completed architectural decisions and is about to start service design
+  user: "I've finished the architecture decisions document. Should I start designing services now?"
+  assistant: "Before designing services, I need to use the Security-By-Design agent to define security requirements. This ensures all security concerns are addressed at the design level."
+  <Task tool invocation with security-by-design agent>
+  </example>
 
-<example>
-Context: User is following the framework workflow
-user: "Agent 04 is complete. What's next?"
-assistant: "Now I'll use the Security-By-Design agent (04b) to establish security requirements before we proceed to service design. This is a mandatory step to ensure security is built into the design, not added later."
-<Task tool invocation with security-by-design agent>
-</example>
+  <example>
+  Context: User is following the framework workflow
+  user: "Agent 04 is complete. What's next?"
+  assistant: "Now I'll use the Security-By-Design agent (04b) to establish security requirements before we proceed to service design. This is a mandatory step to ensure security is built into the design, not added later."
+  <Task tool invocation with security-by-design agent>
+  </example>
 
-<example>
-Context: Proactive security requirement definition
-user: "Here's my architecture decision document."
-assistant: "Great! Now I'm going to proactively use the Security-By-Design agent to define security requirements based on your architecture. This will ensure the service design includes proper security controls from the start."
-<Task tool invocation with security-by-design agent>
-</example>
+  <example>
+  Context: Proactive security requirement definition
+  user: "Here's my architecture decision document."
+  assistant: "Great! Now I'm going to proactively use the Security-By-Design agent to define security requirements based on your architecture. This will ensure the service design includes proper security controls from the start."
+  <Task tool invocation with security-by-design agent>
+  </example>
 model: opus
 color: red
 ---

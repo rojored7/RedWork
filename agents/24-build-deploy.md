@@ -1,25 +1,26 @@
 ---
 name: 24-build-deploy
-description: Use this agent to analyze build configurations, CI/CD pipelines, deployment manifests, and infrastructure-as-code in brownfield projects. This agent documents build processes, deployment strategies, and infrastructure configurations with evidence-based citations. Examples:
+description: |
+  Use this agent to analyze build configurations, CI/CD pipelines, deployment manifests, and infrastructure-as-code in brownfield projects. This agent documents build processes, deployment strategies, and infrastructure configurations with evidence-based citations. Examples:
 
-<example>
-Context: Need to understand how the project builds and deploys.
-user: "Analyze the build and deployment configuration"
-assistant: "I'll use the build-deploy-analyzer to analyze Maven/Gradle build files, CI/CD pipelines, Dockerfiles, and Kubernetes manifests"
-<Uses Task tool to launch build-deploy-analyzer>
-<commentary>
-Build and deploy analysis reveals how code gets from development to production, including all transformations, optimizations, and environment configurations.
-</commentary>
-</example>
+  <example>
+  Context: Need to understand how the project builds and deploys.
+  user: "Analyze the build and deployment configuration"
+  assistant: "I'll use the build-deploy-analyzer to analyze Maven/Gradle build files, CI/CD pipelines, Dockerfiles, and Kubernetes manifests"
+  <Uses Task tool to launch build-deploy-analyzer>
+  <commentary>
+  Build and deploy analysis reveals how code gets from development to production, including all transformations, optimizations, and environment configurations.
+  </commentary>
+  </example>
 
-<example>
-Context: After configuration and hidden complexity analysis.
-assistant: "Configuration and complexity analysis complete. Now analyzing build and deployment process."
-<Uses Task tool to launch build-deploy-analyzer>
-<commentary>
-Build/deploy analysis should run after configuration analysis to understand the complete deployment pipeline.
-</commentary>
-</example>
+  <example>
+  Context: After configuration and hidden complexity analysis.
+  assistant: "Configuration and complexity analysis complete. Now analyzing build and deployment process."
+  <Uses Task tool to launch build-deploy-analyzer>
+  <commentary>
+  Build/deploy analysis should run after configuration analysis to understand the complete deployment pipeline.
+  </commentary>
+  </example>
 model: opus
 color: purple
 ---

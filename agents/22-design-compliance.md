@@ -1,36 +1,37 @@
 ---
 name: 22-design-compliance
-description: Use this agent PROACTIVELY after backend/frontend development (agents 10, 11) and BEFORE testing phases (15, 16, 18) to verify that implemented code matches the architecture defined in 05_service_design.md. This agent enforces a 100% compliance threshold - nearly perfect alignment between design and implementation. Examples:
+description: |
+  Use this agent PROACTIVELY after backend/frontend development (agents 10, 11) and BEFORE testing phases (15, 16, 18) to verify that implemented code matches the architecture defined in 05_service_design.md. This agent enforces a 100% compliance threshold - nearly perfect alignment between design and implementation. Examples:
 
-<example>
-Context: Backend development (agent 10) has completed implementing domain entities and use cases.
-user: "Backend development is complete, all entities and use cases are implemented"
-assistant: "I'm launching the design-compliance-validator agent to verify that your implementation matches the architecture defined in 05_service_design.md with 100% accuracy"
-<Uses Task tool to launch design-compliance-validator>
-<commentary>
-After development agents complete, ALWAYS use design-compliance-validator to ensure architectural integrity before proceeding to testing phases.
-</commentary>
-</example>
+  <example>
+  Context: Backend development (agent 10) has completed implementing domain entities and use cases.
+  user: "Backend development is complete, all entities and use cases are implemented"
+  assistant: "I'm launching the design-compliance-validator agent to verify that your implementation matches the architecture defined in 05_service_design.md with 100% accuracy"
+  <Uses Task tool to launch design-compliance-validator>
+  <commentary>
+  After development agents complete, ALWAYS use design-compliance-validator to ensure architectural integrity before proceeding to testing phases.
+  </commentary>
+  </example>
 
-<example>
-Context: User has implemented backend services and wants to proceed to integration testing.
-user: "Ready to run integration tests"
-assistant: "Before running integration tests, I need to use the design-compliance-validator agent to verify your implementation complies with the service design specifications"
-<Uses Task tool to launch design-compliance-validator>
-<commentary>
-Design compliance validation is a MANDATORY gate before testing. Cannot proceed to testing if compliance is below 100%.
-</commentary>
-</example>
+  <example>
+  Context: User has implemented backend services and wants to proceed to integration testing.
+  user: "Ready to run integration tests"
+  assistant: "Before running integration tests, I need to use the design-compliance-validator agent to verify your implementation complies with the service design specifications"
+  <Uses Task tool to launch design-compliance-validator>
+  <commentary>
+  Design compliance validation is a MANDATORY gate before testing. Cannot proceed to testing if compliance is below 100%.
+  </commentary>
+  </example>
 
-<example>
-Context: Proactive validation after code changes to domain layer.
-user: "I've added the Payment entity and its repository"
-assistant: "Let me proactively use the design-compliance-validator agent to verify this new entity matches the domain model specifications and follows Clean Architecture principles"
-<Uses Task tool to launch design-compliance-validator>
-<commentary>
-Any significant architectural changes trigger immediate compliance validation to prevent drift.
-</commentary>
-</example>
+  <example>
+  Context: Proactive validation after code changes to domain layer.
+  user: "I've added the Payment entity and its repository"
+  assistant: "Let me proactively use the design-compliance-validator agent to verify this new entity matches the domain model specifications and follows Clean Architecture principles"
+  <Uses Task tool to launch design-compliance-validator>
+  <commentary>
+  Any significant architectural changes trigger immediate compliance validation to prevent drift.
+  </commentary>
+  </example>
 model: opus
 color: cyan
 ---

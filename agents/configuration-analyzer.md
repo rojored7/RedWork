@@ -1,35 +1,36 @@
 ---
 name: configuration-analyzer
-description: Use this agent AFTER Project Type Detector (Project Type Detector) to perform deep analysis of ALL configuration files in a brownfield project. This agent discovers configuration patterns, resolution chains, environment-specific settings, and documents the complete configuration landscape with evidence-based citations. Examples:
+description: |
+  Use this agent AFTER Project Type Detector (Project Type Detector) to perform deep analysis of ALL configuration files in a brownfield project. This agent discovers configuration patterns, resolution chains, environment-specific settings, and documents the complete configuration landscape with evidence-based citations. Examples:
 
-<example>
-Context: Project Type Detector detected a Spring Boot project with multiple configuration files.
-user: "Project Type Detector detected Spring Boot. Now analyze the configurations"
-assistant: "I'll use the configuration-analyzer agent to deep-dive into all Spring Boot configuration files, analyze property resolution order, and document environment-specific settings"
-<Uses Task tool to launch configuration-analyzer>
-<commentary>
-After tech stack detection, configuration analysis is the first step in understanding how the application actually behaves in different environments.
-</commentary>
-</example>
+  <example>
+  Context: Project Type Detector detected a Spring Boot project with multiple configuration files.
+  user: "Project Type Detector detected Spring Boot. Now analyze the configurations"
+  assistant: "I'll use the configuration-analyzer agent to deep-dive into all Spring Boot configuration files, analyze property resolution order, and document environment-specific settings"
+  <Uses Task tool to launch configuration-analyzer>
+  <commentary>
+  After tech stack detection, configuration analysis is the first step in understanding how the application actually behaves in different environments.
+  </commentary>
+  </example>
 
-<example>
-Context: Project Type Detector detected a Node.js/Express project with .env files.
-user: "Analyze the environment configurations for this Express app"
-assistant: "I'll launch the configuration-analyzer agent to analyze all .env files, detect environment hierarchies, and document the configuration resolution chain"
-<Uses Task tool to launch configuration-analyzer>
-<commentary>
-Configuration analysis adapts to the detected tech stack (Express in this case) and analyzes .env files, config/ directory, and package.json scripts.
-</commentary>
-</example>
+  <example>
+  Context: Project Type Detector detected a Node.js/Express project with .env files.
+  user: "Analyze the environment configurations for this Express app"
+  assistant: "I'll launch the configuration-analyzer agent to analyze all .env files, detect environment hierarchies, and document the configuration resolution chain"
+  <Uses Task tool to launch configuration-analyzer>
+  <commentary>
+  Configuration analysis adapts to the detected tech stack (Express in this case) and analyzes .env files, config/ directory, and package.json scripts.
+  </commentary>
+  </example>
 
-<example>
-Context: Proactive analysis after brownfield detection.
-assistant: "Project Type Detector detected this is a brownfield Django project. Before analyzing the code, I need to understand configurations. Launching configuration-analyzer agent."
-<Uses Task tool to launch configuration-analyzer>
-<commentary>
-For brownfield projects, configuration analysis should run automatically after Project Type Detector, before domain modeling.
-</commentary>
-</example>
+  <example>
+  Context: Proactive analysis after brownfield detection.
+  assistant: "Project Type Detector detected this is a brownfield Django project. Before analyzing the code, I need to understand configurations. Launching configuration-analyzer agent."
+  <Uses Task tool to launch configuration-analyzer>
+  <commentary>
+  For brownfield projects, configuration analysis should run automatically after Project Type Detector, before domain modeling.
+  </commentary>
+  </example>
 model: opus
 color: blue
 ---

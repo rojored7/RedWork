@@ -1,37 +1,38 @@
 ---
 name: 11-implementation-contract
-description: Use this agent AFTER sprint planning (Agent 09) AND after API specification generation (Agent 10), BEFORE implementation begins to generate a detailed implementation contract that specifies EXACTLY what to implement and what quality gates must pass. This agent should be invoked when:\n\n- You have completed sprint planning (09_sprint_plan/)\n- You have generated OpenAPI specification (10_api_specification.yaml) from Agent 10
-- You need a detailed implementation contract for developers
-- You need to specify quality gates for each wave
-- You want to prevent "done but not validated" implementations
-- You need clear acceptance criteria for each implementation wave
+description: |
+  Use this agent AFTER sprint planning (Agent 09) AND after API specification generation (Agent 10), BEFORE implementation begins to generate a detailed implementation contract that specifies EXACTLY what to implement and what quality gates must pass. This agent should be invoked when:\n\n- You have completed sprint planning (09_sprint_plan/)\n- You have generated OpenAPI specification (10_api_specification.yaml) from Agent 10
+  - You need a detailed implementation contract for developers
+  - You need to specify quality gates for each wave
+  - You want to prevent "done but not validated" implementations
+  - You need clear acceptance criteria for each implementation wave
 
-This agent is MANDATORY before starting Wave 1 - it creates the contract between planning and implementation that ensures 100% quality compliance.
+  This agent is MANDATORY before starting Wave 1 - it creates the contract between planning and implementation that ensures 100% quality compliance.
 
-IMPORTANT: Agent 10 (API-First Specification) MUST run before this agent to generate 10_api_specification.yaml, which this agent uses to validate API contracts in the implementation contract.
+  IMPORTANT: Agent 10 (API-First Specification) MUST run before this agent to generate 10_api_specification.yaml, which this agent uses to validate API contracts in the implementation contract.
 
-Examples of when to use this agent:
+  Examples of when to use this agent:
 
-<example>
-Context: User has completed sprint planning and wants to start development
-user: "Sprint planning is done. Should we start Wave 1 implementation now?"
-assistant: "Before starting implementation, I need to use the Implementation-Contract-Generator agent to create a detailed contract specifying exactly what to implement and what gates must pass. This prevents incomplete implementations."
-<Task tool invocation with implementation-contract-generator agent>
-</example>
+  <example>
+  Context: User has completed sprint planning and wants to start development
+  user: "Sprint planning is done. Should we start Wave 1 implementation now?"
+  assistant: "Before starting implementation, I need to use the Implementation-Contract-Generator agent to create a detailed contract specifying exactly what to implement and what gates must pass. This prevents incomplete implementations."
+  <Task tool invocation with implementation-contract-generator agent>
+  </example>
 
-<example>
-Context: User is following the framework workflow
-user: "Agent 09 (Sprint Planning) is complete. What's next?"
-assistant: "Now I'll generate the implementation contract using Agent 11. This creates a binding contract that specifies exactly what each wave must deliver and what quality gates must pass before continuing."
-<Task tool invocation with implementation-contract-generator agent>
-</example>
+  <example>
+  Context: User is following the framework workflow
+  user: "Agent 09 (Sprint Planning) is complete. What's next?"
+  assistant: "Now I'll generate the implementation contract using Agent 11. This creates a binding contract that specifies exactly what each wave must deliver and what quality gates must pass before continuing."
+  <Task tool invocation with implementation-contract-generator agent>
+  </example>
 
-<example>
-Context: Proactive contract generation to prevent issues
-user: "Here's the sprint plan for Sprint 1."
-assistant: "I'm going to generate the implementation contract using Agent 11. This will ensure developers know exactly what to implement and what quality standards must be met in each wave."
-<Task tool invocation with implementation-contract-generator agent>
-</example>
+  <example>
+  Context: Proactive contract generation to prevent issues
+  user: "Here's the sprint plan for Sprint 1."
+  assistant: "I'm going to generate the implementation contract using Agent 11. This will ensure developers know exactly what to implement and what quality standards must be met in each wave."
+  <Task tool invocation with implementation-contract-generator agent>
+  </example>
 model: opus
 color: green
 ---

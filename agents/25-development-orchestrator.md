@@ -1,43 +1,43 @@
 ---
 name: 25-development-orchestrator
-description: Use this agent BEFORE any development work (Agents 13/14/15/16) to generate execution plan, validate git setup, and create task tracking. This agent acts as mandatory gateway that enforces plan-first workflow.
+description: |
+  Use this agent BEFORE any development work (Agents 13/14/15/16) to generate execution plan, validate git setup, and create task tracking. This agent acts as mandatory gateway that enforces plan-first workflow.
 
-Specifically invoke this agent when:
-- User requests development work ("implement backend", "start sprint 1", "build login feature")
-- Before invoking Agent 14 (Backend Development)
-- Before invoking Agent 16 (Frontend Development)
-- Before invoking Agent 13 (Backend Testing)
-- Before invoking Agent 15 (Frontend Testing)
+  Specifically invoke this agent when:
+  - User requests development work ("implement backend", "start sprint 1", "build login feature")
+  - Before invoking Agent 14 (Backend Development)
+  - Before invoking Agent 16 (Frontend Development)
+  - Before invoking Agent 13 (Backend Testing)
+  - Before invoking Agent 15 (Frontend Testing)
 
-Examples of when to use:
+  Examples of when to use:
 
-<example>
-Context: User wants to start Sprint 1 backend development
-user: "Let's implement the backend tasks for Sprint 1"
-assistant: "I'll use the Task tool to launch the development-orchestrator agent to generate the execution plan, validate git setup, and prepare task tracking before we start coding."
-<commentary>
-User requested development work. MUST use development-orchestrator first to generate plan and get approval.
-</commentary>
-</example>
+  <example>
+  Context: User wants to start Sprint 1 backend development
+  user: "Let's implement the backend tasks for Sprint 1"
+  assistant: "I'll use the Task tool to launch the development-orchestrator agent to generate the execution plan, validate git setup, and prepare task tracking before we start coding."
+  <commentary>
+  User requested development work. MUST use development-orchestrator first to generate plan and get approval.
+  </commentary>
+  </example>
 
-<example>
-Context: User asks to implement a specific feature
-user: "Implement the user authentication endpoints"
-assistant: "I'm going to use the development-orchestrator agent to analyze the sprint plan, validate our git setup, and create a complete execution plan for the authentication endpoints. The plan was already approved at the flow's single human gate, so execution will run end to end with automatic gates."
-<commentary>
-Before ANY development, orchestrator must validate setup and generate plan.
-</commentary>
-</example>
+  <example>
+  Context: User asks to implement a specific feature
+  user: "Implement the user authentication endpoints"
+  assistant: "I'm going to use the development-orchestrator agent to analyze the sprint plan, validate our git setup, and create a complete execution plan for the authentication endpoints. The plan was already approved at the flow's single human gate, so execution will run end to end with automatic gates."
+  <commentary>
+  Before ANY development, orchestrator must validate setup and generate plan.
+  </commentary>
+  </example>
 
-<example>
-Context: User tries to jump directly to coding
-user: "Run Agent 14 to build the backend"
-assistant: "Before we run Agent 14, I need to use the development-orchestrator agent to validate git setup and generate the execution plan. This ensures we have proper tracking and can resume if disconnected."
-<commentary>
-Proactively prevent skipping orchestrator. Enforce plan-first workflow.
-</commentary>
-</example>
-
+  <example>
+  Context: User tries to jump directly to coding
+  user: "Run Agent 14 to build the backend"
+  assistant: "Before we run Agent 14, I need to use the development-orchestrator agent to validate git setup and generate the execution plan. This ensures we have proper tracking and can resume if disconnected."
+  <commentary>
+  Proactively prevent skipping orchestrator. Enforce plan-first workflow.
+  </commentary>
+  </example>
 model: opus
 color: purple
 ---
